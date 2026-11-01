@@ -1,0 +1,22 @@
+{
+	"name": "eventwatch/eventwatch-wordpress",
+	"description": "Development tools for the EventWatch Events WordPress plugin.",
+	"type": "wordpress-plugin",
+	"license": "GPL-2.0-or-later",
+	"require-dev": {
+		"dealerdirect/phpcodesniffer-composer-installer": "1.2.1",
+		"phpcompatibility/phpcompatibility-wp": "2.1.8",
+		"phpunit/phpunit": "9.6.38",
+		"wp-coding-standards/wpcs": "3.4.1",
+		"yoast/phpunit-polyfills": "4.0.0"
+	},
+	"config": {
+		"allow-plugins": {
+			"dealerdirect/phpcodesniffer-composer-installer": true
+		},
+		"platform": {
+			"php": "7.4"
+		},
+		"sort-packages": true
+	}
+}

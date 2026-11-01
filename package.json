@@ -1,0 +1,33 @@
+{
+	"name": "eventwatch",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Show and publish your events from your WordPress site.",
+	"license": "GPL-2.0-or-later",
+	"engines": {
+		"node": "^24.15.0"
+	},
+	"files": [
+		"eventwatch.php",
+		"uninstall.php",
+		"includes",
+		"build",
+		"readme.txt",
+		"LICENSE"
+	],
+	"scripts": {
+		"build": "wp-scripts build",
+		"start": "wp-scripts start",
+		"lint:js": "wp-scripts lint-js --no-error-on-unmatched-pattern",
+		"plugin-zip": "wp-scripts plugin-zip && zip -dq eventwatch.zip eventwatch/package.json eventwatch/README.md",
+		"env": "wp-env",
+		"composer": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch composer",
+		"lint:php": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpcs",
+		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpunit",
+		"test:php:multisite": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch env WP_MULTISITE=1 vendor/bin/phpunit"
+	},
+	"devDependencies": {
+		"@wordpress/env": "11.17.0",
+		"@wordpress/scripts": "36.1.0"
+	}
+}
