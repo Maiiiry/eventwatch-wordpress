@@ -24,7 +24,8 @@
 		"env": "wp-env",
 		"composer": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch composer",
 		"lint:php": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpcs",
-		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpunit"
+		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpunit",
+		"test:php:multisite": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch env WP_MULTISITE=1 vendor/bin/phpunit"
 	},
 	"devDependencies": {
 		"@wordpress/env": "11.17.0",
