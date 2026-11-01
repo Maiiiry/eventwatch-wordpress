@@ -1,0 +1,12 @@
+{
+	"phpVersion": null,
+	"plugins": [],
+	"mappings": {
+		"wp-content/plugins/eventwatch": "."
+	},
+	"port": 8885,
+	"testsPort": 8886,
+	"lifecycleScripts": {
+		"afterStart": "wp-env run cli wp plugin activate eventwatch"
+	}
+}
