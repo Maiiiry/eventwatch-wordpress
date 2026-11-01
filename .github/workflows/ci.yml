@@ -45,7 +45,7 @@ jobs:
             php: '7.4'
           - wp: latest
             core: ''
-            php: '8.4'
+            php: '8.5'
     env:
       WP_ENV_CORE: ${{ matrix.core }}
       WP_ENV_PHP_VERSION: ${{ matrix.php }}
