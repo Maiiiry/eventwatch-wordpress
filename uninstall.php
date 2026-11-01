@@ -11,6 +11,9 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 	exit;
 }
 
+// 本体の uninstall_plugin() は、global を宣言していない関数の中でこのファイルを読み込む。
+global $wpdb;
+
 $eventwatch_like_patterns = array_map(
 	static function ( string $prefix ): string {
 		global $wpdb;
@@ -50,13 +53,14 @@ if ( is_multisite() ) {
 		restore_current_blog();
 	}
 
+	// プラグインのファイルはネットワークをまたいで共通なので、すべてのネットワークの option を消す。
 	$eventwatch_where = implode( ' OR ', array_fill( 0, count( $eventwatch_like_patterns ), 'meta_key LIKE %s' ) );
 	// phpcs:disable WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders,WordPress.DB.SlowDBQuery -- 接頭辞で引く API が無い。$eventwatch_where はプレースホルダーだけでできている。
-	$eventwatch_network_names = $wpdb->get_col( $wpdb->prepare( "SELECT meta_key FROM {$wpdb->sitemeta} WHERE site_id = %d AND ({$eventwatch_where})", array_merge( array( get_current_network_id() ), $eventwatch_like_patterns ) ) );
+	$eventwatch_network_options = $wpdb->get_results( $wpdb->prepare( "SELECT site_id, meta_key FROM {$wpdb->sitemeta} WHERE {$eventwatch_where}", $eventwatch_like_patterns ) );
 	// phpcs:enable
 
-	foreach ( $eventwatch_network_names as $eventwatch_network_name ) {
-		delete_site_option( $eventwatch_network_name );
+	foreach ( $eventwatch_network_options as $eventwatch_network_option ) {
+		delete_network_option( (int) $eventwatch_network_option->site_id, $eventwatch_network_option->meta_key );
 	}
 } else {
 	$eventwatch_delete_site_options();

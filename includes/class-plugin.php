@@ -46,8 +46,9 @@ class Plugin {
 		if ( $network_wide && is_multisite() ) {
 			foreach ( get_sites(
 				array(
-					'fields' => 'ids',
-					'number' => 0,
+					'fields'     => 'ids',
+					'number'     => 0,
+					'network_id' => get_current_network_id(),
 				)
 			) as $site_id ) {
 				switch_to_blog( $site_id );

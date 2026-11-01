@@ -64,7 +64,7 @@ class Plugin_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * ネットワーク全体の無効化で、ほかのサイトの cron も外れる。
+	 * ネットワーク全体の無効化で、ほかのサイトの cron が外れ、rewrite が消える。
 	 *
 	 * @group ms-required
 	 */
@@ -76,6 +76,33 @@ class Plugin_Test extends WP_UnitTestCase {
 		$other_site = self::factory()->blog->create();
 		switch_to_blog( $other_site );
 		wp_schedule_event( time() + 3600, 'daily', 'eventwatch_test_hook' );
+		update_option( 'rewrite_rules', array( 'stale' => 'index.php' ) );
+		restore_current_blog();
+
+		Plugin_With_Cron_Hook::deactivate( true );
+
+		switch_to_blog( $other_site );
+		$next  = wp_next_scheduled( 'eventwatch_test_hook' );
+		$rules = get_option( 'rewrite_rules' );
+		restore_current_blog();
+
+		$this->assertFalse( $next );
+		$this->assertArrayNotHasKey( 'stale', (array) $rules );
+	}
+
+	/**
+	 * ネットワーク全体の無効化は、ほかのネットワークのサイトに触らない。
+	 *
+	 * @group ms-required
+	 */
+	public function test_network_deactivate_keeps_other_networks() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite.' );
+		}
+
+		$other_site = self::factory()->blog->create( array( 'network_id' => self::factory()->network->create() ) );
+		switch_to_blog( $other_site );
+		wp_schedule_event( time() + 3600, 'daily', 'eventwatch_test_hook' );
 		restore_current_blog();
 
 		Plugin_With_Cron_Hook::deactivate( true );
@@ -84,6 +111,6 @@ class Plugin_Test extends WP_UnitTestCase {
 		$next = wp_next_scheduled( 'eventwatch_test_hook' );
 		restore_current_blog();
 
-		$this->assertFalse( $next );
+		$this->assertNotFalse( $next );
 	}
 }

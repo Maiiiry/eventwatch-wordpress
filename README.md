@@ -6,6 +6,7 @@ WordPress のサイトでイベントを公開し、EventWatch にも掲載す�
 
 - Docker
 - Node.js 24.19.0（`.nvmrc` と `.mise.toml` に書いてあります）
+- `zip` コマンド（`npm run plugin-zip` で使います）
 
 PHP と Composer は、wp-env のコンテナの中で動かすので、手元に入れなくても構いません。
 
