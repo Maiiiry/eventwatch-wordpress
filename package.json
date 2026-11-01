@@ -12,7 +12,6 @@
 		"uninstall.php",
 		"includes",
 		"build",
-		"languages",
 		"readme.txt",
 		"LICENSE"
 	],
@@ -20,7 +19,7 @@
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
 		"lint:js": "wp-scripts lint-js --no-error-on-unmatched-pattern",
-		"plugin-zip": "wp-scripts plugin-zip",
+		"plugin-zip": "wp-scripts plugin-zip && zip -dq eventwatch.zip eventwatch/package.json eventwatch/README.md",
 		"env": "wp-env",
 		"composer": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch composer",
 		"lint:php": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpcs",
