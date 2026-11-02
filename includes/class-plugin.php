@@ -44,6 +44,8 @@ class Plugin {
 		// 本体の wp_initialize_site（優先度 10）が表を作った後に動かす。
 		add_action( 'wp_initialize_site', array( static::class, 'initialize_site' ), 100 );
 		Event_Meta::boot();
+		Event_Permalink::boot();
+		Settings::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
 	}

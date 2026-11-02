@@ -28,6 +28,24 @@ class Post_Type {
 	const REWRITE_SLUG = 'event';
 
 	/**
+	 * 個別ページの接頭辞の設定。空なら既定。
+	 */
+	const SLUG_OPTION = 'eventwatch_event_slug';
+
+	/**
+	 * いまの接頭辞。
+	 *
+	 * uninstall.php は本体を読み込まずにこのファイルだけを読むので、ほかのクラスに頼らない。
+	 *
+	 * @return string
+	 */
+	public static function rewrite_slug() {
+		$slug = (string) get_option( self::SLUG_OPTION, '' );
+
+		return '' !== $slug ? $slug : self::REWRITE_SLUG;
+	}
+
+	/**
 	 * 投稿タイプとタクソノミーを登録する。
 	 *
 	 * @return void
@@ -60,7 +78,7 @@ class Post_Type {
 				'capability_type' => array( 'eventwatch_event', 'eventwatch_events' ),
 				'map_meta_cap'    => true,
 				'rewrite'         => array(
-					'slug'       => self::REWRITE_SLUG,
+					'slug'       => self::rewrite_slug(),
 					'with_front' => false,
 				),
 				// custom-fields が無いと、投稿のメタが REST に出ない。
