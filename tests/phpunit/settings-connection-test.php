@@ -293,11 +293,15 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		delete_option( Connection::KEY_OPTION );
 		Site_Identity::ensure();
 
+		// 値が同じ INSERT は added_option を起こさないので、発行した文を数える。
 		$writes = 0;
-		add_action(
-			'added_option',
-			static function () use ( &$writes ) {
-				++$writes;
+		add_filter(
+			'query',
+			static function ( $query ) use ( &$writes ) {
+				if ( false !== stripos( $query, 'INSERT INTO' ) ) {
+					++$writes;
+				}
+				return $query;
 			}
 		);
 
@@ -513,8 +517,11 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	public function test_activation_creates_the_identity() {
 		delete_option( Site_Identity::ID_OPTION );
 		delete_option( Site_Identity::URL_OPTION );
+		delete_option( Connection::KEY_OPTION );
 
 		Plugin::activate();
+
+		$this->assertSame( '', get_option( Connection::KEY_OPTION, false ) );
 
 		$id = get_option( Site_Identity::ID_OPTION );
 		$this->assertTrue( wp_is_uuid( $id, 4 ) );
