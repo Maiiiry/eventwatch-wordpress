@@ -240,11 +240,24 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 			$this->assertSame( self::KEY, get_option( Connection::KEY_OPTION ), $bad );
 		}
 
-		update_option( Connection::KEY_OPTION, '' );
-		$this->assertSame( self::KEY, get_option( Connection::KEY_OPTION ) );
-
 		update_option( Connection::KEY_OPTION, array( 'x' ) );
 		$this->assertSame( self::KEY, get_option( Connection::KEY_OPTION ) );
+	}
+
+	/**
+	 * 空の保存は「替えない」なので、誤りを出さない。形の違う値には出す。
+	 */
+	public function test_empty_key_is_not_an_error() {
+		global $wp_settings_errors;
+
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$wp_settings_errors = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- テストごとに空から数える。
+
+		$this->assertSame( self::KEY, Settings::sanitize_api_key( '' ) );
+		$this->assertSame( array(), get_settings_errors( Connection::KEY_OPTION ) );
+
+		$this->assertSame( self::KEY, Settings::sanitize_api_key( 'abc' ) );
+		$this->assertCount( 1, get_settings_errors( Connection::KEY_OPTION ) );
 	}
 
 	/**
@@ -599,6 +612,34 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 
 		$this->assertStringContainsString( 'revoked', $this->notices_on( 'settings_page_eventwatch' ) );
 		$this->assertStringContainsString( 'page=eventwatch', $this->notices_on( 'edit-eventwatch_event' ) );
+	}
+
+	/**
+	 * 翻訳の文も通知で escape する。
+	 */
+	public function test_key_problem_notice_escapes_text() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		update_option(
+			Connection::STATE_OPTION,
+			array(
+				'status'       => Connection::UNAUTHORIZED,
+				'organization' => '',
+				'checked_at'   => 1,
+				'key'          => wp_hash( self::KEY ),
+			)
+		);
+		add_filter(
+			'gettext_eventwatch',
+			static function ( $translation ) {
+				return false !== strpos( $translation, 'rejected' ) ? '<img src=x>' : $translation;
+			}
+		);
+
+		$html = $this->notices_on( 'settings_page_eventwatch' );
+
+		$this->assertStringNotContainsString( '<img', $html );
+		$this->assertStringContainsString( '&lt;img', $html );
 	}
 
 	/**
