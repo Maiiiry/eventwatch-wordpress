@@ -198,7 +198,8 @@ const OccurrenceRow = ( {
 	);
 };
 
-const EventFields = () => {
+// パネルを畳むと中身が外れるので、書きかけの組と保存の停止はパネルの外で持つ。
+const useEventFields = () => {
 	const [ meta, setMeta ] = useEntityProp( 'postType', POST_TYPE, 'meta' );
 	const stored = meta?.[ OCCURRENCES ];
 
@@ -275,15 +276,69 @@ const EventFields = () => {
 	const hasErrors =
 		Object.keys( rowErrors ).length > 0 || venueIncomplete || urlInvalid;
 
-	const { lockPostSaving, unlockPostSaving } = useDispatch( editorStore );
+	const {
+		lockPostSaving,
+		unlockPostSaving,
+		lockPostAutosaving,
+		unlockPostAutosaving,
+	} = useDispatch( editorStore );
 	useEffect( () => {
+		// 保存の停止は自動保存を止めない。別のロックがある。
 		if ( hasErrors ) {
 			lockPostSaving( LOCK_NAME );
+			lockPostAutosaving( LOCK_NAME );
 		} else {
 			unlockPostSaving( LOCK_NAME );
+			unlockPostAutosaving( LOCK_NAME );
 		}
-		return () => unlockPostSaving( LOCK_NAME );
-	}, [ hasErrors, lockPostSaving, unlockPostSaving ] );
+		return () => {
+			unlockPostSaving( LOCK_NAME );
+			unlockPostAutosaving( LOCK_NAME );
+		};
+	}, [
+		hasErrors,
+		lockPostSaving,
+		unlockPostSaving,
+		lockPostAutosaving,
+		unlockPostAutosaving,
+	] );
+
+	return {
+		meta,
+		setField,
+		rows,
+		rowErrors,
+		changeRow,
+		addRow,
+		removeRow,
+		venueName,
+		venueAddress,
+		url,
+		note,
+		venueIncomplete,
+		urlInvalid,
+	};
+};
+
+const EventFields = ( {
+	fields: {
+		meta,
+		setField,
+		rows,
+		rowErrors,
+		changeRow,
+		addRow,
+		removeRow,
+		venueName,
+		venueAddress,
+		url,
+		note,
+		venueIncomplete,
+		urlInvalid,
+	},
+} ) => {
+	const nameMissing = venueIncomplete && ! venueName.trim();
+	const addressMissing = venueIncomplete && ! venueAddress.trim();
 
 	return (
 		<div className="eventwatch-fields">
@@ -317,10 +372,9 @@ const EventFields = () => {
 				__nextHasNoMarginBottom
 				id="eventwatch-field-venue-name"
 				className={
-					venueIncomplete && ! venueName.trim()
-						? 'eventwatch-control--error'
-						: undefined
+					nameMissing ? 'eventwatch-control--error' : undefined
 				}
+				aria-invalid={ nameMissing ? true : undefined }
 				label={ __( 'Venue name', 'eventwatch' ) }
 				maxLength={ MAX_VENUE_NAME }
 				value={ venueName }
@@ -328,7 +382,7 @@ const EventFields = () => {
 					setField( 'eventwatch_venue_name', value )
 				}
 				help={
-					venueIncomplete && ! venueName.trim() ? (
+					nameMissing ? (
 						<FieldError>
 							{ __(
 								'Enter the venue name too, or clear the address.',
@@ -342,10 +396,9 @@ const EventFields = () => {
 				__nextHasNoMarginBottom
 				id="eventwatch-field-venue-address"
 				className={
-					venueIncomplete && ! venueAddress.trim()
-						? 'eventwatch-control--error'
-						: undefined
+					addressMissing ? 'eventwatch-control--error' : undefined
 				}
+				aria-invalid={ addressMissing ? true : undefined }
 				label={ __( 'Venue address', 'eventwatch' ) }
 				rows={ 2 }
 				maxLength={ MAX_ADDRESS }
@@ -354,7 +407,7 @@ const EventFields = () => {
 					setField( 'eventwatch_venue_address', value )
 				}
 				help={
-					venueIncomplete && ! venueAddress.trim() ? (
+					addressMissing ? (
 						<FieldError>
 							{ __(
 								'Enter the venue address too, or clear the venue name.',
@@ -438,6 +491,7 @@ const EventFields = () => {
 					urlInvalid ? 'eventwatch-control--error' : undefined
 				}
 				type="url"
+				aria-invalid={ urlInvalid ? true : undefined }
 				label={ __(
 					'Separate official page (optional)',
 					'eventwatch'
@@ -496,13 +550,14 @@ const useOpenPanelOnce = () => {
 
 const EventPanelContent = () => {
 	useOpenPanelOnce();
+	const fields = useEventFields();
 
 	return (
 		<PluginDocumentSettingPanel
 			name={ PANEL_NAME }
 			title={ __( 'Event details', 'eventwatch' ) }
 		>
-			<EventFields />
+			<EventFields fields={ fields } />
 		</PluginDocumentSettingPanel>
 	);
 };

@@ -556,6 +556,155 @@ class Event_Meta_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * タイムゾーンを変えた後にリビジョンから戻しても、イベントのタイムゾーンは 1 行のまま変わらない。
+	 */
+	public function test_restoring_a_revision_keeps_the_event_zone() {
+		$id = $this->save( array( 'content' => 'zero' ) )->get_data()['id'];
+		$this->save(
+			array(
+				'content' => 'one',
+				'meta'    => array( Event_Meta::OCCURRENCES => array( $this->range( '2026-12-01 09:00' ) ) ),
+			),
+			$id
+		);
+		$this->save(
+			array(
+				'content' => 'two',
+				'meta'    => array( Event_Meta::OCCURRENCES => array( $this->range( '2026-12-20 09:00' ) ) ),
+			),
+			$id
+		);
+		update_option( 'timezone_string', 'America/New_York' );
+
+		foreach ( wp_get_post_revisions( $id ) as $revision ) {
+			if ( 'one' === $revision->post_content ) {
+				wp_restore_post_revision( $revision->ID );
+			}
+		}
+
+		$this->assertSame( array( 'Asia/Tokyo' ), get_post_meta( $id, Event_Meta::ZONE, false ) );
+		$this->assertSame( strtotime( '2026-12-01 00:00 UTC' ), (int) get_post_meta( $id, Event_Meta::FIRST_START, true ) );
+	}
+
+	/**
+	 * 自動保存は誤りのあるメタで断らず、メタだけを落とす。本体が検証の結果を見ずに先へ進むため。
+	 *
+	 * 本物の経路は DOING_AUTOSAVE を定義してプロセスに残すので、フィルターを直接呼ぶ。
+	 *
+	 * @dataProvider data_invalid_autosave_meta
+	 *
+	 * @param array $meta 送られたメタ。
+	 */
+	public function test_autosave_drops_invalid_meta( array $meta ) {
+		$post_id = $this->create_event();
+		$request = new WP_REST_Request( 'POST', '/wp/v2/' . Post_Type::POST_TYPE . '/' . $post_id . '/autosaves' );
+		$request->set_param( 'meta', $meta );
+		$prepared     = new \stdClass();
+		$prepared->ID = $post_id;
+
+		$result = Event_Meta::validate_rest_request( $prepared, $request );
+
+		$this->assertSame( $prepared, $result );
+		$this->assertSame( array(), $request->get_param( 'meta' ) );
+	}
+
+	/**
+	 * 自動保存で落とすメタ。
+	 *
+	 * @return array<string, array{array}>
+	 */
+	public function data_invalid_autosave_meta() {
+		return array(
+			'片方だけの会場' => array( array( Event_Meta::VENUE_NAME => 'Hall' ) ),
+			'スキーマ違反'  => array( array( Event_Meta::CATEGORY => 9 ) ),
+			'重なる日程'   => array(
+				array(
+					Event_Meta::OCCURRENCES => array(
+						array(
+							'start' => '2026-12-01 10:00',
+							'end'   => '2026-12-01 12:00',
+						),
+						array(
+							'start' => '2026-12-01 11:00',
+							'end'   => '',
+						),
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * 自動保存でも、正しいメタは残す。
+	 */
+	public function test_autosave_keeps_valid_meta() {
+		$post_id = $this->create_event();
+		$request = new WP_REST_Request( 'POST', '/wp/v2/' . Post_Type::POST_TYPE . '/' . $post_id . '/autosaves' );
+		$meta    = array( Event_Meta::SCHEDULE_NOTE => 'note' );
+		$request->set_param( 'meta', $meta );
+		$prepared     = new \stdClass();
+		$prepared->ID = $post_id;
+
+		Event_Meta::validate_rest_request( $prepared, $request );
+
+		$this->assertSame( $meta, $request->get_param( 'meta' ) );
+	}
+
+	/**
+	 * 空白だけの会場名は、全角空白でも空として扱う。編集画面の判定と揃える。
+	 */
+	public function test_venue_pair_treats_full_width_space_as_blank() {
+		$this->assertSame( 201, $this->save( array( 'meta' => array( Event_Meta::VENUE_NAME => "\u{3000}" ) ) )->get_status() );
+
+		$response = $this->save(
+			array(
+				'meta' => array(
+					Event_Meta::VENUE_NAME    => "\u{3000}",
+					Event_Meta::VENUE_ADDRESS => 'Address',
+				),
+			)
+		);
+		$this->assertSame( 400, $response->get_status() );
+		$this->assertSame( 'eventwatch_venue_incomplete', $response->as_error()->get_error_code() );
+	}
+
+	/**
+	 * パスワード保護のイベントのメタは、パスワードを知らない人に出ない。
+	 */
+	public function test_password_protected_meta_is_hidden() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_type'     => Post_Type::POST_TYPE,
+				'post_status'   => 'publish',
+				'post_password' => 'secret',
+			)
+		);
+		update_post_meta( $post_id, Event_Meta::VENUE_NAME, 'Hidden hall' );
+		$route = '/wp/v2/' . Post_Type::POST_TYPE . '/' . $post_id;
+
+		wp_set_current_user( 0 );
+		$anonymous = rest_do_request( new WP_REST_Request( 'GET', $route ) );
+		$this->assertSame( 200, $anonymous->get_status() );
+		$this->assertArrayNotHasKey( 'meta', $anonymous->get_data() );
+
+		$collection = rest_do_request( new WP_REST_Request( 'GET', '/wp/v2/' . Post_Type::POST_TYPE ) );
+		$this->assertArrayNotHasKey( 'meta', $collection->get_data()[0] );
+
+		$wrong = new WP_REST_Request( 'GET', $route );
+		$wrong->set_param( 'password', 'wrong' );
+		$this->assertArrayNotHasKey( 'meta', rest_do_request( $wrong )->get_data() );
+
+		$right = new WP_REST_Request( 'GET', $route );
+		$right->set_param( 'password', 'secret' );
+		$this->assertSame( 'Hidden hall', rest_do_request( $right )->get_data()['meta'][ Event_Meta::VENUE_NAME ] );
+
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
+		$editor = new WP_REST_Request( 'GET', $route );
+		$editor->set_param( 'context', 'edit' );
+		$this->assertSame( 'Hidden hall', rest_do_request( $editor )->get_data()['meta'][ Event_Meta::VENUE_NAME ] );
+	}
+
+	/**
 	 * 作成から削除まで、EventWatch へ通信しない。
 	 */
 	public function test_no_requests_to_eventwatch() {

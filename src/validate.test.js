@@ -153,6 +153,8 @@ describe( 'isVenueIncomplete', () => {
 		[ 'Hall', '', true ],
 		[ '', 'Address', true ],
 		[ 'Hall', '   ', true ],
+		[ '\u3000', '', false ],
+		[ '\u3000', 'Address', true ],
 	] )( '%j and %j -> %j', ( name, address, expected ) => {
 		expect( isVenueIncomplete( name, address ) ).toBe( expected );
 	} );

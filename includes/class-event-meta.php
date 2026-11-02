@@ -71,7 +71,10 @@ class Event_Meta {
 		add_action( 'added_post_meta', array( self::class, 'on_meta_change' ), 10, 3 );
 		add_action( 'updated_post_meta', array( self::class, 'on_meta_change' ), 10, 3 );
 		add_action( 'deleted_post_meta', array( self::class, 'on_meta_change' ), 10, 3 );
+		// 本体がメタを戻す処理（優先度 10）の後に計算する。
+		add_action( 'wp_restore_post_revision', array( self::class, 'sync_after_restore' ), 11 );
 		add_filter( 'rest_pre_insert_' . Post_Type::POST_TYPE, array( self::class, 'validate_rest_request' ), 10, 2 );
+		add_filter( 'rest_prepare_' . Post_Type::POST_TYPE, array( self::class, 'hide_protected_meta' ), 10, 3 );
 	}
 
 	/**
@@ -386,8 +389,24 @@ class Event_Meta {
 		if ( Post_Type::POST_TYPE !== get_post_type( $post_id ) ) {
 			return;
 		}
+		// 戻す途中はタイムゾーンが一度消える。ここで補うと、戻す値が 2 行目になって読まれない。
+		if ( doing_action( 'wp_restore_post_revision' ) ) {
+			return;
+		}
 
 		self::sync_derived( (int) $post_id );
+	}
+
+	/**
+	 * リビジョンからメタを戻した後に、UTC の整数を計算し直す。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return void
+	 */
+	public static function sync_after_restore( $post_id ) {
+		if ( Post_Type::POST_TYPE === get_post_type( $post_id ) ) {
+			self::sync_derived( (int) $post_id );
+		}
 	}
 
 	/**
@@ -428,7 +447,7 @@ class Event_Meta {
 	}
 
 	/**
-	 * REST の保存を、組をまたぐ規則で確かめる。スキーマでは書けない規則だけをここで見る。
+	 * REST の保存を、投稿を保存する前に確かめる。
 	 *
 	 * @param \stdClass|WP_Error $prepared_post 保存しようとしている投稿。
 	 * @param WP_REST_Request    $request       要求。
@@ -447,6 +466,29 @@ class Event_Meta {
 		unset( $meta[ self::FIRST_START ], $meta[ self::LAST_END ] );
 		$request->set_param( 'meta', $meta );
 
+		$error = self::find_error( $prepared_post, $meta, $post_id );
+		if ( ! $error ) {
+			return $prepared_post;
+		}
+
+		// 自動保存の本体は、ここの WP_Error を見ずに先へ進む。本文は残し、誤りのあるメタだけを落とす。
+		if ( preg_match( '#/autosaves$#', (string) $request->get_route() ) ) {
+			$request->set_param( 'meta', array() );
+			return $prepared_post;
+		}
+
+		return $error;
+	}
+
+	/**
+	 * 保存しようとしている内容の誤りを探す。
+	 *
+	 * @param \stdClass $prepared_post 保存しようとしている投稿。
+	 * @param array     $meta          送られたメタ。
+	 * @param int       $post_id       投稿の ID。新規なら 0。
+	 * @return WP_Error|null
+	 */
+	private static function find_error( $prepared_post, array $meta, $post_id ) {
 		$error = self::validate_against_schema( $meta );
 		if ( $error ) {
 			return $error;
@@ -471,14 +513,52 @@ class Event_Meta {
 
 		$name    = array_key_exists( self::VENUE_NAME, $meta ) ? $meta[ self::VENUE_NAME ] : ( $post_id ? get_post_meta( $post_id, self::VENUE_NAME, true ) : '' );
 		$address = array_key_exists( self::VENUE_ADDRESS, $meta ) ? $meta[ self::VENUE_ADDRESS ] : ( $post_id ? get_post_meta( $post_id, self::VENUE_ADDRESS, true ) : '' );
-		if ( ( '' === trim( (string) $name ) ) !== ( '' === trim( (string) $address ) ) ) {
+		if ( self::is_blank( $name ) !== self::is_blank( $address ) ) {
 			return self::invalid(
 				'eventwatch_venue_incomplete',
 				__( 'Enter both the venue name and the venue address, or leave both empty.', 'eventwatch' )
 			);
 		}
 
-		return $prepared_post;
+		return null;
+	}
+
+	/**
+	 * パスワード保護のイベントのメタを、パスワードを知らない人の応答から外す。
+	 *
+	 * 本体は本文と抜粋を隠すが、メタは隠さない。ここではメタがイベントの中身そのものになる。
+	 * 編集できる人には出す。隠すと編集画面がメタを読めず、次の保存で欄が空になる。
+	 *
+	 * @param \WP_REST_Response $response 応答。
+	 * @param \WP_Post          $post     投稿。
+	 * @param WP_REST_Request   $request  要求。
+	 * @return \WP_REST_Response
+	 */
+	public static function hide_protected_meta( $response, $post, $request ) {
+		if ( '' === $post->post_password || current_user_can( 'edit_post', $post->ID ) || ! post_password_required( $post ) ) {
+			return $response;
+		}
+
+		$password = $request->get_param( 'password' );
+		if ( is_string( $password ) && hash_equals( $post->post_password, $password ) ) {
+			return $response;
+		}
+
+		$data = $response->get_data();
+		unset( $data['meta'] );
+		$response->set_data( $data );
+
+		return $response;
+	}
+
+	/**
+	 * 空白だけの値か。編集画面の trim と揃えて、全角空白も空白として扱う。
+	 *
+	 * @param mixed $value 値。
+	 * @return bool
+	 */
+	private static function is_blank( $value ) {
+		return '' === preg_replace( '/^[\s\p{Z}\x{FEFF}]+|[\s\p{Z}\x{FEFF}]+$/u', '', (string) $value );
 	}
 
 	/**

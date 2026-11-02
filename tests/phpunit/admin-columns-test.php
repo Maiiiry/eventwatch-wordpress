@@ -125,6 +125,8 @@ class Admin_Columns_Test extends WP_UnitTestCase {
 		$late  = $this->create_event( array( array( 'start' => '2026-12-20 09:00' ) ) );
 		$early = $this->create_event( array( array( 'start' => '2026-12-01 09:00' ) ) );
 		$none  = $this->create_event();
+		// 編集画面で開いた下書きには、開催日に近い大きさの数字で始まるメタが付く。
+		update_post_meta( $none, '_edit_lock', ( strtotime( '2026-12-10 00:00 UTC' ) ) . ':1' );
 
 		$order = function ( $direction ) {
 			global $wp_the_query;

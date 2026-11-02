@@ -102,14 +102,16 @@ class Admin_Columns {
 			'meta_query',
 			array(
 				'relation'        => 'OR',
+				// 並べ替えに使う節。JOIN にメタのキーの条件が付くのは NOT EXISTS の節だけなので、こちらに名前を付ける。
+				// EXISTS の節で並べると、日程の無い投稿はほかのメタの値で並ぶ。
 				'eventwatch_date' => array(
 					'key'     => Event_Meta::FIRST_START,
-					'compare' => 'EXISTS',
+					'compare' => 'NOT EXISTS',
 					'type'    => 'NUMERIC',
 				),
 				array(
 					'key'     => Event_Meta::FIRST_START,
-					'compare' => 'NOT EXISTS',
+					'compare' => 'EXISTS',
 				),
 			)
 		);
