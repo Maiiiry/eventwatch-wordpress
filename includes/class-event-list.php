@@ -484,7 +484,7 @@ class Event_List {
 	 * @param int $post_id 投稿の ID。
 	 * @return bool
 	 */
-	private static function is_ended( $post_id ) {
+	public static function is_ended( $post_id ) {
 		$last_end = get_post_meta( $post_id, Event_Meta::LAST_END, true );
 
 		return '' !== $last_end && (int) $last_end < Event_Dates::upcoming_boundary();
@@ -589,7 +589,7 @@ class Event_List {
 	 * @param int $post_id 投稿の ID。
 	 * @return string
 	 */
-	private static function venue_text( $post_id ) {
+	public static function venue_text( $post_id ) {
 		if ( get_post_meta( $post_id, Event_Meta::ONLINE, true ) ) {
 			return __( 'Online', 'eventwatch' );
 		}
@@ -605,7 +605,7 @@ class Event_List {
 	 * @param WP_Post $post イベント。
 	 * @return string
 	 */
-	private static function category_text( WP_Post $post ) {
+	public static function category_text( WP_Post $post ) {
 		$terms = get_the_terms( $post, Post_Type::TAX_CATEGORY );
 		if ( is_array( $terms ) && $terms ) {
 			return $terms[0]->name;

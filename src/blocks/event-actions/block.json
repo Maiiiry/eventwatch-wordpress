@@ -1,0 +1,22 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eventwatch/event-actions",
+	"version": "0.1.0",
+	"title": "Event Actions",
+	"category": "theme",
+	"icon": "button",
+	"description": "A row of event actions: add to calendar, save, and share.",
+	"keywords": [ "event", "calendar", "share" ],
+	"textdomain": "eventwatch",
+	"allowedBlocks": [ "eventwatch/event-field" ],
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "eventwatch-event-field-style",
+	"render": "file:./render.php"
+}

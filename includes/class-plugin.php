@@ -39,12 +39,14 @@ class Plugin {
 		add_action( 'init', array( Event_Search_Block::class, 'register' ) );
 		add_action( 'init', array( Past_Events_Block::class, 'register' ) );
 		add_action( 'init', array( Event_Patterns::class, 'register' ) );
+		add_action( 'init', array( Event_Detail::class, 'register' ) );
 		add_filter( 'posts_where', array( Event_List::class, 'filter_where' ), 10, 2 );
 		add_action( 'after_setup_theme', array( Post_Type::class, 'add_thumbnail_support' ), 100 );
 		// 本体の wp_initialize_site（優先度 10）が表を作った後に動かす。
 		add_action( 'wp_initialize_site', array( static::class, 'initialize_site' ), 100 );
 		Event_Meta::boot();
 		Event_Permalink::boot();
+		Event_Detail::boot();
 		Settings::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
