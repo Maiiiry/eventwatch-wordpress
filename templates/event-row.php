@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 				<span class="eventwatch-event__more"><?php echo esc_html( $args['more'] ); ?></span>
 			<?php endif; ?>
 		</p>
-		<p class="eventwatch-event__venue"><?php echo esc_html( implode( _x( '・', 'separator between the venue and the category', 'eventwatch' ), array_filter( array( $args['venue'], $args['category'] ) ) ) ); ?></p>
+		<p class="eventwatch-event__venue"><?php echo esc_html( implode( _x( ' · ', 'separator between the venue and the category', 'eventwatch' ), array_filter( array( $args['venue'], $args['category'] ) ) ) ); ?></p>
 	</div>
 	<?php if ( '' !== $args['image'] ) : ?>
 		<?php // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- 本体の get_the_post_thumbnail が作った HTML。 ?>

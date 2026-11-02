@@ -663,5 +663,5 @@ msgstr "カレンダー"
 
 #: templates/event-row.php:26
 msgctxt "separator between the venue and the category"
-msgid "・"
+msgid " · "
 msgstr "・"

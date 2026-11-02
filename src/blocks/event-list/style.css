@@ -12,8 +12,11 @@
 	--eventwatch-surface: var(--wp--preset--color--base-2, color-mix(in srgb, currentcolor 6%, transparent));
 	--eventwatch-radius: var(--wp--custom--radius, 0);
 	--eventwatch-small: var(--wp--preset--font-size--small, 0.875em);
-	--eventwatch-current-bg: var(--wp--preset--color--contrast, transparent);
-	--eventwatch-current-fg: var(--wp--preset--color--base, inherit);
+
+	/* 塗りと文字の片方だけが preset に無いテーマでも、同じ色にならないようシステムの色で補う。 */
+	--eventwatch-current-bg: var(--wp--preset--color--contrast, canvastext);
+	--eventwatch-current-fg: var(--wp--preset--color--base, canvas);
+	--eventwatch-current-border: var(--wp--preset--color--contrast, canvastext);
 
 	/* 列の切り替えはブロックの幅で決める。2 カラムの中に置いても崩れないように。 */
 	container-type: inline-size;
@@ -50,6 +53,7 @@
 	--eventwatch-surface: color-mix(in srgb, currentcolor 10%, transparent);
 	--eventwatch-current-bg: transparent;
 	--eventwatch-current-fg: inherit;
+	--eventwatch-current-border: currentcolor;
 }
 
 .eventwatch-events__items {
@@ -124,13 +128,14 @@
 
 /*
  * テーマの img の指定に負けないよう、ブロックの名前から指定する。
- * Twenty Twenty-One は画像の幅を max-width としてインラインで付けるので、小さい画像が枠に広がらない。
+ * Twenty Twenty-One は画像の max-width と height をインラインで付ける。
+ * !important でないと枠に広がらない。
  */
 .wp-block-eventwatch-event-list .eventwatch-event__media img {
 	display: block;
 	max-width: none !important;
 	width: 100%;
-	height: 100%;
+	height: 100% !important;
 	object-fit: cover;
 }
 
@@ -256,7 +261,7 @@
 
 /* 今のページは塗りで示す。塗れないときも太い枠と下線が残るので、色だけに頼らない。 */
 .eventwatch-events__pagination .page-numbers.current {
-	border: 2px solid var(--eventwatch-contrast);
+	border: 2px solid var(--eventwatch-current-border);
 	background: var(--eventwatch-current-bg);
 	color: var(--eventwatch-current-fg);
 	text-decoration: underline;
