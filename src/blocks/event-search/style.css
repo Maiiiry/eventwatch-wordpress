@@ -92,13 +92,12 @@
 }
 
 /*
- * mask は輪郭も切るので、キーボードで印に来たときは外して、塗りと輪郭で示す。
- * 印には :focus-visible が効かない。印にフォーカスがあるときは、欄の :focus-within だけが成り立つ。
+ * mask は印の輪郭も切るので、印にフォーカスがあるときは欄に輪郭を出す。
+ * 印には :focus-visible が効かず、キーボードとマウスを分けられない。このとき欄は :focus-within だけが成り立つ。
  */
-.eventwatch-search__input:focus-within:not(:focus-visible)::-webkit-calendar-picker-indicator {
-	outline: 2px solid currentcolor;
+.wp-block-eventwatch-event-search .eventwatch-search__input:focus-within:not(:focus-visible) {
+	outline: 2px solid var(--eventwatch-contrast);
 	outline-offset: 2px;
-	mask: none;
 }
 
 /* ブラウザーの印は padding が効かず右端に寄るので、消して板の 16px の印を描く。currentcolor を使うため mask にする。 */
@@ -123,6 +122,20 @@
 	appearance: none;
 	background-image: none;
 	padding-inline-end: calc(var(--wp--preset--spacing--30, 0.75rem) + 24px);
+}
+
+/* 強制カラーでは background-color が地の色に置き換わり、印が消える。 */
+@media (forced-colors: active) {
+
+	.eventwatch-search__select::after {
+		background-color: canvastext;
+		forced-color-adjust: none;
+	}
+
+	.eventwatch-search__input::-webkit-calendar-picker-indicator {
+		background-color: canvastext;
+		forced-color-adjust: none;
+	}
 }
 
 /* 開いた一覧はブラウザーが地を決めるので、select の文字の色を受け継ぐと白地に白になる。 */
