@@ -125,6 +125,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		return $matches[1];
 	}
 
+	/**
+	 * キーワードは題・本文・会場名に当たる。
+	 */
 	public function test_keyword_matches_title_content_and_venue() {
 		$this->event( '秋の音楽祭' );
 		$this->event( '本文で当たる', '+3 days', array(), array( 'post_content' => '音楽の話' ) );
@@ -138,6 +141,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( array( '秋の音楽祭', '本文で当たる', '会場で当たる' ), $this->titles( array( Event_Search::PARAM_KEYWORD => '音楽' ) ) );
 	}
 
+	/**
+	 * 語はすべて含むものに当たり、全角の空白でも分かれる。
+	 */
 	public function test_keyword_terms_are_all_required_and_split_on_full_width_space() {
 		$this->event( '春の音楽祭' );
 		$this->event( '秋の音楽祭' );
@@ -146,6 +152,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( array( '秋の音楽祭' ), $this->titles( array( Event_Search::PARAM_KEYWORD => '音楽 秋' ) ) );
 	}
 
+	/**
+	 * LIKE の記号と引用符は文字として扱う。
+	 */
 	public function test_keyword_wildcards_are_literal() {
 		$this->event( '割引50%の日' );
 		$this->event( 'a_b の会' );
@@ -157,6 +166,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->titles( array( Event_Search::PARAM_KEYWORD => "It's" ) ) );
 	}
 
+	/**
+	 * ログイン中でも、出さないイベントにはキーワードが当たらない。
+	 */
 	public function test_keyword_does_not_reach_events_that_must_not_be_listed() {
 		$venue = array( Event_Meta::VENUE_NAME => '秘密の会場' );
 		$this->event( '秘密 公開', '+3 days', $venue );
@@ -177,6 +189,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( array( '秘密 公開' ), $this->titles( array( Event_Search::PARAM_KEYWORD => '秘密' ) ) );
 	}
 
+	/**
+	 * キーワードの無いクエリの WHERE を変えない。
+	 */
 	public function test_keyword_filter_does_not_touch_other_queries() {
 		$this->event( '音楽祭' );
 		$this->event( '別の会' );
@@ -192,6 +207,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( ' AND 1', Event_List::filter_where( ' AND 1', $query ) );
 	}
 
+	/**
+	 * 都道府県と期間で絞れ、組み合わせられる。
+	 */
 	public function test_filters_by_prefecture_period_and_combination() {
 		$this->event( '東京', '+3 days', array( Event_Meta::PREFECTURE => 13 ) );
 		$this->event( '大阪', '+3 days', array( Event_Meta::PREFECTURE => 27 ) );
@@ -213,6 +231,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * 語のあるサイトは語で絞る。
+	 */
 	public function test_category_uses_site_terms_when_they_exist() {
 		$term = self::factory()->term->create(
 			array(
@@ -230,6 +251,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertCount( 2, $this->titles( array( Event_Search::PARAM_CATEGORY => '5' ) ) );
 	}
 
+	/**
+	 * 語の無いサイトは EventWatch の固定のカテゴリで絞る。
+	 */
 	public function test_category_falls_back_to_eventwatch_values_without_terms() {
 		$this->event( 'お祭り', '+3 days', array( Event_Meta::CATEGORY => 5 ) );
 		$this->event( 'セミナー', '+3 days', array( Event_Meta::CATEGORY => 3 ) );
@@ -240,6 +264,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( array( 'お祭り' ), $this->titles( array( Event_Search::PARAM_CATEGORY => '5' ) ) );
 	}
 
+	/**
+	 * 都道府県の選択肢は開催予定のものと選択中のもの。
+	 */
 	public function test_prefecture_options_are_upcoming_only_and_keep_the_selected() {
 		$this->event( '大阪', '+3 days', array( Event_Meta::PREFECTURE => 27 ) );
 		$this->event( '東京', '+3 days', array( Event_Meta::PREFECTURE => 13 ) );
@@ -252,6 +279,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( array( 1, 13, 27 ), array_keys( Event_Search::prefecture_options( 1 ) ) );
 	}
 
+	/**
+	 * 不正な値は無かったものとして扱う。
+	 */
 	public function test_conditions_reject_invalid_values() {
 		$_GET = array(
 			Event_Search::PARAM_KEYWORD    => array( 'x' ),
@@ -273,6 +303,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		);
 	}
 
+	/**
+	 * 始まりが終わりより後なら入れ替える。
+	 */
 	public function test_conditions_swap_reversed_period() {
 		$_GET = array(
 			Event_Search::PARAM_FROM => '2026-12-31',
@@ -285,6 +318,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( '2026-12-31', $conditions['to'] );
 	}
 
+	/**
+	 * キーワードの長さと語の数を打ち切る。
+	 */
 	public function test_keyword_is_limited() {
 		$_GET = array( Event_Search::PARAM_KEYWORD => str_repeat( 'あ', 150 ) );
 		$this->assertSame( 100, mb_strlen( Event_Search::conditions()['keyword'] ) );
@@ -293,6 +329,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), Event_Search::keyword_terms( '　 ' ) );
 	}
 
+	/**
+	 * 件数はページをまたいだ全件を数える。
+	 */
 	public function test_status_counts_all_pages() {
 		for ( $i = 0; $i < 3; $i++ ) {
 			$this->event( 'イベント' . $i );
@@ -304,6 +343,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( 2, substr_count( $html, 'eventwatch-events__item"' ) );
 	}
 
+	/**
+	 * 条件なしの 0 件にヒントとクリアを出さない。
+	 */
 	public function test_empty_without_conditions_has_no_clear_in_the_results() {
 		$html = $this->render();
 
@@ -312,6 +354,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( 1, substr_count( $html, 'eventwatch-search__clear' ) );
 	}
 
+	/**
+	 * 条件ありの 0 件はヒントとクリアを出し、クリアはほかのクエリを保つ。
+	 */
 	public function test_empty_with_conditions_offers_clear() {
 		$this->event( '音楽祭' );
 		$_GET                   = array( Event_Search::PARAM_KEYWORD => 'オペラ' );
@@ -324,6 +369,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertSame( 2, substr_count( $html, 'eventwatch-search__clear" href="/search/?keep=1"' ) );
 	}
 
+	/**
+	 * 範囲外のページは 1 ページ目を出す。
+	 */
 	public function test_page_out_of_range_falls_back_to_the_first() {
 		$this->event( '音楽祭' );
 		$_GET = array( Event_Search::PARAM_PAGE => '9' );
@@ -334,6 +382,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'No upcoming events yet.', $html );
 	}
 
+	/**
+	 * ページ送りは条件を保ち、結果の頭に着地する。
+	 */
 	public function test_pagination_keeps_the_conditions() {
 		for ( $i = 0; $i < 3; $i++ ) {
 			$this->event( '音楽' . $i );
@@ -347,6 +398,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '#eventwatch_page=2[^"]*\#eventwatch-search-results"#', $html );
 	}
 
+	/**
+	 * GET で消えるクエリを hidden で送り直す。配列は送らない。
+	 */
 	public function test_form_keeps_other_query_arguments_as_hidden_fields() {
 		$_SERVER['REQUEST_URI'] = '/?page_id=5&eventwatch_q=x&list[]=1';
 
@@ -357,6 +411,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'name="list"', $html );
 	}
 
+	/**
+	 * 欄に URL の条件を出す。
+	 */
 	public function test_form_shows_the_conditions() {
 		$this->event( '東京', '+3 days', array( Event_Meta::PREFECTURE => 13 ) );
 		$_GET = array(
@@ -372,6 +429,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertMatchesRegularExpression( '#<option value="13"\s+selected#', $html );
 	}
 
+	/**
+	 * テンプレートは渡された値をエスケープする。
+	 */
 	public function test_form_template_escapes_its_values() {
 		$xss = '"><script>alert(1)</script>';
 		ob_start();
@@ -400,6 +460,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '<script>', $html );
 	}
 
+	/**
+	 * URL の値がそのまま HTML に出ない。
+	 */
 	public function test_url_values_are_escaped_in_the_output() {
 		$_GET                   = array( Event_Search::PARAM_KEYWORD => '"><img src=x>' );
 		$_SERVER['REQUEST_URI'] = '/search/?a="><script>alert(1)</script>&b=%22%3E%3Cscript%3E';
@@ -410,6 +473,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( '<img src=x', $html );
 	}
 
+	/**
+	 * 同じページの 2 つ目は Router を使わず、id も重ならない。
+	 */
 	public function test_only_the_first_block_on_a_page_uses_the_router() {
 		$first  = $this->render();
 		$second = $this->render();
@@ -422,6 +488,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'id="eventwatch-search-keyword-2"', $second );
 	}
 
+	/**
+	 * ショートコードはブロックと同じ出力になる。
+	 */
 	public function test_shortcode_matches_the_block() {
 		$this->event( '音楽祭' );
 
@@ -433,6 +502,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'is-layout-list', $shortcode );
 	}
 
+	/**
+	 * ブロックのサポートが外側の要素に届き、一覧の CSS のクラスも付く。
+	 */
 	public function test_block_supports_reach_the_wrapper() {
 		$html = $this->render( array( 'backgroundColor' => 'contrast' ) );
 
@@ -440,6 +512,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'wp-block-eventwatch-event-list', $html );
 	}
 
+	/**
+	 * 結果はテーマの差し替えのテンプレートで描く。
+	 */
 	public function test_results_use_the_theme_template() {
 		$this->event( '音楽祭' );
 		register_theme_directory( dirname( __DIR__ ) . '/fixtures/themes' );
@@ -463,6 +538,9 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertDoesNotMatchRegularExpression( '/import\s*\{[^}]*withSyncEvent/', $view );
 	}
 
+	/**
+	 * 描画でサーバーの外へ通信しない。
+	 */
 	public function test_rendering_makes_no_http_request() {
 		$requests = 0;
 		$watch    = static function ( $preempt ) use ( &$requests ) {

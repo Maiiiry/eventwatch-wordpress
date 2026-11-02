@@ -119,7 +119,7 @@ class Event_Search {
 	 * @return array{keyword: string, from: string, to: string, category: int, prefecture: int}
 	 */
 	public static function conditions() {
-		$keyword = mb_substr( sanitize_text_field( self::request( self::PARAM_KEYWORD ) ), 0, self::MAX_KEYWORD_LENGTH );
+		$keyword = mb_substr( self::request( self::PARAM_KEYWORD ), 0, self::MAX_KEYWORD_LENGTH );
 		$from    = self::request( self::PARAM_FROM );
 		$from    = null !== Event_List::parse_date( $from ) ? $from : '';
 		$to      = self::request( self::PARAM_TO );
@@ -344,9 +344,12 @@ class Event_Search {
 	 * @return string
 	 */
 	private static function request( $name ) {
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- 検索の条件を読むだけで、状態を変えない。
-		$value = isset( $_GET[ $name ] ) ? wp_unslash( $_GET[ $name ] ) : '';
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended -- 検索の条件を読むだけで、状態を変えない。
+		if ( ! isset( $_GET[ $name ] ) || ! is_string( $_GET[ $name ] ) ) {
+			return '';
+		}
 
-		return is_string( $value ) ? $value : '';
+		return sanitize_text_field( wp_unslash( $_GET[ $name ] ) );
+		// phpcs:enable
 	}
 }

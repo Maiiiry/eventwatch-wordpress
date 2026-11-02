@@ -27,7 +27,10 @@ export default function Edit( { attributes, setAttributes } ) {
 								value: 'cards',
 								label: __( 'Cards', 'eventwatch' ),
 							},
-							{ value: 'list', label: __( 'List', 'eventwatch' ) },
+							{
+								value: 'list',
+								label: __( 'List', 'eventwatch' ),
+							},
 						] }
 						onChange={ ( value ) =>
 							setAttributes( { layout: value } )

@@ -52,6 +52,7 @@ class Event_List {
 		$hash   = substr( md5( (string) wp_json_encode( $identity ) ), 0, 8 );
 		$param  = 'eventwatch_page_' . $hash;
 		$anchor = 'eventwatch-events-' . $hash;
+
 		list( $query, $page ) = self::query_for_request( $attributes, $param );
 
 		$html = '<div ' . get_block_wrapper_attributes(
