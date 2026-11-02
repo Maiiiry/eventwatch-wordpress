@@ -28,5 +28,8 @@ PHP と Composer は wp-env のコンテナの中で動かす。先に `npm run 
 - `templates/` の `$args` はテーマが上書きで使う契約なので、キーを消す・意味を変えるときは readme も直す
 - 詳細のページの既定の並びは `Event_Detail::default_content()` の 1 か所。ブロックテーマのテンプレートと `templates/single-event.php` が共有する
 - cron のフックを足したら `Plugin::CRON_HOOKS` にも足す（無効化で外すため）
+- EventWatch の API は `Api_Client` を通して呼ぶ。管理画面の操作と WP-Cron からだけ呼び、サイトの表示の流れでは呼ばない。キーの平文を画面・ログ・エラーに出さない
+- 送り直しの判断は `Api_Client::is_temporary()` で分ける。同じ要求の中で送り直すのは `Api_Client` の 503 の 1 回だけで、呼び出し側で回数を足さない
+- 開発では定数 `EVENTWATCH_API_URL` で API の URL を変えられる。wp-env では `WP_HOME` が固定なので、URL の変化は `eventwatch_site_url` を書き換えて確かめる
 - コードのコメントは日本語、画面の文言は英語を原文にする
 - wp-env のポートは 8885 / 8886。8888 は EventWatch の API サーバーが使う

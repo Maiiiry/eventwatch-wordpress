@@ -14,7 +14,7 @@ Publish your events on your WordPress site and list them on EventWatch.
 
 EventWatch Events lets you manage events on your own WordPress site. Add events from the block editor with their dates, venue, prefecture, and category. Drafts, publishing, scheduling, private posts, the trash, and revisions work the same way as for WordPress posts.
 
-You can use the plugin without an EventWatch account. It does not connect to EventWatch in this version.
+You can use the plugin without an EventWatch account. To connect your site to EventWatch, you need an EventWatch account and an API key. See "Connecting to EventWatch" below.
 
 = Showing events on your site =
 
@@ -60,13 +60,33 @@ By default, the event page only links to Google Maps and OpenStreetMap, and open
 
 The links under "Share" and "Add to calendar" open Google Calendar, X, LINE, or Facebook only when a visitor chooses them.
 
+= Connecting to EventWatch =
+
+To list your events on EventWatch, you need an EventWatch account and an API key. Issue the key on EventWatch under Organization settings > Site connection, and enter it in Settings > EventWatch. Saved keys are hidden and are not shown again. Use "Check connection" to see which organization the key belongs to.
+
+A key saved in the settings is also included in database backups and copies of your site. We recommend setting it in `wp-config.php` instead. The constant takes priority, and the field becomes read-only:
+
+`define( 'EVENTWATCH_API_KEY', 'ewk_...' );`
+
+On a multisite network the constant applies to every site. To use a different key for each site, save the key on each site's settings page.
+
+If your site's URL changes, for example when you copy it to a staging site, nothing is sent to EventWatch until an administrator confirms in Settings > EventWatch whether the site is a copy or has moved. A copy becomes a separate site, and its saved key is removed.
+
+Your site does not depend on EventWatch. Your pages and publishing keep working if EventWatch is unavailable, and visitors' browsers never connect to EventWatch for the event pages or blocks. The only link to EventWatch that visitors get is the "Open in the app" link for events listed there.
+
+= External services =
+
+**EventWatch** (https://eventwatch.app): this plugin connects your server to the EventWatch API (`api.eventwatch.app`) only after you enter an API key. In this version, it connects when an administrator uses "Check connection". The request sends the API key and returns your organization's name. Terms of use: https://eventwatch.app/terms . Privacy policy: https://eventwatch.app/privacy .
+
+**Google Maps**: see "Maps" above.
+
 = Scheduled events =
 
 WordPress publishes scheduled events with WP-Cron, which only runs when someone visits your site. On a site with few visitors, a scheduled event may be published later than the time you set. To publish on time, run WP-Cron from your server's cron.
 
 = Removing the plugin =
 
-Deleting the plugin removes its settings and the capabilities it added to user roles. Your events stay in the database unless the option `eventwatch_delete_events_on_uninstall` is set.
+Deleting the plugin removes its settings, including the API key and the site ID, and the capabilities it added to user roles. Your events stay in the database unless you turn on "Delete all events when the plugin is deleted" in Settings > EventWatch. If you reinstall the plugin, the site gets a new site ID, so EventWatch treats it as a new site: when you publish the remaining events, they can be sent as separate posts.
 
 = Translations =
 
