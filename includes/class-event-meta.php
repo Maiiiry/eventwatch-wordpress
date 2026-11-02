@@ -291,7 +291,8 @@ class Event_Meta {
 		if ( ! is_string( $value ) ) {
 			return '';
 		}
-		if ( preg_match( '/^[+-]\d{2}:\d{2}$/', $value ) ) {
+		// 範囲は EventWatch が使う Java の ZoneOffset と同じ ±18:00 まで。
+		if ( preg_match( '/^[+-](?:1[0-7]|0\d):[0-5]\d$|^[+-]18:00$/', $value ) ) {
 			return $value;
 		}
 		return in_array( $value, timezone_identifiers_list( DateTimeZone::ALL_WITH_BC ), true ) ? $value : '';

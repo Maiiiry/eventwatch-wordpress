@@ -375,6 +375,9 @@ class Event_Meta_Test extends WP_UnitTestCase {
 		$this->assertSame( 'Asia/Tokyo', Event_Meta::sanitize_zone( 'Asia/Tokyo' ) );
 		$this->assertSame( '+09:00', Event_Meta::sanitize_zone( '+09:00' ) );
 		$this->assertSame( 'UTC', Event_Meta::sanitize_zone( 'UTC' ) );
+		$this->assertSame( '-18:00', Event_Meta::sanitize_zone( '-18:00' ) );
+		$this->assertSame( '', Event_Meta::sanitize_zone( '+18:01' ) );
+		$this->assertSame( '', Event_Meta::sanitize_zone( '+99:99' ) );
 		$this->assertSame( '', Event_Meta::sanitize_zone( 'JST' ) );
 		$this->assertSame( '', Event_Meta::sanitize_zone( 'Mars/Base' ) );
 		$this->assertSame( '', Event_Meta::sanitize_zone( array() ) );

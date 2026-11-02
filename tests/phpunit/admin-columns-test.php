@@ -109,8 +109,12 @@ class Admin_Columns_Test extends WP_UnitTestCase {
 		update_post_meta( $tokyo, Event_Meta::PREFECTURE, 13 );
 		$online = $this->create_event();
 		update_post_meta( $online, Event_Meta::ONLINE, true );
+		$online_with_prefecture = $this->create_event();
+		update_post_meta( $online_with_prefecture, Event_Meta::ONLINE, true );
+		update_post_meta( $online_with_prefecture, Event_Meta::PREFECTURE, 13 );
 		$empty = $this->create_event();
 
+		$this->assertSame( 'Online', $this->render( Admin_Columns::COLUMN_PREFECTURE, $online_with_prefecture ) );
 		$this->assertSame( 'Tokyo', $this->render( Admin_Columns::COLUMN_PREFECTURE, $tokyo ) );
 		$this->assertSame( 'Online', $this->render( Admin_Columns::COLUMN_PREFECTURE, $online ) );
 		$this->assertSame( '—', $this->render( Admin_Columns::COLUMN_PREFECTURE, $empty ) );

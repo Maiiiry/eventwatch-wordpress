@@ -157,13 +157,13 @@ class Admin_Columns {
 	 * @return string
 	 */
 	private static function prefecture_text( $post_id ) {
+		if ( get_post_meta( $post_id, Event_Meta::ONLINE, true ) ) {
+			return __( 'Online', 'eventwatch' );
+		}
+
 		$prefectures = Event_Options::prefectures();
 		$code        = (int) get_post_meta( $post_id, Event_Meta::PREFECTURE, true );
 
-		if ( isset( $prefectures[ $code ] ) ) {
-			return $prefectures[ $code ];
-		}
-
-		return get_post_meta( $post_id, Event_Meta::ONLINE, true ) ? __( 'Online', 'eventwatch' ) : '—';
+		return isset( $prefectures[ $code ] ) ? $prefectures[ $code ] : '—';
 	}
 }
