@@ -9,6 +9,9 @@ function setupMenu( root ) {
 	const items = () =>
 		Array.from( menu.querySelectorAll( '[role="menuitem"]' ) );
 
+	// JS が無いときはリンクをそのまま Tab で辿れるよう、ここで外す。項目の移動は矢印で行う。
+	items().forEach( ( item ) => item.setAttribute( 'tabindex', '-1' ) );
+
 	const close = ( returnFocus ) => {
 		if ( menu.hidden ) {
 			return;

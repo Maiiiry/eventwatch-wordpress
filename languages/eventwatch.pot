@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-02T11:33:43+00:00\n"
+"POT-Creation-Date: 2026-11-02T11:41:47+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -59,7 +59,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-ical.php:165
+#: includes/class-event-ical.php:166
 #: includes/class-event-list.php:594
 msgid "Online"
 msgstr ""
@@ -564,6 +564,10 @@ msgstr ""
 
 #: includes/class-event-permalink.php:86
 msgid "WordPress uses this word in its own URLs. Choose another URL prefix."
+msgstr ""
+
+#: includes/class-event-permalink.php:88
+msgid "Pages or posts on your site already use this URL. Choose another URL prefix."
 msgstr ""
 
 #. translators: %s: the number of events found.

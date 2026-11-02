@@ -91,7 +91,7 @@ class Event_Ical {
 	public static function build( WP_Post $post ) {
 		$host     = (string) wp_parse_url( home_url(), PHP_URL_HOST );
 		$url      = (string) get_permalink( $post );
-		$title    = wp_strip_all_tags( get_the_title( $post ) );
+		$title    = Event_Detail::plain_title( $post );
 		$location = self::location_text( $post->ID );
 		$stamp    = gmdate( 'Ymd\THis\Z', (int) get_post_modified_time( 'U', true, $post ) );
 
@@ -131,7 +131,7 @@ class Event_Ical {
 	public static function google_url( WP_Post $post, array $row ) {
 		$args = array(
 			'action'  => 'TEMPLATE',
-			'text'    => rawurlencode( wp_strip_all_tags( get_the_title( $post ) ) ),
+			'text'    => rawurlencode( Event_Detail::plain_title( $post ) ),
 			'dates'   => self::utc( $row['start'] ) . '/' . self::utc( self::end_of( $row ) ),
 			'details' => rawurlencode( (string) get_permalink( $post ) ),
 		);
@@ -145,13 +145,14 @@ class Event_Ical {
 	}
 
 	/**
-	 * 組の終わり。
+	 * 組の終わり。終了が空か開始と同じなら、既定の長さにする。
 	 *
 	 * @param array{start: int, end: int|null} $row 組。
 	 * @return int
 	 */
 	private static function end_of( array $row ) {
-		return null !== $row['end'] ? $row['end'] : $row['start'] + self::DEFAULT_LENGTH;
+		// DTEND は DTSTART より後でなければならない（RFC 5545 3.8.2.2）。終了が開始と同じ組も保存できる。
+		return null !== $row['end'] && $row['end'] > $row['start'] ? $row['end'] : $row['start'] + self::DEFAULT_LENGTH;
 	}
 
 	/**

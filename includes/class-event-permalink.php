@@ -84,6 +84,8 @@ class Event_Permalink {
 			$error = __( 'Use only lowercase letters, numbers, and hyphens for the URL prefix.', 'eventwatch' );
 		} elseif ( in_array( $slug, self::RESERVED, true ) ) {
 			$error = __( 'WordPress uses this word in its own URLs. Choose another URL prefix.', 'eventwatch' );
+		} elseif ( self::takes_over_urls( $slug ) ) {
+			$error = __( 'Pages or posts on your site already use this URL. Choose another URL prefix.', 'eventwatch' );
 		}
 
 		if ( null === $error ) {
@@ -96,6 +98,31 @@ class Event_Permalink {
 		}
 
 		return (string) get_option( Post_Type::SLUG_OPTION, '' );
+	}
+
+	/**
+	 * この接頭辞がいまの URL を奪うか。
+	 *
+	 * 投稿タイプの rewrite は固定ページや投稿の rewrite より先に当たるので、奪われたページは 404 になる。
+	 * 転送は旧い接頭辞の 404 だけを見るので、救えない。
+	 *
+	 * @param string $slug 接頭辞。
+	 * @return bool
+	 */
+	private static function takes_over_urls( $slug ) {
+		// 年と月別のアーカイブ。
+		if ( ctype_digit( $slug ) ) {
+			return true;
+		}
+
+		if ( get_page_by_path( $slug ) ) {
+			return true;
+		}
+
+		// パーマリンクの先頭の固定の語（/blog/%postname%/ の blog）。
+		$first = strtok( ltrim( (string) get_option( 'permalink_structure' ), '/' ), '/' );
+
+		return $first === $slug;
 	}
 
 	/**
@@ -179,15 +206,27 @@ class Event_Permalink {
 			return null;
 		}
 
-		$segments = explode( '/', trim( substr( $path, strlen( $home ) ), '/' ) );
+		$relative = trim( substr( $path, strlen( $home ) ), '/' );
+		// パーマリンクが /index.php/%postname%/ のときは、イベントの URL にも index.php が付く。
+		if ( 0 === strpos( $relative, 'index.php/' ) ) {
+			$relative = substr( $relative, strlen( 'index.php/' ) );
+		}
+
+		$segments = explode( '/', $relative );
 		if ( 2 !== count( $segments ) || ! in_array( $segments[0], self::previous_slugs(), true ) ) {
+			return null;
+		}
+
+		$name = sanitize_title( rawurldecode( $segments[1] ) );
+		// 空の name は絞り込みにならず、最新のイベントが返る。
+		if ( '' === $name ) {
 			return null;
 		}
 
 		$ids = get_posts(
 			array(
 				'post_type'        => Post_Type::POST_TYPE,
-				'name'             => sanitize_title( rawurldecode( $segments[1] ) ),
+				'name'             => $name,
 				'post_status'      => 'publish',
 				'numberposts'      => 1,
 				'fields'           => 'ids',

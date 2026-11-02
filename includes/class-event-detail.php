@@ -483,7 +483,7 @@ class Event_Detail {
 		$id = 'eventwatch-calendar-' . $post->ID;
 
 		$items = sprintf(
-			'<li role="none"><a role="menuitem" tabindex="-1" href="%1$s" rel="nofollow" download>%2$s%3$s</a></li>',
+			'<li role="none"><a role="menuitem" href="%1$s" rel="nofollow" download>%2$s%3$s</a></li>',
 			esc_url( Event_Ical::download_url( $post ) ),
 			self::icon( 'download' ),
 			esc_html__( 'Download iCal (.ics)', 'eventwatch' )
@@ -495,7 +495,7 @@ class Event_Detail {
 		}
 
 		$items .= sprintf(
-			'<li role="none"><a role="menuitem" tabindex="-1" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s<span class="eventwatch-detail__menu-text">%3$s%4$s</span></a></li>',
+			'<li role="none"><a role="menuitem" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s<span class="eventwatch-detail__menu-text">%3$s%4$s</span></a></li>',
 			esc_url( Event_Ical::google_url( $post, $next ) ),
 			self::icon( 'ext' ),
 			$google,
@@ -582,7 +582,7 @@ class Event_Detail {
 	 */
 	private static function render_share( WP_Post $post ) {
 		$url   = (string) get_permalink( $post );
-		$title = wp_strip_all_tags( get_the_title( $post ) );
+		$title = self::plain_title( $post );
 		$id    = 'eventwatch-share-' . $post->ID;
 
 		$services = array(
@@ -607,13 +607,13 @@ class Event_Detail {
 		);
 
 		$items = sprintf(
-			'<li role="none" class="eventwatch-detail__copy"><button type="button" role="menuitem" tabindex="-1" data-eventwatch-copy>%1$s%2$s</button></li>',
+			'<li role="none" class="eventwatch-detail__copy"><button type="button" role="menuitem" data-eventwatch-copy>%1$s%2$s</button></li>',
 			self::icon( 'link' ),
 			esc_html__( 'Copy link', 'eventwatch' )
 		);
 		foreach ( $services as $service ) {
 			$items .= sprintf(
-				'<li role="none"><a role="menuitem" tabindex="-1" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s%3$s%4$s</a></li>',
+				'<li role="none"><a role="menuitem" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s%3$s%4$s</a></li>',
 				esc_url( $service[1] ),
 				self::icon( 'ext' ),
 				esc_html( $service[0] ),
@@ -659,6 +659,26 @@ class Event_Detail {
 	}
 
 	/**
+	 * HTML ではない出力先へ渡す文。the_title などの整形が作る実体参照を文字へ戻す。
+	 *
+	 * @param string $text 文。
+	 * @return string
+	 */
+	public static function plain_text( $text ) {
+		return html_entity_decode( wp_strip_all_tags( (string) $text ), ENT_QUOTES, 'UTF-8' );
+	}
+
+	/**
+	 * HTML ではない出力先へ渡す題。
+	 *
+	 * @param WP_Post $post イベント。
+	 * @return string
+	 */
+	public static function plain_title( WP_Post $post ) {
+		return self::plain_text( get_the_title( $post ) );
+	}
+
+	/**
 	 * SEO プラグインが description と og:* を出すか。
 	 *
 	 * @return bool
@@ -681,7 +701,7 @@ class Event_Detail {
 	 */
 	public static function description( WP_Post $post ) {
 		$text = '' !== trim( $post->post_excerpt ) ? $post->post_excerpt : excerpt_remove_blocks( $post->post_content );
-		$text = trim( (string) preg_replace( '/\s+/u', ' ', wp_strip_all_tags( strip_shortcodes( $text ) ) ) );
+		$text = trim( (string) preg_replace( '/\s+/u', ' ', self::plain_text( strip_shortcodes( $text ) ) ) );
 
 		return function_exists( 'mb_substr' ) ? mb_substr( $text, 0, self::DESCRIPTION_LENGTH ) : substr( $text, 0, self::DESCRIPTION_LENGTH );
 	}
@@ -746,8 +766,8 @@ class Event_Detail {
 
 		$properties = array(
 			'og:type'        => 'article',
-			'og:site_name'   => get_bloginfo( 'name' ),
-			'og:title'       => wp_strip_all_tags( get_the_title( $post ) ),
+			'og:site_name'   => self::plain_text( get_bloginfo( 'name' ) ),
+			'og:title'       => self::plain_title( $post ),
 			'og:url'         => (string) get_permalink( $post ),
 			'og:description' => $description,
 			'og:image'       => (string) get_the_post_thumbnail_url( $post, 'full' ),
@@ -776,7 +796,7 @@ class Event_Detail {
 		$url   = (string) get_permalink( $post );
 		$base  = array(
 			'@type'               => 'Event',
-			'name'                => wp_strip_all_tags( get_the_title( $post ) ),
+			'name'                => self::plain_title( $post ),
 			'url'                 => $url,
 			'eventStatus'         => 'https://schema.org/EventScheduled',
 			'eventAttendanceMode' => get_post_meta( $post->ID, Event_Meta::ONLINE, true )
@@ -784,7 +804,7 @@ class Event_Detail {
 				: 'https://schema.org/OfflineEventAttendanceMode',
 			'organizer'           => array(
 				'@type' => 'Organization',
-				'name'  => get_bloginfo( 'name' ),
+				'name'  => self::plain_text( get_bloginfo( 'name' ) ),
 				'url'   => home_url( '/' ),
 			),
 		);

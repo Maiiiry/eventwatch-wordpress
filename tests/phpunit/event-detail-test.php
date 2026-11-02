@@ -776,6 +776,65 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * HTML ではない出力先に、題と説明の実体参照を文字のまま出さない。
+	 */
+	public function test_plain_outputs_decode_entities() {
+		update_option( 'blogname', 'A &amp; B Hall' );
+		$post = $this->event(
+			array(),
+			array(
+				'post_title'   => "Tom's A & B",
+				'post_content' => '<p>Rock &amp; roll</p>',
+			)
+		);
+
+		$ics = str_replace( "\r\n ", '', Event_Ical::build( $post ) );
+		$this->assertStringContainsString( "SUMMARY:Tom’s A & B", str_replace( '\\', '', $ics ) );
+		$this->assertStringNotContainsString( '&#', $ics );
+
+		$row = Event_Dates::next_occurrence( $post->ID );
+		$this->assertStringContainsString( 'text=' . rawurlencode( 'Tom’s A & B' ), Event_Ical::google_url( $post, $row ) );
+
+		$share = Event_Detail::render_field( 'share', $post );
+		$this->assertStringContainsString( 'text=' . rawurlencode( 'Tom’s A & B' ), html_entity_decode( $share ) );
+
+		$event = Event_Detail::json_ld( $post )['@graph'][0];
+		$this->assertSame( 'Tom’s A & B', $event['name'] );
+		$this->assertSame( 'Rock & roll', $event['description'] );
+		$this->assertSame( 'A & B Hall', $event['organizer']['name'] );
+	}
+
+	/**
+	 * 終了が開始と同じ組は、長さ 0 の予定にしない。
+	 */
+	public function test_ical_same_start_and_end_gets_the_default_length() {
+		$start = $this->day( 5, '10:00' );
+		$post  = $this->event(
+			array(
+				Event_Meta::OCCURRENCES => array(
+					array(
+						'start' => $start,
+						'end'   => $start,
+					),
+				),
+			)
+		);
+		$utc   = strtotime( $start . ' Asia/Tokyo' );
+
+		$this->assertContains( 'DTEND:' . gmdate( 'Ymd\THis\Z', $utc + HOUR_IN_SECONDS ), explode( "\r\n", Event_Ical::build( $post ) ) );
+	}
+
+	/**
+	 * JS が無くてもキーボードで届くよう、メニューの項目の tabindex はマークアップに書かない。
+	 */
+	public function test_menu_items_are_reachable_without_js() {
+		$post = $this->event();
+
+		$this->assertStringNotContainsString( 'tabindex', Event_Detail::render_field( 'calendar', $post ) );
+		$this->assertStringNotContainsString( 'tabindex', Event_Detail::render_field( 'share', $post ) );
+	}
+
+	/**
 	 * 説明は抜粋を先に使い、タグを除き、長さを切る。
 	 */
 	public function test_description() {

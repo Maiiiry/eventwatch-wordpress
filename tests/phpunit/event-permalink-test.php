@@ -149,6 +149,56 @@ class Event_Permalink_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 実在の固定ページ・パーマリンクの固定の語・数字だけの値は、URL を奪うので断る。
+	 */
+	public function test_slug_that_takes_over_existing_urls_is_rejected() {
+		self::factory()->post->create(
+			array(
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_name'   => 'about',
+			)
+		);
+		update_option( Post_Type::SLUG_OPTION, 'events' );
+
+		update_option( Post_Type::SLUG_OPTION, 'about' );
+		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ), '固定ページ' );
+
+		update_option( Post_Type::SLUG_OPTION, '2026' );
+		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ), '年' );
+
+		$this->set_permalink_structure( '/blog/%postname%/' );
+		update_option( Post_Type::SLUG_OPTION, 'blog' );
+		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ), 'パーマリンクの固定の語' );
+
+		update_option( Post_Type::SLUG_OPTION, 'shows' );
+		$this->assertSame( 'shows', get_option( Post_Type::SLUG_OPTION ), '当たらない語は通す' );
+	}
+
+	/**
+	 * 記号だけの URL を、無関係なイベントへ転送しない。
+	 */
+	public function test_symbol_only_url_does_not_redirect() {
+		$this->event( 'sample' );
+		update_option( Post_Type::SLUG_OPTION, 'events' );
+
+		$this->assertNull( Event_Permalink::redirect_target( '/event/%21/' ) );
+		$this->assertNull( Event_Permalink::redirect_target( '/event/---/' ) );
+	}
+
+	/**
+	 * Index.php を含むパーマリンクでも転送する。
+	 */
+	public function test_redirect_with_index_php_permalinks() {
+		$id = $this->event( 'sample' );
+		$this->set_permalink_structure( '/index.php/%postname%/' );
+		update_option( Post_Type::SLUG_OPTION, 'events' );
+		Post_Type::register();
+
+		$this->assertSame( get_permalink( $id ), Event_Permalink::redirect_target( '/index.php/event/sample/' ) );
+	}
+
+	/**
 	 * 空を保存すると既定に戻り、旧い接頭辞を転送の対象に残す。
 	 */
 	public function test_empty_slug_returns_to_the_default() {

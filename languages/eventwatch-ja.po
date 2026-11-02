@@ -54,7 +54,7 @@ msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] "%1$s（ほか %2$d 日程）"
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-ical.php:165
+#: includes/class-event-ical.php:166
 #: includes/class-event-list.php:594
 msgid "Online"
 msgstr "オンライン"
@@ -1143,3 +1143,7 @@ msgstr "会場"
 msgctxt "block keyword"
 msgid "map"
 msgstr "地図"
+
+#: includes/class-event-permalink.php:88
+msgid "Pages or posts on your site already use this URL. Choose another URL prefix."
+msgstr "サイトの固定ページや投稿がこの URL を使っています。別の接頭辞を選んでください。"
