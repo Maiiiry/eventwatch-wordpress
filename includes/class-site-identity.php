@@ -27,7 +27,11 @@ class Site_Identity {
 	public static function ensure() {
 		add_option( self::ID_OPTION, wp_generate_uuid4(), '', false );
 		add_option( self::URL_OPTION, self::current_url(), '', false );
-		add_option( Connection::KEY_OPTION, '', '', false );
+
+		// register_setting の既定値があると、add_option は行があっても書き込みまで進む。
+		if ( false === get_option( Connection::KEY_OPTION, false ) ) {
+			add_option( Connection::KEY_OPTION, '', '', false );
+		}
 	}
 
 	/**

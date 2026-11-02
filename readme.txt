@@ -70,7 +70,7 @@ A key saved in the settings is also included in database backups and copies of y
 
 On a multisite network the constant applies to every site. To use a different key for each site, save the key on each site's settings page.
 
-If your site's URL changes, for example when you copy it to a staging site, nothing is sent to EventWatch until an administrator confirms in Settings > EventWatch whether the site is a copy or has moved. A copy becomes a separate site, and its saved key is removed.
+If your site's URL changes, for example when you copy it to a staging site, nothing is sent to EventWatch until an administrator confirms in Settings > EventWatch whether the site is a copy or has moved. A copy becomes a separate site, and its saved key is removed. A key set in `wp-config.php` can't be removed this way, so remove it from the copy's `wp-config.php` first if the copy shouldn't send events.
 
 Your site does not depend on EventWatch. Your pages and publishing keep working if EventWatch is unavailable, and visitors' browsers never connect to EventWatch for the event pages or blocks. The only link to EventWatch that visitors get is the "Open in the app" link for events listed there.
 

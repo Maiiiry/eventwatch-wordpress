@@ -230,13 +230,14 @@ class Connection_Admin {
 
 	/**
 	 * 結果を設定画面の通知に渡す。本体の options-head.php が settings-updated のときに読む形。
+	 * 本体の settings_errors() は文を escape せずに出すので、ここで escape する。
 	 *
 	 * @param string $message 文。
 	 * @param string $type    種類。
 	 * @return void
 	 */
 	private static function report( $message, $type ) {
-		add_settings_error( Settings::PAGE, 'eventwatch_result', $message, $type );
+		add_settings_error( Settings::PAGE, 'eventwatch_result', esc_html( $message ), $type );
 		set_transient( 'settings_errors', get_settings_errors(), 30 );
 	}
 

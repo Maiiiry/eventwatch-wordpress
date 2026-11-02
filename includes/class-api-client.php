@@ -61,7 +61,7 @@ class Api_Client {
 	const CODE_SUSPENDED = 'organizationSuspended';
 
 	/**
-	 * 送り直しの対象の失敗か。429 は data の retry_after の時刻まで送らない。
+	 * 送り直しの対象の失敗か。data の retry_after は待つ秒数で、指定が無ければ 0。429 はその間送らない。
 	 *
 	 * @param WP_Error $error 失敗。
 	 * @return bool
@@ -144,6 +144,8 @@ class Api_Client {
 			'timeout'     => isset( $args['timeout'] ) ? (float) $args['timeout'] : self::TIMEOUT,
 			// キーのヘッダーを別のホストへ運ばない。
 			'redirection' => 0,
+			// 既定の User-Agent はサイトの URL を含む。この要求で送るものを増やさない。
+			'user-agent'  => 'EventWatch-WordPress',
 			'headers'     => $headers,
 		);
 
@@ -198,7 +200,7 @@ class Api_Client {
 	 */
 	private function interpret( $response ) {
 		if ( is_wp_error( $response ) ) {
-			return new WP_Error( self::TEMPORARY, 'Could not connect to EventWatch.' );
+			return new WP_Error( self::TEMPORARY, 'Could not connect to EventWatch.', array( 'retry_after' => 0 ) );
 		}
 
 		$status = (int) wp_remote_retrieve_response_code( $response );

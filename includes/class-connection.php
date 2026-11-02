@@ -135,7 +135,8 @@ class Connection {
 			return;
 		}
 
-		if ( in_array( self::state()['status'], array( self::UNAUTHORIZED, self::SUSPENDED ), true ) ) {
+		// 通ったので、前の失敗の案内を残さない。つながっている状態と団体名は消さない。
+		if ( ! in_array( self::state()['status'], array( self::UNCHECKED, self::CONNECTED ), true ) ) {
 			self::save( self::UNCHECKED );
 		}
 	}

@@ -129,6 +129,7 @@ class Api_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( Api_Client::BEHAVIOR, $args['headers']['X-EW-Behavior'] );
 		$this->assertArrayNotHasKey( 'Authorization', $args['headers'] );
 		$this->assertSame( 0, $args['redirection'] );
+		$this->assertStringNotContainsString( wp_parse_url( home_url(), PHP_URL_HOST ), $args['user-agent'] );
 		$this->assertSame( 30.0, (float) $args['timeout'] );
 	}
 
@@ -216,6 +217,7 @@ class Api_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( Api_Client::TEMPORARY, $result->get_error_code() );
 		$this->assertTrue( Api_Client::is_temporary( $result ) );
 		$this->assertStringNotContainsString( 'cURL', $result->get_error_message() );
+		$this->assertSame( 0, $result->get_error_data()['retry_after'] );
 		$this->assertCount( 1, $this->sent );
 	}
 
@@ -482,6 +484,24 @@ class Api_Client_Test extends WP_UnitTestCase {
 		$this->assertSame( Connection::UNAUTHORIZED, Connection::state()['status'] );
 
 		$client->request( 'POST', '/api/v1.0/org-api/x' );
+		$this->assertSame( Connection::UNCHECKED, Connection::state()['status'] );
+	}
+
+	/**
+	 * 通ったら、確かめたときの失敗の案内を残さない。
+	 *
+	 * @testWith [404]
+	 *           [403]
+	 *
+	 * @param int $code 確かめたときのステータス。
+	 */
+	public function test_success_clears_other_failures( $code ) {
+		$this->respond_with( $this->http( $code ), $this->http( 200 ) );
+
+		$this->assertNotSame( Connection::UNCHECKED, Connection::check()['status'] );
+
+		( new Api_Client() )->request( 'POST', '/api/v1.0/org-api/x' );
+
 		$this->assertSame( Connection::UNCHECKED, Connection::state()['status'] );
 	}
 

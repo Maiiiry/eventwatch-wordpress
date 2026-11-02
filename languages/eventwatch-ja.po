@@ -1192,41 +1192,41 @@ msgstr "まだ確かめていません。「接続を確かめる」で、この
 msgid "Sorry, you are not allowed to manage options for this site."
 msgstr "このサイトの設定を変更する権限がありません。"
 
-#: includes/class-connection-admin.php:270
+#: includes/class-connection-admin.php:271
 msgid "To list these events on EventWatch, enter an EventWatch API key. Your site works without one."
 msgstr "これらのイベントを EventWatch に掲載するには、EventWatch の API キーを入れてください。キーがなくてもサイトは動きます。"
 
-#: includes/class-connection-admin.php:276
+#: includes/class-connection-admin.php:277
 msgid "Don’t show this again"
 msgstr "今後は表示しない"
 
-#: includes/class-connection-admin.php:288
+#: includes/class-connection-admin.php:289
 msgid "Sending to EventWatch is stopped because this site’s URL has changed."
 msgstr "サイトの URL が変わったので、EventWatch への送信を止めています。"
 
 #. translators: 1: site URL when it was last confirmed, 2: current site URL.
-#: includes/class-connection-admin.php:292
+#: includes/class-connection-admin.php:293
 #, php-format
 msgid "Saved URL: %1$s. Current URL: %2$s. Nothing is sent until you choose, so a copy of your site can’t change your live listings."
 msgstr "記録している URL: %1$s。今の URL: %2$s。選ぶまで何も送らないので、サイトの複製から掲載中の投稿が書き換わることはありません。"
 
-#: includes/class-connection-admin.php:309
+#: includes/class-connection-admin.php:310
 msgid "If this is a copy, it becomes a separate site. Its saved API key is removed, and you enter a key again only if this copy should send events."
 msgstr "複製なら、別のサイトとして扱います。保存していた API キーは削除します。この複製からイベントを送るときだけ、キーを入れ直してください。"
 
-#: includes/class-connection-admin.php:311
+#: includes/class-connection-admin.php:312
 msgid "If the site moved, sending continues as the same site."
 msgstr "移転なら、同じサイトとして送信を続けます。"
 
-#: includes/class-connection-admin.php:313
+#: includes/class-connection-admin.php:314
 msgid "This is a copy"
 msgstr "複製です"
 
-#: includes/class-connection-admin.php:315
+#: includes/class-connection-admin.php:316
 msgid "The site moved"
 msgstr "移転しました"
 
-#: includes/class-connection-admin.php:328
+#: includes/class-connection-admin.php:329
 msgid "Open EventWatch settings"
 msgstr "EventWatch の設定を開く"
 
@@ -1347,6 +1347,6 @@ msgstr "既定はオフで、イベントはデータベースに残ります。
 msgid "This site is now treated as a separate site. It keeps using the API key set in wp-config.php."
 msgstr "このサイトを別のサイトとして扱います。wp-config.php で設定した API キーは使い続けます。"
 
-#: includes/class-connection-admin.php:308
+#: includes/class-connection-admin.php:309
 msgid "If this is a copy, it becomes a separate site. The API key set in wp-config.php can’t be removed here, so this copy keeps sending events with that key. Remove it from wp-config.php first if this copy shouldn’t send events."
 msgstr "複製なら、別のサイトとして扱います。wp-config.php で設定した API キーはここでは削除できないので、この複製はそのキーでイベントを送り続けます。この複製から送らないときは、先に wp-config.php から削除してください。"

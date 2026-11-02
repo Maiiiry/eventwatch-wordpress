@@ -42,7 +42,8 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		require_once ABSPATH . 'wp-admin/includes/template.php';
 		require_once ABSPATH . 'wp-admin/includes/screen.php';
 		require_once ABSPATH . 'wp-admin/includes/class-wp-screen.php';
-		$this->sent = array();
+		$this->sent                    = array();
+		$GLOBALS['wp_settings_errors'] = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- 前のテストの誤りを数えない。
 		delete_option( Connection::KEY_OPTION );
 		Connection::forget();
 		Site_Identity::use_as_moved();
@@ -198,7 +199,19 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 確かめると EventWatch を呼び、設定画面へ戻る。
+	 * 操作が通知へ渡した結果。本体の settings_errors() が読む transient から読む。
+	 *
+	 * @return array[]
+	 */
+	private function reported() {
+		$errors = get_transient( 'settings_errors' );
+		delete_transient( 'settings_errors' );
+		$GLOBALS['wp_settings_errors'] = array(); // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- 次の操作へ持ち越さない。
+		return is_array( $errors ) ? $errors : array();
+	}
+
+	/**
+	 * 確かめると EventWatch を呼び、設定画面へ戻る。届かなければ警告の通知を渡す。
 	 */
 	public function test_check_action() {
 		$this->log_in_as_admin();
@@ -210,6 +223,99 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		$this->assertSame( Connection::UNREACHABLE, Connection::state()['status'] );
 		$this->assertStringContainsString( 'page=eventwatch', $location );
 		$this->assertStringContainsString( 'settings-updated=true', $location );
+
+		$reported = $this->reported();
+		$this->assertCount( 1, $reported );
+		$this->assertSame( 'warning', $reported[0]['type'] );
+	}
+
+	/**
+	 * つながれば団体名の成功の通知を渡す。本体は文を escape しないので、渡す時点で escape してある。
+	 */
+	public function test_check_reports_escaped_success() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		remove_all_filters( 'pre_http_request' );
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'headers'  => array(),
+					'body'     => '{"displayName":"A & B"}',
+					'response' => array( 'code' => 200 ),
+				);
+			}
+		);
+		add_filter(
+			'gettext_eventwatch',
+			static function ( $translation ) {
+				return 0 === strpos( $translation, 'Connected to EventWatch' ) ? '<img src=x>' . $translation : $translation;
+			}
+		);
+
+		$this->run_action( Connection_Admin::ACTION_CHECK, array( Connection_Admin::class, 'handle_check' ) );
+
+		$reported = $this->reported();
+		$this->assertSame( 'success', $reported[0]['type'] );
+		$this->assertStringContainsString( '&lt;img', $reported[0]['message'] );
+		$this->assertStringNotContainsString( '<img', $reported[0]['message'] );
+		$this->assertStringContainsString( 'A &amp; B', $reported[0]['message'] );
+	}
+
+	/**
+	 * 失効では結果の通知を渡さない。同じ内容を通知が出す。
+	 */
+	public function test_check_does_not_report_a_revoked_key_twice() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		remove_all_filters( 'pre_http_request' );
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'headers'  => array(),
+					'body'     => '{}',
+					'response' => array( 'code' => 401 ),
+				);
+			}
+		);
+
+		$this->run_action( Connection_Admin::ACTION_CHECK, array( Connection_Admin::class, 'handle_check' ) );
+
+		$this->assertSame( Connection::UNAUTHORIZED, Connection::state()['status'] );
+		$this->assertSame( array(), $this->reported() );
+	}
+
+	/**
+	 * 2 回目からは option へ書かない。定数のキーのサイトでは、キーの行が空のまま残る。
+	 */
+	public function test_ensure_does_not_write_twice() {
+		delete_option( Connection::KEY_OPTION );
+		Site_Identity::ensure();
+
+		$writes = 0;
+		add_action(
+			'added_option',
+			static function () use ( &$writes ) {
+				++$writes;
+			}
+		);
+
+		Site_Identity::ensure();
+		Site_Identity::has_changed();
+
+		$this->assertSame( 0, $writes );
+	}
+
+	/**
+	 * 保存したキーを ensure で消さない。
+	 */
+	public function test_ensure_keeps_a_saved_key() {
+		update_option( Connection::KEY_OPTION, self::KEY );
+
+		Site_Identity::ensure();
+
+		$this->assertSame( self::KEY, get_option( Connection::KEY_OPTION ) );
 	}
 
 	/**
@@ -559,6 +665,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		$this->run_action( Connection_Admin::ACTION_COPY, array( Connection_Admin::class, 'handle_copy' ) );
 		$this->assertSame( self::KEY, Connection::api_key() );
 		$this->assertFalse( Site_Identity::has_changed() );
+		$this->assertStringContainsString( 'wp-config.php', $this->reported()[0]['message'] );
 	}
 
 	/**
