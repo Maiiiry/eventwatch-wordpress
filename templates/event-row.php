@@ -14,10 +14,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 ?>
-<a class="eventwatch-event eventwatch-event--row<?php echo '' !== $args['image'] ? ' has-image' : ''; ?>" href="<?php echo esc_url( $args['url'] ); ?>">
+<a class="eventwatch-event eventwatch-event--row<?php echo '' !== $args['image'] ? ' has-image' : ''; ?><?php echo ! empty( $args['ended'] ) ? ' is-ended' : ''; ?>" href="<?php echo esc_url( $args['url'] ); ?>">
 	<div class="eventwatch-event__body">
 		<h3 class="eventwatch-event__title"><?php echo wp_kses_post( $args['title'] ); ?></h3>
 		<p class="eventwatch-event__date">
+			<?php if ( ! empty( $args['ended'] ) ) : ?>
+				<span class="eventwatch-event__ended"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"></path></svg><?php echo esc_html_x( 'Ended', 'label on an event that has ended', 'eventwatch' ); ?></span>
+			<?php endif; ?>
 			<time datetime="<?php echo esc_attr( $args['datetime'] ); ?>"><?php echo esc_html( $args['date'] ); ?></time>
 			<?php if ( '' !== $args['more'] ) : ?>
 				<span class="eventwatch-event__more"><?php echo esc_html( $args['more'] ); ?></span>

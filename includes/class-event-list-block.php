@@ -64,6 +64,7 @@ class Event_List_Block {
 				'from'       => '',
 				'to'         => '',
 				'empty_text' => '',
+				'period'     => '',
 			),
 			$atts,
 			self::SHORTCODE
@@ -82,6 +83,7 @@ class Event_List_Block {
 					'dateFrom'   => $atts['from'],
 					'dateTo'     => $atts['to'],
 					'emptyText'  => $atts['empty_text'],
+					'period'     => $atts['period'],
 				),
 				'innerBlocks'  => array(),
 				'innerHTML'    => '',

@@ -31,6 +31,7 @@ msgstr "イベントを WordPress のサイトで公開し、EventWatch にも�
 
 #. Author of the plugin
 #: eventwatch.php
+#: includes/class-event-patterns.php:29
 msgid "EventWatch"
 msgstr "EventWatch"
 
@@ -39,7 +40,7 @@ msgid "Event date"
 msgstr "開催日"
 
 #: includes/class-admin-columns.php:52
-#: templates/event-search-form.php:77
+#: templates/event-search-form.php:79
 #: build/blocks/event-list/index.js:1
 #: build/index.js:7
 msgid "Prefecture"
@@ -53,7 +54,7 @@ msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] "%1$s（ほか %2$d 日程）"
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-list.php:411
+#: includes/class-event-list.php:515
 msgid "Online"
 msgstr "オンライン"
 
@@ -88,32 +89,32 @@ msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr "Y年n月j日(D)"
 
-#: includes/class-event-list.php:68
+#: includes/class-event-list.php:118
 #: includes/class-event-search.php:228
 #: build/blocks/event-list/index.js:1
 msgid "No upcoming events yet."
 msgstr "予定しているイベントはまだありません。"
 
 #. translators: %d: the number of other dates of the event.
-#: includes/class-event-list.php:303
+#: includes/class-event-list.php:394
 #, php-format
 msgid "+%d more date"
 msgid_plural "+%d more dates"
 msgstr[0] "ほか %d 日程"
 
-#: includes/class-event-list.php:371
+#: includes/class-event-list.php:475
 msgid "Previous"
 msgstr "前へ"
 
-#: includes/class-event-list.php:372
+#: includes/class-event-list.php:476
 msgid "Next"
 msgstr "次へ"
 
-#: includes/class-event-list.php:376
+#: includes/class-event-list.php:480
 msgid "Pagination"
 msgstr "ページ送り"
 
-#: includes/class-event-list.php:416
+#: includes/class-event-list.php:520
 msgid "Venue to be announced"
 msgstr "場所未定"
 
@@ -437,34 +438,39 @@ msgstr "イベントタグ"
 msgid "Event Tag"
 msgstr "イベントタグ"
 
-#: templates/event-search-form.php:70
-#: templates/event-search-form.php:79
+#: templates/event-search-form.php:71
+#: templates/event-search-form.php:82
 #: build/blocks/event-list/index.js:1
 msgid "All"
 msgstr "すべて"
 
 #: build/blocks/event-list/index.js:1
 #: build/blocks/event-search/index.js:1
+#: build/blocks/past-events/index.js:1
 msgid "Display"
 msgstr "表示"
 
 #: build/blocks/event-list/index.js:1
 #: build/blocks/event-search/index.js:1
+#: build/blocks/past-events/index.js:1
 msgid "Layout"
 msgstr "表示形式"
 
 #: build/blocks/event-list/index.js:1
 #: build/blocks/event-search/index.js:1
+#: build/blocks/past-events/index.js:1
 msgid "Cards"
 msgstr "カード"
 
 #: build/blocks/event-list/index.js:1
 #: build/blocks/event-search/index.js:1
+#: build/blocks/past-events/index.js:1
 msgid "List"
 msgstr "リスト"
 
 #: build/blocks/event-list/index.js:1
 #: build/blocks/event-search/index.js:1
+#: build/blocks/past-events/index.js:1
 msgid "Events per page"
 msgstr "1 ページの件数"
 
@@ -481,6 +487,7 @@ msgid "Latest first"
 msgstr "開催が遠い順"
 
 #: build/blocks/event-list/index.js:1
+#: build/blocks/past-events/index.js:1
 msgid "Text when there are no events"
 msgstr "0 件のときの文"
 
@@ -665,6 +672,7 @@ msgstr "サイトの開催予定のイベントを一覧で出します。色と
 
 #: build/blocks/event-list/block.json
 #: build/blocks/event-search/block.json
+#: build/blocks/past-events/block.json
 msgctxt "block keyword"
 msgid "event"
 msgstr "イベント"
@@ -674,7 +682,7 @@ msgctxt "block keyword"
 msgid "calendar"
 msgstr "カレンダー"
 
-#: templates/event-row.php:26
+#: templates/event-row.php:29
 msgctxt "separator between the venue and the category"
 msgid " · "
 msgstr "・"
@@ -695,7 +703,7 @@ msgid "Try a shorter keyword, or remove the date or category filter."
 msgstr "キーワードを短くするか、期間やカテゴリの指定を外してみてください。"
 
 #: includes/class-event-search.php:233
-#: templates/event-search-form.php:87
+#: templates/event-search-form.php:91
 msgid "Clear filters"
 msgstr "条件をクリア"
 
@@ -711,7 +719,7 @@ msgstr "キーワード"
 msgid "Event or venue name"
 msgstr "イベント名や会場名"
 
-#: templates/event-search-form.php:86
+#: templates/event-search-form.php:90
 msgid "Search"
 msgstr "検索する"
 
@@ -744,3 +752,129 @@ msgstr "期間"
 msgctxt "between the search dates"
 msgid "–"
 msgstr "〜"
+
+#: includes/class-event-list.php:109
+#: build/blocks/past-events/index.js:1
+msgid "No past events yet."
+msgstr "終了したイベントはまだありません。"
+
+#: includes/class-event-list.php:113
+msgid "No events this month."
+msgstr "今月のイベントはありません。"
+
+#: includes/class-event-list.php:116
+msgid "No events in the next 30 days."
+msgstr "30 日以内のイベントはありません。"
+
+#: includes/class-event-patterns.php:34
+msgid "Past events"
+msgstr "終了したイベント"
+
+#: includes/class-event-patterns.php:35
+msgid "Events that have ended, newest first."
+msgstr "終わったイベントを、新しい順に並べています。"
+
+#: includes/class-event-patterns.php:41
+#: build/blocks/event-list/index.js:1
+msgid "Events This Month"
+msgstr "今月のイベント"
+
+#: includes/class-event-patterns.php:45
+msgid "Events this month"
+msgstr "今月のイベント"
+
+#: includes/class-event-patterns.php:52
+#: build/blocks/event-list/index.js:1
+msgid "Coming Soon"
+msgstr "近日のイベント"
+
+#: includes/class-event-patterns.php:56
+msgctxt "heading of the next events"
+msgid "Coming soon"
+msgstr "近日のイベント"
+
+#: includes/class-event-patterns.php:63
+msgid "Past Events"
+msgstr "終了したイベント"
+
+#: includes/class-event-patterns.php:68
+msgid "Upcoming and Past Events"
+msgstr "開催予定と終了したイベント"
+
+#: includes/class-event-patterns.php:71
+msgid "Upcoming events"
+msgstr "開催予定のイベント"
+
+#: templates/event-card.php:21
+#: templates/event-row.php:22
+msgctxt "label on an event that has ended"
+msgid "Ended"
+msgstr "終了"
+
+#: build/blocks/event-list/index.js:1
+msgid "Period"
+msgstr "期間"
+
+#: build/blocks/event-list/index.js:1
+msgid "Any dates"
+msgstr "指定なし"
+
+#: build/blocks/event-list/index.js:1
+msgid "This month"
+msgstr "今月"
+
+#: build/blocks/event-list/index.js:1
+msgid "Next 30 days"
+msgstr "今日から 30 日"
+
+#: build/blocks/event-list/index.js:1
+msgid "Show the events of this month that have not ended."
+msgstr "今月のイベントのうち、まだ終わっていないものを出します。"
+
+#: build/blocks/event-list/index.js:1
+msgid "Show the next events within 30 days."
+msgstr "30 日以内のイベントを出します。"
+
+#: build/blocks/past-events/index.js:1
+msgid "How far back"
+msgstr "さかのぼる範囲"
+
+#: build/blocks/past-events/index.js:1
+msgid "3 months"
+msgstr "3 か月"
+
+#: build/blocks/past-events/index.js:1
+msgid "6 months"
+msgstr "6 か月"
+
+#: build/blocks/past-events/index.js:1
+msgid "1 year"
+msgstr "1 年"
+
+#: build/blocks/past-events/index.js:1
+msgid "2 years"
+msgstr "2 年"
+
+#: build/blocks/past-events/index.js:1
+msgid "All past events"
+msgstr "すべて"
+
+#: build/blocks/past-events/block.json
+msgctxt "block title"
+msgid "Past Events"
+msgstr "終了したイベント"
+
+#: build/blocks/past-events/block.json
+msgctxt "block description"
+msgid "Show the events of your site that have ended, newest first."
+msgstr "サイトの終わったイベントを、新しい順に出します。"
+
+#: build/blocks/past-events/block.json
+msgctxt "block keyword"
+msgid "past"
+msgstr "過去"
+
+#: build/blocks/past-events/block.json
+msgctxt "block keyword"
+msgid "archive"
+msgstr "アーカイブ"

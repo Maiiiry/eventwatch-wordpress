@@ -25,6 +25,18 @@ class Event_List {
 	const DEFAULT_SIZE = 6;
 	const MAX_SIZE     = 24;
 
+	const SCOPE_UPCOMING = 'upcoming';
+	const SCOPE_PAST     = 'past';
+
+	const PERIOD_THIS_MONTH   = 'thisMonth';
+	const PERIOD_NEXT_30_DAYS = 'next30Days';
+
+	/**
+	 * 過去のイベントをさかのぼる月数の選択肢。0 はすべて。
+	 */
+	const MONTHS_BACK_CHOICES = array( 3, 6, 12, 24, 0 );
+	const DEFAULT_MONTHS_BACK = 12;
+
 	/**
 	 * キーワードの語を渡すクエリの変数。
 	 */
@@ -40,14 +52,20 @@ class Event_List {
 	 *
 	 * ブロックの描画の中で呼ぶ（get_block_wrapper_attributes が描画中のブロックを読むため）。ブロックの外からは render_block を通す。
 	 *
-	 * @param array $attributes ブロックの属性。
+	 * @param array  $attributes ブロックの属性。
+	 * @param string $scope      開催予定か過去か。投稿の本文で書き換えられないよう、属性に持たせず描画側が決める。
 	 * @return string
 	 */
-	public static function render( $attributes ) {
-		$raw        = is_array( $attributes ) ? $attributes : array();
-		$attributes = self::normalize( $raw );
+	public static function render( $attributes, $scope = self::SCOPE_UPCOMING ) {
+		$raw                 = is_array( $attributes ) ? $attributes : array();
+		$attributes          = self::normalize( $raw );
+		$attributes['scope'] = self::SCOPE_PAST === $scope ? self::SCOPE_PAST : self::SCOPE_UPCOMING;
 		// 色や余白も含めて分ける。絞り込みが同じで色だけ違うブロックを、別の一覧として扱うため。
 		$identity = array_merge( $raw, $attributes );
+		// 動く期間の日付は日ごとに変わる。共有されたページ送りのリンクが効かなくならないよう、名前の元に入れない。
+		if ( '' !== $attributes['period'] ) {
+			unset( $identity['dateFrom'], $identity['dateTo'] );
+		}
 		ksort( $identity );
 		$hash   = substr( md5( (string) wp_json_encode( $identity ) ), 0, 8 );
 		$param  = 'eventwatch_page_' . $hash;
@@ -55,21 +73,49 @@ class Event_List {
 
 		list( $query, $page ) = self::query_for_request( $attributes, $param );
 
+		$classes = 'is-layout-' . $attributes['layout'];
+		if ( self::SCOPE_PAST === $attributes['scope'] ) {
+			// 一覧の CSS を使い回す。一覧のブロックには本体が同じクラスを付ける。
+			$classes .= ' wp-block-eventwatch-event-list';
+		}
+
 		$html = '<div ' . get_block_wrapper_attributes(
 			array(
 				'id'    => $anchor,
-				'class' => 'is-layout-' . $attributes['layout'],
+				'class' => $classes,
 			)
 		) . '>';
 
 		if ( $query->posts ) {
 			$html .= self::render_results( $attributes, $query, $param, $anchor, $page );
 		} else {
-			$text  = '' !== $attributes['emptyText'] ? $attributes['emptyText'] : __( 'No upcoming events yet.', 'eventwatch' );
-			$html .= '<div class="eventwatch-events__empty"><p>' . esc_html( $text ) . '</p></div>';
+			$html .= '<div class="eventwatch-events__empty"><p>' . esc_html( self::empty_text( $attributes ) ) . '</p></div>';
 		}
 
 		return $html . '</div>';
+	}
+
+	/**
+	 * 0 件のときの文。
+	 *
+	 * @param array $attributes normalize() を通した属性と scope。
+	 * @return string
+	 */
+	private static function empty_text( array $attributes ) {
+		if ( '' !== $attributes['emptyText'] ) {
+			return $attributes['emptyText'];
+		}
+		if ( self::SCOPE_PAST === $attributes['scope'] ) {
+			return __( 'No past events yet.', 'eventwatch' );
+		}
+		// 「まだありません」だと、この期間の外に予定があるサイトで誤りになる。
+		if ( self::PERIOD_THIS_MONTH === $attributes['period'] ) {
+			return __( 'No events this month.', 'eventwatch' );
+		}
+		if ( self::PERIOD_NEXT_30_DAYS === $attributes['period'] ) {
+			return __( 'No events in the next 30 days.', 'eventwatch' );
+		}
+		return __( 'No upcoming events yet.', 'eventwatch' );
 	}
 
 	/**
@@ -120,7 +166,7 @@ class Event_List {
 	 * 投稿の本文は投稿者が書き換えられるので、block.json の型を頼らない。
 	 *
 	 * @param array $attributes 属性。
-	 * @return array{layout: string, perPage: int, order: string, categoryId: int, tagId: int, prefecture: int, dateFrom: string, dateTo: string, emptyText: string}
+	 * @return array{layout: string, perPage: int, order: string, categoryId: int, tagId: int, prefecture: int, dateFrom: string, dateTo: string, emptyText: string, period: string, monthsBack: int}
 	 */
 	public static function normalize( array $attributes ) {
 		$attributes = wp_parse_args(
@@ -135,11 +181,17 @@ class Event_List {
 				'dateFrom'   => '',
 				'dateTo'     => '',
 				'emptyText'  => '',
+				'period'     => '',
+				'monthsBack' => self::DEFAULT_MONTHS_BACK,
 			)
 		);
 
 		$prefecture = is_scalar( $attributes['prefecture'] ) ? (int) $attributes['prefecture'] : 0;
 		$per_page   = is_scalar( $attributes['perPage'] ) ? (int) $attributes['perPage'] : self::DEFAULT_SIZE;
+		$range      = self::period_range( $attributes['period'] );
+
+		// 数字でない値を整数にすると 0（すべて）になるので、先に落とす。
+		$months = is_numeric( $attributes['monthsBack'] ) ? (int) $attributes['monthsBack'] : self::DEFAULT_MONTHS_BACK;
 
 		return array(
 			'layout'     => self::LAYOUT_LIST === $attributes['layout'] ? self::LAYOUT_LIST : self::LAYOUT_CARDS,
@@ -148,23 +200,68 @@ class Event_List {
 			'categoryId' => is_scalar( $attributes['categoryId'] ) ? absint( $attributes['categoryId'] ) : 0,
 			'tagId'      => is_scalar( $attributes['tagId'] ) ? absint( $attributes['tagId'] ) : 0,
 			'prefecture' => array_key_exists( $prefecture, Event_Options::prefectures() ) ? $prefecture : 0,
-			'dateFrom'   => null !== self::parse_date( $attributes['dateFrom'] ) ? $attributes['dateFrom'] : '',
-			'dateTo'     => null !== self::parse_date( $attributes['dateTo'] ) ? $attributes['dateTo'] : '',
+			'dateFrom'   => $range ? $range[0] : ( null !== self::parse_date( $attributes['dateFrom'] ) ? $attributes['dateFrom'] : '' ),
+			'dateTo'     => $range ? $range[1] : ( null !== self::parse_date( $attributes['dateTo'] ) ? $attributes['dateTo'] : '' ),
 			'emptyText'  => is_string( $attributes['emptyText'] ) ? sanitize_text_field( $attributes['emptyText'] ) : '',
+			'period'     => $range ? $attributes['period'] : '',
+			'monthsBack' => in_array( $months, self::MONTHS_BACK_CHOICES, true ) ? $months : self::DEFAULT_MONTHS_BACK,
 		);
 	}
 
 	/**
-	 * 開催予定のイベントを引く。
+	 * 動く期間を、サイトのタイムゾーンの今日から計算する。
+	 *
+	 * 投稿の本文に日付を書くと古くなるので、描画のたびに求める。
+	 *
+	 * @param mixed $period 期間の名前。
+	 * @return array{0: string, 1: string}|null 始まりと終わり。知らない名前は null。
+	 */
+	private static function period_range( $period ) {
+		$today = new DateTimeImmutable( 'today', wp_timezone() );
+
+		if ( self::PERIOD_THIS_MONTH === $period ) {
+			return array( $today->modify( 'first day of this month' )->format( 'Y-m-d' ), $today->modify( 'last day of this month' )->format( 'Y-m-d' ) );
+		}
+		if ( self::PERIOD_NEXT_30_DAYS === $period ) {
+			return array( $today->format( 'Y-m-d' ), $today->modify( '+30 days' )->format( 'Y-m-d' ) );
+		}
+		return null;
+	}
+
+	/**
+	 * N か月前の同じ日。その月に同じ日が無ければ月末にする。
+	 *
+	 * DateTimeImmutable::modify は 5 月 31 日の 3 か月前を 3 月 3 日に繰り上げる。
+	 *
+	 * @param DateTimeImmutable $day    基準の日。
+	 * @param int               $months 月数。
+	 * @return DateTimeImmutable
+	 */
+	public static function months_before( DateTimeImmutable $day, $months ) {
+		$month = $day->modify( 'first day of this month' )->modify( '-' . (int) $months . ' months' );
+
+		return $month->setDate(
+			(int) $month->format( 'Y' ),
+			(int) $month->format( 'n' ),
+			min( (int) $day->format( 'j' ), (int) $month->format( 't' ) )
+		);
+	}
+
+	/**
+	 * イベントを引く。既定は開催予定で、scope が past なら終了したものを終了の新しい順に引く。
 	 *
 	 * 配列のメタは比べられないので、判定と並べ替えは UTC の整数のメタで行う。日程の無いイベントはこのメタを持たないので出ない。
-	 * 期間は最初の開始と最後の終了の範囲で比べるので、組と組の間の期間にも当たる。並びも最初の開始なので、過ぎた回があるイベントは先に並ぶ。
+	 * 固定の日付は最初の開始と最後の終了の範囲で比べるので、組と組の間の期間にも当たる。並びも最初の開始なので、過ぎた回があるイベントは先に並ぶ。
+	 * 動く期間は組の単位で比べ、期間に入る最初の組の順に並べる。
 	 *
 	 * @param array $attributes normalize() を通した属性。
 	 * @param int   $page       ページ。
 	 * @return WP_Query
 	 */
 	public static function query( array $attributes, $page ) {
+		$is_past = isset( $attributes['scope'] ) && self::SCOPE_PAST === $attributes['scope'];
+
+		// 同じ境目を境に分ける。開催予定と過去の間に隙間も重なりも作らない。
 		$meta_query = array(
 			'relation'          => 'AND',
 			'eventwatch_starts' => array(
@@ -172,13 +269,22 @@ class Event_List {
 				'compare' => 'EXISTS',
 				'type'    => 'NUMERIC',
 			),
-			array(
+			'eventwatch_ends'   => array(
 				'key'     => Event_Meta::LAST_END,
 				'value'   => Event_Dates::upcoming_boundary(),
-				'compare' => '>=',
+				'compare' => $is_past ? '<' : '>=',
 				'type'    => 'NUMERIC',
 			),
 		);
+
+		if ( $is_past && ! empty( $attributes['monthsBack'] ) ) {
+			$meta_query[] = array(
+				'key'     => Event_Meta::LAST_END,
+				'value'   => self::months_before( new DateTimeImmutable( 'today', wp_timezone() ), $attributes['monthsBack'] )->getTimestamp(),
+				'compare' => '>=',
+				'type'    => 'NUMERIC',
+			);
+		}
 
 		$from = self::parse_date( $attributes['dateFrom'] );
 		if ( null !== $from ) {
@@ -229,29 +335,93 @@ class Event_List {
 			}
 		}
 
-		$order = 'desc' === $attributes['order'] ? 'DESC' : 'ASC';
-
-		// phpcs:disable WordPress.DB.SlowDBQuery -- 判定と絞り込みはメタとタームにしか持てない。件数は MAX_SIZE までに抑えている。
-		return new WP_Query(
-			array(
-				'post_type'           => Post_Type::POST_TYPE,
-				// ログイン中でも、下書きや非公開を公開のページに混ぜない。
-				'post_status'         => 'publish',
-				// メタがイベントの中身そのものなので、パスワードを知らない人に出さない。テンプレートへ渡す前に落とす。
-				'has_password'        => false,
-				'posts_per_page'      => $attributes['perPage'],
-				'paged'               => $page,
-				'ignore_sticky_posts' => true,
-				'meta_query'          => $meta_query,
-				'tax_query'           => $tax_query,
-				self::KEYWORD_VAR     => empty( $attributes['keyword'] ) ? array() : array_values( $attributes['keyword'] ),
-				'orderby'             => array(
-					'eventwatch_starts' => $order,
-					'ID'                => $order,
-				),
+		$order   = 'desc' === $attributes['order'] ? 'DESC' : 'ASC';
+		$orderby = $is_past
+			? array(
+				'eventwatch_ends' => 'DESC',
+				'ID'              => 'DESC',
 			)
+			: array(
+				'eventwatch_starts' => $order,
+				'ID'                => $order,
+			);
+
+		// phpcs:disable WordPress.DB.SlowDBQuery -- 判定と絞り込みはメタとタームにしか持てない。
+		$args = array(
+			'post_type'           => Post_Type::POST_TYPE,
+			// ログイン中でも、下書きや非公開を公開のページに混ぜない。
+			'post_status'         => 'publish',
+			// メタがイベントの中身そのものなので、パスワードを知らない人に出さない。テンプレートへ渡す前に落とす。
+			'has_password'        => false,
+			'posts_per_page'      => $attributes['perPage'],
+			'paged'               => $page,
+			'ignore_sticky_posts' => true,
+			'meta_query'          => $meta_query,
+			'tax_query'           => $tax_query,
+			self::KEYWORD_VAR     => empty( $attributes['keyword'] ) ? array() : array_values( $attributes['keyword'] ),
+			'orderby'             => $orderby,
 		);
 		// phpcs:enable
+
+		if ( ! $is_past && ! empty( $attributes['period'] ) && null !== $from && null !== $to ) {
+			$args['post__in'] = self::ids_in_period(
+				$args,
+				max( Event_Dates::upcoming_boundary(), $from->getTimestamp() ),
+				$to->modify( '+1 day' )->getTimestamp(),
+				$order
+			);
+			$args['orderby']  = 'post__in';
+		}
+
+		return new WP_Query( $args );
+	}
+
+	/**
+	 * 範囲に重なる組を持つイベントの ID を、範囲に入る最初の組の順に返す。
+	 *
+	 * メタの比較は最初の開始と最後の終了しか見ないので、組と組の間の期間にも当たり、並びも過ぎた回の順になる。
+	 * 「今月」と見出しを付けて来月の回だけのイベントを出したり、件数を絞った「近日」で直近のイベントを押し出したりしないよう、組ごとに確かめる。
+	 *
+	 * @param array  $args  絞り込みの条件を入れた WP_Query の引数。
+	 * @param int    $from  範囲の始まりの UTC の整数。
+	 * @param int    $until 範囲の終わりの UTC の整数。この時刻は含まない。
+	 * @param string $order ASC か DESC。
+	 * @return int[] 無ければ、どの投稿にも当たらない値。
+	 */
+	private static function ids_in_period( array $args, $from, $until, $order ) {
+		$query = new WP_Query(
+			array_merge(
+				$args,
+				array(
+					'fields'         => 'ids',
+					// phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- ページに分ける前に組で絞るので、期間に当たるものを全部読む。
+					'posts_per_page' => -1,
+					'paged'          => 1,
+					'no_found_rows'  => true,
+				)
+			)
+		);
+
+		// fields => ids はメタを読み込まないので、1 件ごとに問い合わせないよう先に読む。
+		update_meta_cache( 'post', $query->posts );
+
+		$found = array();
+		foreach ( $query->posts as $post_id ) {
+			$start = Event_Dates::first_start_between( (int) $post_id, $from, $until );
+			if ( null !== $start ) {
+				$found[] = array( $start, (int) $post_id );
+			}
+		}
+
+		// 開始と ID で比べる。同じ開始でもページをまたいで順が動かない。
+		usort(
+			$found,
+			static function ( array $a, array $b ) use ( $order ) {
+				return 'DESC' === $order ? $b <=> $a : $a <=> $b;
+			}
+		);
+
+		return $found ? array_column( $found, 1 ) : array( 0 );
 	}
 
 	/**
@@ -284,7 +454,7 @@ class Event_List {
 	 *
 	 * @param WP_Post  $post イベント。
 	 * @param int|null $from 期間で絞っているときの始まり。
-	 * @return array{id: int, title: string, url: string, image: string, date: string, datetime: string, more: string, venue: string, category: string}
+	 * @return array{id: int, title: string, url: string, image: string, date: string, datetime: string, more: string, venue: string, category: string, ended: bool}
 	 */
 	public static function item_data( WP_Post $post, $from = null ) {
 		$summary = Event_Dates::summary( $post->ID, $from );
@@ -304,7 +474,20 @@ class Event_List {
 				: '',
 			'venue'    => self::venue_text( $post->ID ),
 			'category' => self::category_text( $post ),
+			'ended'    => self::is_ended( $post->ID ),
 		);
+	}
+
+	/**
+	 * 最後の終了が境目より前か。query() の過去の条件と同じ判定。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return bool
+	 */
+	private static function is_ended( $post_id ) {
+		$last_end = get_post_meta( $post_id, Event_Meta::LAST_END, true );
+
+		return '' !== $last_end && (int) $last_end < Event_Dates::upcoming_boundary();
 	}
 
 	/**

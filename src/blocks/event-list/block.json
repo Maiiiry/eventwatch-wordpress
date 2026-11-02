@@ -47,6 +47,11 @@
 		"emptyText": {
 			"type": "string",
 			"default": ""
+		},
+		"period": {
+			"type": "string",
+			"enum": [ "", "thisMonth", "next30Days" ],
+			"default": ""
 		}
 	},
 	"supports": {
