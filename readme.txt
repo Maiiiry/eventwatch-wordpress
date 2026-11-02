@@ -52,7 +52,7 @@ Block themes can rearrange the page in the Site Editor: edit the Single Event te
 
 Classic themes use `templates/single-event.php`. To change it, copy it to an `eventwatch` folder in your theme, or add a `single-eventwatch_event.php` template to your theme.
 
-The page also outputs schema.org `Event` data, a description, and Open Graph tags. If Yoast SEO, Rank Math, All in One SEO, SEOPress, or The SEO Framework is active, the description and Open Graph tags are left to that plugin. Use the filters `eventwatch_output_meta_tags` and `eventwatch_output_json_ld` to change this.
+The page also outputs schema.org `Event` data, a description, and Open Graph tags. If Yoast SEO, Rank Math, All in One SEO, SEOPress, or The SEO Framework is active, the description and Open Graph tags are left to that plugin. Use the filters `eventwatch_output_meta_tags` and `eventwatch_output_json_ld` to change this, for example if your SEO plugin also outputs `Event` data.
 
 = Maps =
 

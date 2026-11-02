@@ -70,6 +70,7 @@ class Event_Detail {
 	public static function boot() {
 		add_filter( 'single_template', array( self::class, 'single_template' ) );
 		add_filter( 'single_template_hierarchy', array( self::class, 'add_to_template_hierarchy' ) );
+		add_filter( 'render_block_core/post-featured-image', array( self::class, 'hide_protected_image' ), 10, 3 );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue_styles' ) );
 		add_action( 'wp_head', array( self::class, 'print_head' ), 5 );
 		add_action( 'template_redirect', array( Event_Ical::class, 'maybe_send' ), 1 );
@@ -135,7 +136,7 @@ class Event_Detail {
 			. '<!-- wp:post-title {"level":1,"style":{"spacing":{"margin":{"top":"0.25rem"}}}} /-->' . "\n"
 			. '<!-- wp:post-featured-image {"aspectRatio":"16/9",' . substr( $gap, 1 ) . '} /-->' . "\n"
 			. '<!-- wp:post-content {"layout":{"type":"constrained"},' . substr( $gap, 1 ) . '} /-->' . "\n"
-			. '<!-- wp:group {"className":"eventwatch-detail-facts","style":{"spacing":{"margin":{"top":"2rem"},"blockGap":"0"}}} -->' . "\n"
+			. '<!-- wp:group {"className":"eventwatch-detail-facts","style":{"spacing":{"margin":{"top":"2rem"}}}} -->' . "\n"
 			. '<div class="wp-block-group eventwatch-detail-facts" style="margin-top:2rem">'
 			. '<!-- wp:eventwatch/event-field {"field":"dates"} /-->' . "\n"
 			. '<!-- wp:eventwatch/event-field {"field":"venue"} /-->' . "\n"
@@ -184,14 +185,29 @@ class Event_Detail {
 			return $template;
 		}
 
-		// テーマが階層の名前で用意したものはそのまま使う。
-		if ( 'single-' . Post_Type::POST_TYPE . '.php' === basename( (string) $template ) ) {
+		// テーマが階層の名前で用意したものは、スラッグ別のものも含めてそのまま使う。
+		if ( preg_match( '/^single-eventwatch[_-]event[-.]/', basename( (string) $template ) ) ) {
 			return $template;
 		}
 
 		$theme = locate_template( Event_List::THEME_DIR . '/single-event.php' );
 
 		return '' !== $theme ? $theme : plugin_dir_path( PLUGIN_FILE ) . 'templates/single-event.php';
+	}
+
+	/**
+	 * パスワードを知らない人に、本体のアイキャッチ画像のブロックを出さない。本体はこのブロックで確かめない。
+	 *
+	 * @param string    $content  描画した HTML。
+	 * @param array     $block    ブロック。
+	 * @param \WP_Block $instance ブロックの実体。
+	 * @return string
+	 */
+	public static function hide_protected_image( $content, $block, $instance ) {
+		$post_id = isset( $instance->context['postId'] ) ? (int) $instance->context['postId'] : 0;
+		$post    = $post_id ? get_post( $post_id ) : null;
+
+		return $post && Post_Type::POST_TYPE === $post->post_type && post_password_required( $post ) ? '' : $content;
 	}
 
 	/**
@@ -763,7 +779,7 @@ class Event_Detail {
 		}
 
 		/**
-		 * 構造化データを出すか。主な SEO プラグインは Event を出さないので、既定は常に出す。
+		 * 構造化データを出すか。既定は出す。SEO プラグインが同じ Event を出すなら、これで止める。
 		 *
 		 * @param bool    $output 出すか。
 		 * @param WP_Post $post   イベント。

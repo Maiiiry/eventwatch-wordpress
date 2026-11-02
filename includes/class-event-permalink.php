@@ -115,7 +115,18 @@ class Event_Permalink {
 			return true;
 		}
 
-		if ( get_page_by_path( $slug ) ) {
+		// 固定ページそのものは重ならない（/events/ と /events/my-event/）。奪われるのは子のページ。
+		$page = get_page_by_path( $slug );
+		if ( $page && get_posts(
+			array(
+				'post_type'        => 'page',
+				'post_parent'      => $page->ID,
+				'post_status'      => 'any',
+				'numberposts'      => 1,
+				'fields'           => 'ids',
+				'suppress_filters' => true,
+			)
+		) ) {
 			return true;
 		}
 
@@ -181,7 +192,7 @@ class Event_Permalink {
 	 * @return void
 	 */
 	public static function redirect_old_url() {
-		if ( ! is_404() ) {
+		if ( ! self::is_redirect_candidate( is_404(), is_attachment() ) ) {
 			return;
 		}
 
@@ -189,6 +200,19 @@ class Event_Permalink {
 		if ( null !== $target && wp_safe_redirect( $target, 301, 'EventWatch' ) ) {
 			exit;
 		}
+	}
+
+	/**
+	 * 転送を試す要求か。
+	 *
+	 * 旧い接頭辞の URL は、同じスラッグのメディアがあると本体の添付の rewrite に当たり、404 にならない。
+	 *
+	 * @param bool $is_404        404 か。
+	 * @param bool $is_attachment 添付のページか。
+	 * @return bool
+	 */
+	public static function is_redirect_candidate( $is_404, $is_attachment ) {
+		return $is_404 || $is_attachment;
 	}
 
 	/**

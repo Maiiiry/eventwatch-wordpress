@@ -152,17 +152,25 @@ class Event_Permalink_Test extends WP_UnitTestCase {
 	 * 実在の固定ページ・パーマリンクの固定の語・数字だけの値は、URL を奪うので断る。
 	 */
 	public function test_slug_that_takes_over_existing_urls_is_rejected() {
-		self::factory()->post->create(
+		$about = self::factory()->post->create(
 			array(
 				'post_type'   => 'page',
 				'post_status' => 'publish',
 				'post_name'   => 'about',
 			)
 		);
+		self::factory()->post->create(
+			array(
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_name'   => 'team',
+				'post_parent' => $about,
+			)
+		);
 		update_option( Post_Type::SLUG_OPTION, 'events' );
 
 		update_option( Post_Type::SLUG_OPTION, 'about' );
-		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ), '固定ページ' );
+		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ), '子のある固定ページ' );
 
 		update_option( Post_Type::SLUG_OPTION, '2026' );
 		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ), '年' );
@@ -173,6 +181,22 @@ class Event_Permalink_Test extends WP_UnitTestCase {
 
 		update_option( Post_Type::SLUG_OPTION, 'shows' );
 		$this->assertSame( 'shows', get_option( Post_Type::SLUG_OPTION ), '当たらない語は通す' );
+	}
+
+	/**
+	 * 子の無い固定ページと同じ接頭辞は通す。/events/ の一覧と /events/my-event/ は重ならない。
+	 */
+	public function test_slug_same_as_a_page_without_children_is_allowed() {
+		self::factory()->post->create(
+			array(
+				'post_type'   => 'page',
+				'post_status' => 'publish',
+				'post_name'   => 'events',
+			)
+		);
+
+		update_option( Post_Type::SLUG_OPTION, 'events' );
+		$this->assertSame( 'events', get_option( Post_Type::SLUG_OPTION ) );
 	}
 
 	/**
@@ -275,6 +299,15 @@ class Event_Permalink_Test extends WP_UnitTestCase {
 		$this->assertNull( Event_Permalink::redirect_target( '/event/missing/' ), '無いイベント' );
 		$this->assertNull( Event_Permalink::redirect_target( '/event/sample/extra/' ), '深いパス' );
 		$this->assertNull( Event_Permalink::redirect_target( '/event/' ), '接頭辞だけ' );
+	}
+
+	/**
+	 * 同じスラッグのメディアがあると、旧い URL は本体の添付の rewrite に当たる。そのときも転送する。
+	 */
+	public function test_redirect_applies_to_attachment_requests() {
+		$this->assertTrue( Event_Permalink::is_redirect_candidate( true, false ), '404' );
+		$this->assertTrue( Event_Permalink::is_redirect_candidate( false, true ), '添付' );
+		$this->assertFalse( Event_Permalink::is_redirect_candidate( false, false ), 'それ以外' );
 	}
 
 	/**

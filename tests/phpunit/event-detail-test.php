@@ -300,6 +300,85 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 本体のアイキャッチ画像のブロックも、パスワードを知らない人に出さない。本体はこのブロックで確かめない。
+	 */
+	public function test_featured_image_is_hidden_when_protected() {
+		$thumbnail = self::factory()->attachment->create_object(
+			array(
+				'file'           => 'image.jpg',
+				'post_mime_type' => 'image/jpeg',
+			)
+		);
+
+		$open = $this->event();
+		set_post_thumbnail( $open, $thumbnail );
+		$this->go_to( get_permalink( $open ) );
+		the_post();
+		$this->assertStringContainsString( '<img', do_blocks( '<!-- wp:post-featured-image /-->' ) );
+
+		$locked = $this->event( array(), array( 'post_password' => 'secret' ) );
+		set_post_thumbnail( $locked, $thumbnail );
+		$this->go_to( get_permalink( $locked ) );
+		the_post();
+		$this->assertStringNotContainsString( '<img', do_blocks( '<!-- wp:post-featured-image /-->' ) );
+	}
+
+	/**
+	 * パスワード保護の別の投稿タイプの画像は変えない。
+	 */
+	public function test_featured_image_of_other_post_types_is_untouched() {
+		$thumbnail = self::factory()->attachment->create_object(
+			array(
+				'file'           => 'image.jpg',
+				'post_mime_type' => 'image/jpeg',
+			)
+		);
+		$post      = self::factory()->post->create( array( 'post_password' => 'secret' ) );
+		set_post_thumbnail( $post, $thumbnail );
+		$this->go_to( get_permalink( $post ) );
+		the_post();
+
+		$this->assertStringContainsString( '<img', do_blocks( '<!-- wp:post-featured-image /-->' ) );
+	}
+
+	/**
+	 * テーマが階層の名前で用意したテンプレートは、スラッグ別のものも含めて上書きしない。
+	 *
+	 * @dataProvider theme_templates
+	 *
+	 * @param string $file テンプレート。
+	 */
+	public function test_theme_templates_win_on_classic_themes( $file ) {
+		switch_theme( 'twentytwentyone' );
+		$this->go_to( get_permalink( $this->event() ) );
+
+		$this->assertSame( $file, Event_Detail::single_template( $file ) );
+	}
+
+	/**
+	 * テーマのテンプレートの名前。
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function theme_templates() {
+		return array(
+			'投稿タイプ'    => array( '/theme/single-eventwatch_event.php' ),
+			'スラッグ別'    => array( '/theme/single-eventwatch_event-organ-class.php' ),
+			'プラグインの名前' => array( '/theme/single-eventwatch-event.php' ),
+		);
+	}
+
+	/**
+	 * テーマの single.php は、プラグインのテンプレートに置き換える。
+	 */
+	public function test_generic_theme_template_is_replaced_on_classic_themes() {
+		switch_theme( 'twentytwentyone' );
+		$this->go_to( get_permalink( $this->event() ) );
+
+		$this->assertStringEndsWith( 'templates/single-event.php', Event_Detail::single_template( '/theme/single.php' ) );
+	}
+
+	/**
 	 * 別の投稿タイプでは何も描かない。
 	 */
 	public function test_other_post_types_render_nothing() {
