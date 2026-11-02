@@ -29,47 +29,54 @@ class Event_Patterns {
 			array( 'label' => __( 'EventWatch', 'eventwatch' ) )
 		);
 
-		$upcoming_list = '<!-- wp:eventwatch/event-list {"layout":"list","perPage":2} /-->';
-		$past_section  = self::section(
+		$past_section = self::section(
 			__( 'Past events', 'eventwatch' ),
 			__( 'Events that have ended, newest first.', 'eventwatch' ),
-			'<!-- wp:eventwatch/past-events /-->'
+			Past_Events_Block::NAME,
+			array()
 		);
 
 		$patterns = array(
 			'this-month'        => array(
 				'title'      => __( 'Events This Month', 'eventwatch' ),
 				'blockTypes' => array( Event_List_Block::NAME ),
-				'content'    => self::wrap(
-					self::section(
-						__( 'Events this month', 'eventwatch' ),
-						'',
-						'<!-- wp:eventwatch/event-list {"period":"thisMonth"} /-->'
-					)
+				'content'    => self::section(
+					__( 'Events this month', 'eventwatch' ),
+					'',
+					Event_List_Block::NAME,
+					array( 'period' => Event_List::PERIOD_THIS_MONTH )
 				),
 			),
 			'coming-soon'       => array(
 				'title'      => __( 'Coming Soon', 'eventwatch' ),
 				'blockTypes' => array( Event_List_Block::NAME ),
-				'content'    => self::wrap(
-					self::section(
-						_x( 'Coming soon', 'heading of the next events', 'eventwatch' ),
-						'',
-						'<!-- wp:eventwatch/event-list {"perPage":3,"period":"next30Days"} /-->'
+				'content'    => self::section(
+					_x( 'Coming soon', 'heading of the next events', 'eventwatch' ),
+					'',
+					Event_List_Block::NAME,
+					array(
+						'perPage' => 3,
+						'period'  => Event_List::PERIOD_NEXT_30_DAYS,
 					)
 				),
 			),
 			'past-events'       => array(
 				'title'      => __( 'Past Events', 'eventwatch' ),
 				'blockTypes' => array( Past_Events_Block::NAME ),
-				'content'    => self::wrap( $past_section ),
+				'content'    => $past_section,
 			),
 			'upcoming-and-past' => array(
 				'title'      => __( 'Upcoming and Past Events', 'eventwatch' ),
 				'blockTypes' => array( Event_List_Block::NAME, Past_Events_Block::NAME ),
-				'content'    => self::wrap(
-					self::section( __( 'Upcoming events', 'eventwatch' ), '', $upcoming_list ) . $past_section
-				),
+				'content'    => self::section(
+					__( 'Upcoming events', 'eventwatch' ),
+					'',
+					Event_List_Block::NAME,
+					array(
+						'layout'  => Event_List::LAYOUT_LIST,
+						'perPage' => 2,
+					)
+				) . '<!-- wp:spacer {"height":"3rem"} --><div style="height:3rem" aria-hidden="true" class="wp-block-spacer"></div><!-- /wp:spacer -->' . $past_section,
 			),
 		);
 
@@ -88,29 +95,25 @@ class Event_Patterns {
 	}
 
 	/**
-	 * パターン全体を包む。
-	 *
-	 * @param string $content ブロックの文。
-	 * @return string
-	 */
-	private static function wrap( $content ) {
-		return '<!-- wp:group {"align":"wide","layout":{"type":"default"}} --><div class="wp-block-group alignwide">' . $content . '</div><!-- /wp:group -->';
-	}
-
-	/**
 	 * 見出しと説明とブロックの 1 区切り。
 	 *
-	 * @param string $heading 見出し。
-	 * @param string $text    説明。空なら置かない。
-	 * @param string $block   ブロックの文。
+	 * 余白はブロックの margin に書く。blockGap はテーマが有効にしないと出力されず、preset の値はテーマが持つとは限らない。
+	 *
+	 * @param string $heading    見出し。
+	 * @param string $text       説明。空なら置かない。
+	 * @param string $block      ブロックの名前。
+	 * @param array  $attributes ブロックの属性。
 	 * @return string
 	 */
-	private static function section( $heading, $text, $block ) {
-		$head = '<!-- wp:heading --><h2 class="wp-block-heading">' . esc_html( $heading ) . '</h2><!-- /wp:heading -->';
-		if ( '' !== $text ) {
-			$head .= '<!-- wp:paragraph {"fontSize":"small"} --><p class="has-small-font-size">' . esc_html( $text ) . '</p><!-- /wp:paragraph -->';
-		}
+	private static function section( $heading, $text, $block, array $attributes ) {
+		$attributes['style'] = array( 'spacing' => array( 'margin' => array( 'top' => '1rem' ) ) );
 
-		return '<!-- wp:group {"style":{"spacing":{"blockGap":"0.25rem"}},"layout":{"type":"default"}} --><div class="wp-block-group">' . $head . '</div><!-- /wp:group -->' . $block;
+		$html = '<!-- wp:heading {"style":{"spacing":{"margin":{"top":"0","bottom":"0"}}}} --><h2 class="wp-block-heading" style="margin-top:0;margin-bottom:0">' . esc_html( $heading ) . '</h2><!-- /wp:heading -->';
+		if ( '' !== $text ) {
+			$html .= '<!-- wp:paragraph {"style":{"spacing":{"margin":{"top":"0.25rem","bottom":"0"}}},"fontSize":"small"} --><p class="has-small-font-size" style="margin-top:0.25rem;margin-bottom:0">' . esc_html( $text ) . '</p><!-- /wp:paragraph -->';
+		}
+		$html .= '<!-- wp:' . $block . ' ' . wp_json_encode( $attributes ) . ' /-->';
+
+		return '<!-- wp:group {"align":"wide","layout":{"type":"default"}} --><div class="wp-block-group alignwide">' . $html . '</div><!-- /wp:group -->';
 	}
 }

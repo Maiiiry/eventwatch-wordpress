@@ -578,7 +578,7 @@ class Past_Events_Test extends WP_UnitTestCase {
 			}
 			$this->assertContains( 'core/heading', $names, $slug );
 
-			foreach ( array( 'textColor', 'backgroundColor', '"color"', 'has-text-color', 'has-background', 'style="' ) as $color ) {
+			foreach ( array( 'textColor', 'backgroundColor', '"color"', 'has-text-color', 'has-background', 'color:', 'background' ) as $color ) {
 				$this->assertStringNotContainsString( $color, $pattern['content'], $slug );
 			}
 		}
