@@ -40,6 +40,7 @@ export default function Edit( { attributes, setAttributes } ) {
 		dateFrom,
 		dateTo,
 		emptyText,
+		period,
 	} = attributes;
 
 	const { categories, tags } = useSelect( ( select ) => {
@@ -163,26 +164,54 @@ export default function Edit( { attributes, setAttributes } ) {
 						] }
 						onChange={ setNumber( 'prefecture' ) }
 					/>
-					<TextControl
+					<SelectControl
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
-						type="date"
-						label={ __( 'From', 'eventwatch' ) }
-						value={ dateFrom }
+						label={ __( 'Period', 'eventwatch' ) }
+						value={ period }
+						options={ [
+							{
+								value: '',
+								label: __( 'Any dates', 'eventwatch' ),
+							},
+							{
+								value: 'thisMonth',
+								label: __( 'This month', 'eventwatch' ),
+							},
+							{
+								value: 'next30Days',
+								label: __( 'Next 30 days', 'eventwatch' ),
+							},
+						] }
 						onChange={ ( value ) =>
-							setAttributes( { dateFrom: value } )
+							setAttributes( { period: value } )
 						}
 					/>
-					<TextControl
-						__next40pxDefaultSize
-						__nextHasNoMarginBottom
-						type="date"
-						label={ __( 'To', 'eventwatch' ) }
-						value={ dateTo }
-						onChange={ ( value ) =>
-							setAttributes( { dateTo: value } )
-						}
-					/>
+					{ /* 動く期間があると日付は使わないので、効かない欄を見せない。 */ }
+					{ '' === period && (
+						<>
+							<TextControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								type="date"
+								label={ __( 'From', 'eventwatch' ) }
+								value={ dateFrom }
+								onChange={ ( value ) =>
+									setAttributes( { dateFrom: value } )
+								}
+							/>
+							<TextControl
+								__next40pxDefaultSize
+								__nextHasNoMarginBottom
+								type="date"
+								label={ __( 'To', 'eventwatch' ) }
+								value={ dateTo }
+								onChange={ ( value ) =>
+									setAttributes( { dateTo: value } )
+								}
+							/>
+						</>
+					) }
 				</PanelBody>
 			</InspectorControls>
 			{ /* 公開の表示と同じ PHP を通す。編集中にリンクで画面を離れないよう、操作は止める。 */ }
