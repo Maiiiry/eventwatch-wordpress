@@ -661,6 +661,62 @@ class Past_Events_Test extends WP_UnitTestCase {
 		$this->assertSame( 3, (int) $query->found_posts );
 		$this->assertSame( 2, (int) $query->max_num_pages );
 		$this->assertCount( 2, $query->posts );
+		$this->assertSame( array( 'a', 'b' ), wp_list_pluck( $query->posts, 'post_title' ) );
+
+		$second = Event_List::query(
+			Event_List::normalize(
+				array(
+					'period'  => 'next30Days',
+					'perPage' => 2,
+				)
+			),
+			2
+		);
+		$this->assertSame( array( 'c' ), wp_list_pluck( $second->posts, 'post_title' ) );
+	}
+
+	/**
+	 * 期間に 2 組あるイベントは、その早いほうの組で並ぶ。
+	 */
+	public function test_period_uses_the_earliest_date_in_the_period() {
+		$this->event(
+			'two dates',
+			array(
+				array(
+					'start' => $this->wall( '+2 days 10:00' ),
+					'end'   => '',
+				),
+				array(
+					'start' => $this->wall( '+20 days 10:00' ),
+					'end'   => '',
+				),
+			)
+		);
+		$this->event( 'between them', $this->dates( '+10 days 10:00' ) );
+
+		$this->assertSame( array( 'two dates', 'between them' ), $this->upcoming( array( 'period' => 'next30Days' ) ) );
+	}
+
+	/**
+	 * 期間内の開始が同じなら ID の順にする。最初の開始の順に引き継がない。
+	 */
+	public function test_period_breaks_ties_by_id() {
+		$this->event( 'smaller id', $this->dates( '+5 days 10:00' ) );
+		$this->event(
+			'larger id with an old date',
+			array(
+				array(
+					'start' => $this->wall( '-100 days 10:00' ),
+					'end'   => '',
+				),
+				array(
+					'start' => $this->wall( '+5 days 10:00' ),
+					'end'   => '',
+				),
+			)
+		);
+
+		$this->assertSame( array( 'smaller id', 'larger id with an old date' ), $this->upcoming( array( 'period' => 'next30Days' ) ) );
 	}
 
 	/**
