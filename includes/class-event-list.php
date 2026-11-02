@@ -188,8 +188,10 @@ class Event_List {
 
 		$prefecture = is_scalar( $attributes['prefecture'] ) ? (int) $attributes['prefecture'] : 0;
 		$per_page   = is_scalar( $attributes['perPage'] ) ? (int) $attributes['perPage'] : self::DEFAULT_SIZE;
-		$months     = is_scalar( $attributes['monthsBack'] ) ? (int) $attributes['monthsBack'] : self::DEFAULT_MONTHS_BACK;
 		$range      = self::period_range( $attributes['period'] );
+
+		// 数字でない値を整数にすると 0（すべて）になるので、先に落とす。
+		$months = is_numeric( $attributes['monthsBack'] ) ? (int) $attributes['monthsBack'] : self::DEFAULT_MONTHS_BACK;
 
 		return array(
 			'layout'     => self::LAYOUT_LIST === $attributes['layout'] ? self::LAYOUT_LIST : self::LAYOUT_CARDS,
@@ -227,6 +229,25 @@ class Event_List {
 	}
 
 	/**
+	 * N か月前の同じ日。その月に同じ日が無ければ月末にする。
+	 *
+	 * DateTimeImmutable::modify は 5 月 31 日の 3 か月前を 3 月 3 日に繰り上げる。
+	 *
+	 * @param DateTimeImmutable $day    基準の日。
+	 * @param int               $months 月数。
+	 * @return DateTimeImmutable
+	 */
+	public static function months_before( DateTimeImmutable $day, $months ) {
+		$month = $day->modify( 'first day of this month' )->modify( '-' . (int) $months . ' months' );
+
+		return $month->setDate(
+			(int) $month->format( 'Y' ),
+			(int) $month->format( 'n' ),
+			min( (int) $day->format( 'j' ), (int) $month->format( 't' ) )
+		);
+	}
+
+	/**
 	 * イベントを引く。既定は開催予定で、scope が past なら終了したものを終了の新しい順に引く。
 	 *
 	 * 配列のメタは比べられないので、判定と並べ替えは UTC の整数のメタで行う。日程の無いイベントはこのメタを持たないので出ない。
@@ -256,10 +277,9 @@ class Event_List {
 		);
 
 		if ( $is_past && ! empty( $attributes['monthsBack'] ) ) {
-			$oldest       = new DateTimeImmutable( 'today', wp_timezone() );
 			$meta_query[] = array(
 				'key'     => Event_Meta::LAST_END,
-				'value'   => $oldest->modify( '-' . (int) $attributes['monthsBack'] . ' months' )->getTimestamp(),
+				'value'   => self::months_before( new DateTimeImmutable( 'today', wp_timezone() ), $attributes['monthsBack'] )->getTimestamp(),
 				'compare' => '>=',
 				'type'    => 'NUMERIC',
 			);
@@ -326,23 +346,65 @@ class Event_List {
 			);
 
 		// phpcs:disable WordPress.DB.SlowDBQuery -- 判定と絞り込みはメタとタームにしか持てない。件数は MAX_SIZE までに抑えている。
-		return new WP_Query(
-			array(
-				'post_type'           => Post_Type::POST_TYPE,
-				// ログイン中でも、下書きや非公開を公開のページに混ぜない。
-				'post_status'         => 'publish',
-				// メタがイベントの中身そのものなので、パスワードを知らない人に出さない。テンプレートへ渡す前に落とす。
-				'has_password'        => false,
-				'posts_per_page'      => $attributes['perPage'],
-				'paged'               => $page,
-				'ignore_sticky_posts' => true,
-				'meta_query'          => $meta_query,
-				'tax_query'           => $tax_query,
-				self::KEYWORD_VAR     => empty( $attributes['keyword'] ) ? array() : array_values( $attributes['keyword'] ),
-				'orderby'             => $orderby,
-			)
+		$args = array(
+			'post_type'           => Post_Type::POST_TYPE,
+			// ログイン中でも、下書きや非公開を公開のページに混ぜない。
+			'post_status'         => 'publish',
+			// メタがイベントの中身そのものなので、パスワードを知らない人に出さない。テンプレートへ渡す前に落とす。
+			'has_password'        => false,
+			'posts_per_page'      => $attributes['perPage'],
+			'paged'               => $page,
+			'ignore_sticky_posts' => true,
+			'meta_query'          => $meta_query,
+			'tax_query'           => $tax_query,
+			self::KEYWORD_VAR     => empty( $attributes['keyword'] ) ? array() : array_values( $attributes['keyword'] ),
+			'orderby'             => $orderby,
 		);
 		// phpcs:enable
+
+		if ( ! $is_past && ! empty( $attributes['period'] ) && null !== $from && null !== $to ) {
+			$args['post__in'] = self::ids_in_period(
+				$args,
+				max( Event_Dates::upcoming_boundary(), $from->getTimestamp() ),
+				$to->modify( '+1 day' )->getTimestamp()
+			);
+		}
+
+		return new WP_Query( $args );
+	}
+
+	/**
+	 * 範囲に重なる組を持つイベントの ID。
+	 *
+	 * メタの比較は最初の開始と最後の終了しか見ないので、組と組の間の期間にも当たる。「今月」と見出しを付けて、来月の回だけのイベントを出さないよう、組ごとに確かめる。
+	 *
+	 * @param array $args  絞り込みの条件を入れた WP_Query の引数。
+	 * @param int   $from  範囲の始まりの UTC の整数。
+	 * @param int   $until 範囲の終わりの UTC の整数。この時刻は含まない。
+	 * @return int[] 無ければ、どの投稿にも当たらない値。
+	 */
+	private static function ids_in_period( array $args, $from, $until ) {
+		$query = new WP_Query(
+			array_merge(
+				$args,
+				array(
+					'fields'         => 'ids',
+					// phpcs:ignore WordPress.WP.PostsPerPage.posts_per_page_posts_per_page -- ページに分ける前に組で絞るので、期間に当たるものを全部読む。
+					'posts_per_page' => -1,
+					'paged'          => 1,
+					'no_found_rows'  => true,
+				)
+			)
+		);
+
+		$ids = array();
+		foreach ( $query->posts as $post_id ) {
+			if ( Event_Dates::has_occurrence_between( (int) $post_id, $from, $until ) ) {
+				$ids[] = (int) $post_id;
+			}
+		}
+
+		return $ids ? $ids : array( 0 );
 	}
 
 	/**

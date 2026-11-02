@@ -74,6 +74,32 @@ class Event_Dates {
 	}
 
 	/**
+	 * 範囲に重なる組があるか。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @param int $from    範囲の始まりの UTC の整数。
+	 * @param int $until   範囲の終わりの UTC の整数。この時刻は含まない。
+	 * @return bool
+	 */
+	public static function has_occurrence_between( $post_id, $from, $until ) {
+		$rows = get_post_meta( $post_id, Event_Meta::OCCURRENCES, true );
+		if ( ! is_array( $rows ) ) {
+			return false;
+		}
+
+		$zone = self::zone( $post_id )->getName();
+		foreach ( $rows as $row ) {
+			$start = Event_Meta::to_utc( $row['start'], $zone );
+			$end   = Event_Meta::to_utc( '' !== $row['end'] ? $row['end'] : $row['start'], $zone );
+			if ( null !== $start && null !== $end && $start < $until && $end >= $from ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * 組の文。同じ日に終わる組は開始だけ、日をまたぐ組は終わりの日まで出す。
 	 *
 	 * @param array{start: string, end: string} $row   組。

@@ -66,7 +66,8 @@ class Past_Events_Block {
 				'attrs'        => array(
 					'layout'     => $atts['layout'],
 					'perPage'    => (int) $atts['per_page'],
-					'monthsBack' => (int) $atts['months'],
+					// 整数にしない。`months=""` が 0（すべて）にならず、検証で既定に戻るように。
+					'monthsBack' => $atts['months'],
 					'emptyText'  => $atts['empty_text'],
 				),
 				'innerBlocks'  => array(),

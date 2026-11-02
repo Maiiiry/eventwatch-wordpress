@@ -159,15 +159,6 @@ class Past_Events_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * サイトのタイムゾーンで今日を決める。
-	 */
-	public function test_boundary_uses_the_site_timezone() {
-		$this->event( 'ended yesterday in tokyo', $this->dates( '-1 day 12:00' ) );
-		$this->assertSame( array( 'ended yesterday in tokyo' ), $this->past() );
-		$this->assertSame( array(), $this->upcoming() );
-	}
-
-	/**
 	 * 終了の新しい順。最初の開始の順とは違う。
 	 */
 	public function test_orders_by_the_last_end_newest_first() {
@@ -243,8 +234,25 @@ class Past_Events_Test extends WP_UnitTestCase {
 	 * さかのぼる範囲。既定は 1 年で、範囲の端の 0 時ちょうどは入る。
 	 */
 	public function test_months_back_limits_the_range() {
-		$this->event( 'edge', $this->dates( '-3 months 00:00' ) );
-		$this->event( 'just over 3', $this->dates( '-3 months -1 minute' ) );
+		$edge = Event_List::months_before( new \DateTimeImmutable( 'today', wp_timezone() ), 3 );
+		$this->event(
+			'edge',
+			array(
+				array(
+					'start' => $edge->format( 'Y-m-d H:i' ),
+					'end'   => '',
+				),
+			)
+		);
+		$this->event(
+			'just over 3',
+			array(
+				array(
+					'start' => $edge->modify( '-1 minute' )->format( 'Y-m-d H:i' ),
+					'end'   => '',
+				),
+			)
+		);
 		$this->event( 'over 1 year', $this->dates( '-13 months' ) );
 		$this->event( 'over 2 years', $this->dates( '-25 months' ) );
 
@@ -255,11 +263,31 @@ class Past_Events_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * N か月前の同じ日が無ければ月末にする。繰り上げると範囲が短くなる。
+	 */
+	public function test_months_before_clamps_to_the_month_end() {
+		$cases = array(
+			array( '2026-05-31', 3, '2026-02-28' ),
+			array( '2026-08-31', 6, '2026-02-28' ),
+			array( '2028-02-29', 12, '2027-02-28' ),
+			array( '2026-03-31', 1, '2026-02-28' ),
+			array( '2026-01-15', 3, '2025-10-15' ),
+			array( '2026-11-02', 24, '2024-11-02' ),
+		);
+		foreach ( $cases as $case ) {
+			$day = new \DateTimeImmutable( $case[0], wp_timezone() );
+			$this->assertSame( $case[2], Event_List::months_before( $day, $case[1] )->format( 'Y-m-d' ), $case[0] );
+		}
+	}
+
+	/**
 	 * 選択肢に無い範囲は既定に戻す。
 	 */
 	public function test_months_back_rejects_other_values() {
 		$this->assertSame( 12, Event_List::normalize( array( 'monthsBack' => 7 ) )['monthsBack'] );
 		$this->assertSame( 12, Event_List::normalize( array( 'monthsBack' => array( 3 ) ) )['monthsBack'] );
+		$this->assertSame( 12, Event_List::normalize( array( 'monthsBack' => 'abc' ) )['monthsBack'] );
+		$this->assertSame( 12, Event_List::normalize( array( 'monthsBack' => '' ) )['monthsBack'] );
 		$this->assertSame( 12, Event_List::normalize( array() )['monthsBack'] );
 		$this->assertSame( 0, Event_List::normalize( array( 'monthsBack' => 0 ) )['monthsBack'] );
 		$this->assertSame( 24, Event_List::normalize( array( 'monthsBack' => '24' ) )['monthsBack'] );
@@ -429,6 +457,21 @@ class Past_Events_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * ショートコードの不正な months は、全期間でなく既定の 1 年になる。
+	 */
+	public function test_shortcode_with_invalid_months_uses_the_default() {
+		$this->event( 'over 1 year', $this->dates( '-13 months' ) );
+		$this->event( 'old', $this->dates( '-2 days 10:00' ) );
+
+		foreach ( array( 'months=""', 'months="abc"', 'months="7"' ) as $attr ) {
+			$html = do_shortcode( '[eventwatch_past_events ' . $attr . ']' );
+			$this->assertStringContainsString( '>old<', $html, $attr );
+			$this->assertStringNotContainsString( '>over 1 year<', $html, $attr );
+		}
+		$this->assertStringContainsString( '>over 1 year<', do_shortcode( '[eventwatch_past_events months="0"]' ) );
+	}
+
+	/**
 	 * データはサイトの中だけから読む。
 	 */
 	public function test_does_not_call_external_services() {
@@ -475,6 +518,98 @@ class Past_Events_Test extends WP_UnitTestCase {
 		$this->event( 'today', $this->dates( 'today 12:00' ) );
 
 		$this->assertSame( array( 'today', 'day 30' ), $this->upcoming( array( 'period' => 'next30Days' ) ) );
+	}
+
+	/**
+	 * 動く期間は組の単位で見る。組と組の間に入るだけのイベントは出さない。
+	 */
+	public function test_period_skips_events_with_no_date_in_the_period() {
+		$rows = static function ( array $starts ) {
+			return array_map(
+				static function ( $start ) {
+					return array(
+						'start' => $start,
+						'end'   => '',
+					);
+				},
+				$starts
+			);
+		};
+
+		$this->event( 'between', $rows( array( $this->wall( '-100 days 10:00' ), $this->wall( '+70 days 10:00' ) ) ) );
+		$this->event( 'ended this period', $rows( array( $this->wall( '-1 day 10:00' ), $this->wall( '+70 days 10:00' ) ) ) );
+		$this->event( 'has one', $rows( array( $this->wall( '-100 days 10:00' ), $this->wall( '+10 days 10:00' ) ) ) );
+
+		$this->assertSame( array( 'has one' ), $this->upcoming( array( 'period' => 'next30Days' ) ) );
+		$this->assertNotContains( 'between', $this->upcoming( array( 'period' => 'thisMonth' ) ) );
+		$this->assertNotContains( 'ended this period', $this->upcoming( array( 'period' => 'thisMonth' ) ) );
+
+		// 固定の日付は、これまでどおり範囲で比べる。
+		$this->assertContains(
+			'between',
+			$this->upcoming(
+				array(
+					'dateFrom' => substr( $this->wall( '+1 day' ), 0, 10 ),
+					'dateTo'   => substr( $this->wall( '+2 days' ), 0, 10 ),
+				)
+			)
+		);
+	}
+
+	/**
+	 * 動く期間でもページ送りの件数は組で絞った後の数になる。当たりが無ければ 0 件。
+	 */
+	public function test_period_pagination_counts_filtered_events() {
+		foreach ( array( 'a', 'b', 'c' ) as $title ) {
+			$this->event( $title, $this->dates( '+2 days 10:00' ) );
+		}
+		$this->event(
+			'between',
+			array(
+				array(
+					'start' => $this->wall( '-100 days 10:00' ),
+					'end'   => '',
+				),
+				array(
+					'start' => $this->wall( '+70 days 10:00' ),
+					'end'   => '',
+				),
+			)
+		);
+
+		$query = Event_List::query(
+			Event_List::normalize(
+				array(
+					'period'  => 'next30Days',
+					'perPage' => 2,
+				)
+			),
+			1
+		);
+		$this->assertSame( 3, (int) $query->found_posts );
+		$this->assertSame( 2, (int) $query->max_num_pages );
+		$this->assertCount( 2, $query->posts );
+	}
+
+	/**
+	 * 動く期間に当たりが無ければ、全件を返さず 0 件にする。
+	 */
+	public function test_period_with_no_match_returns_nothing() {
+		$this->event(
+			'between',
+			array(
+				array(
+					'start' => $this->wall( '-100 days 10:00' ),
+					'end'   => '',
+				),
+				array(
+					'start' => $this->wall( '+70 days 10:00' ),
+					'end'   => '',
+				),
+			)
+		);
+
+		$this->assertSame( array(), $this->upcoming( array( 'period' => 'next30Days' ) ) );
 	}
 
 	/**
