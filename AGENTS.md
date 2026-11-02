@@ -16,7 +16,10 @@ PHP と Composer は wp-env のコンテナの中で動かす。先に `npm run 
 | `npm run test:js` | JS の単体テスト（Vitest） |
 | `npm run lint:php` | PHPCS |
 | `npm run test:php` / `npm run test:php:multisite` | PHPUnit |
+| `npm run i18n:check` | ja の翻訳がいまのソースにそろっているか（先に `npm run build`） |
 | `npm run plugin-zip` | 配布用の zip |
+
+文言を足したら、`npm run build` と `npm run i18n` のあと `languages/eventwatch-ja.po` に訳を足し、もう一度 `npm run i18n` で MO と JSON を作り直す。
 
 ## 守ること
 
