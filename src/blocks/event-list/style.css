@@ -38,6 +38,13 @@
 }
 
 /*
+ * ブロック自体に背景色を付けると、中身が色の端に張り付く。:where で詳細度を 0 にして、設定の余白に勝たないようにする。
+ */
+:where(.wp-block-eventwatch-event-list.has-background) {
+	padding: var(--wp--preset--spacing--50, 1.5rem);
+}
+
+/*
  * オーナーやテーマのスタイルがブロックかその外側に色を付けたら、テーマの弱い色と accent を重ねない。
  * セクションのスタイルは has-background を付けず is-style-* だけを付ける。
  */

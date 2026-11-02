@@ -82,6 +82,49 @@
 	opacity: 1;
 }
 
+/* ブラウザーのカレンダーの印は黒く描かれ、暗い地で読めない。その場の文字の色で描き直す。 */
+.eventwatch-search__input::-webkit-calendar-picker-indicator {
+	background-color: currentcolor;
+	background-image: none;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.75' y='5.25' width='16.5' height='15' rx='2'/%3E%3Cpath d='M3.75 10h16.5M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
+	opacity: 1;
+	cursor: pointer;
+}
+
+/*
+ * mask は輪郭も切るので、キーボードで印に来たときは外して、塗りと輪郭で示す。
+ * 印には :focus-visible が効かない。印にフォーカスがあるときは、欄の :focus-within だけが成り立つ。
+ */
+.eventwatch-search__input:focus-within:not(:focus-visible)::-webkit-calendar-picker-indicator {
+	outline: 2px solid currentcolor;
+	outline-offset: 2px;
+	mask: none;
+}
+
+/* ブラウザーの印は padding が効かず右端に寄るので、消して板の 16px の印を描く。currentcolor を使うため mask にする。 */
+.eventwatch-search__select {
+	position: relative;
+}
+
+.eventwatch-search__select::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: var(--wp--preset--spacing--30, 0.75rem);
+	width: 16px;
+	height: 16px;
+	background-color: currentcolor;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+	transform: translateY(-50%);
+	pointer-events: none;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-search__select select {
+	appearance: none;
+	background-image: none;
+	padding-inline-end: calc(var(--wp--preset--spacing--30, 0.75rem) + 24px);
+}
+
 /* 開いた一覧はブラウザーが地を決めるので、select の文字の色を受け継ぐと白地に白になる。 */
 .eventwatch-search__input option {
 	background-color: canvas;

@@ -66,21 +66,25 @@ $eventwatch_suffix     = $args['suffix'];
 	</fieldset>
 	<div class="eventwatch-search__field">
 		<label class="eventwatch-search__label" for="eventwatch-search-category<?php echo esc_attr( $eventwatch_suffix ); ?>"><?php esc_html_e( 'Category', 'eventwatch' ); ?></label>
-		<select class="eventwatch-search__input" id="eventwatch-search-category<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_CATEGORY ); ?>" value="<?php echo esc_attr( $eventwatch_conditions['category'] ? $eventwatch_conditions['category'] : '' ); ?>">
-			<option value=""><?php esc_html_e( 'All', 'eventwatch' ); ?></option>
-			<?php foreach ( $args['categories'] as $eventwatch_value => $eventwatch_label ) : ?>
-				<option value="<?php echo esc_attr( $eventwatch_value ); ?>" <?php selected( $eventwatch_conditions['category'], $eventwatch_value ); ?>><?php echo esc_html( $eventwatch_label ); ?></option>
-			<?php endforeach; ?>
-		</select>
+		<div class="eventwatch-search__select">
+			<select class="eventwatch-search__input" id="eventwatch-search-category<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_CATEGORY ); ?>" value="<?php echo esc_attr( $eventwatch_conditions['category'] ? $eventwatch_conditions['category'] : '' ); ?>">
+				<option value=""><?php esc_html_e( 'All', 'eventwatch' ); ?></option>
+				<?php foreach ( $args['categories'] as $eventwatch_value => $eventwatch_label ) : ?>
+					<option value="<?php echo esc_attr( $eventwatch_value ); ?>" <?php selected( $eventwatch_conditions['category'], $eventwatch_value ); ?>><?php echo esc_html( $eventwatch_label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
 	</div>
 	<div class="eventwatch-search__field">
 		<label class="eventwatch-search__label" for="eventwatch-search-prefecture<?php echo esc_attr( $eventwatch_suffix ); ?>"><?php esc_html_e( 'Prefecture', 'eventwatch' ); ?></label>
-		<select class="eventwatch-search__input" id="eventwatch-search-prefecture<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_PREFECTURE ); ?>" value="<?php echo esc_attr( $eventwatch_conditions['prefecture'] ? $eventwatch_conditions['prefecture'] : '' ); ?>">
-			<option value=""><?php esc_html_e( 'All', 'eventwatch' ); ?></option>
-			<?php foreach ( $args['prefectures'] as $eventwatch_value => $eventwatch_label ) : ?>
-				<option value="<?php echo esc_attr( $eventwatch_value ); ?>" <?php selected( $eventwatch_conditions['prefecture'], $eventwatch_value ); ?>><?php echo esc_html( $eventwatch_label ); ?></option>
-			<?php endforeach; ?>
-		</select>
+		<div class="eventwatch-search__select">
+			<select class="eventwatch-search__input" id="eventwatch-search-prefecture<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_PREFECTURE ); ?>" value="<?php echo esc_attr( $eventwatch_conditions['prefecture'] ? $eventwatch_conditions['prefecture'] : '' ); ?>">
+				<option value=""><?php esc_html_e( 'All', 'eventwatch' ); ?></option>
+				<?php foreach ( $args['prefectures'] as $eventwatch_value => $eventwatch_label ) : ?>
+					<option value="<?php echo esc_attr( $eventwatch_value ); ?>" <?php selected( $eventwatch_conditions['prefecture'], $eventwatch_value ); ?>><?php echo esc_html( $eventwatch_label ); ?></option>
+				<?php endforeach; ?>
+			</select>
+		</div>
 	</div>
 	<div class="eventwatch-search__actions">
 		<button class="eventwatch-search__submit" type="submit"><?php esc_html_e( 'Search', 'eventwatch' ); ?></button>
