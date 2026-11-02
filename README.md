@@ -42,6 +42,8 @@ WP_ENV_PORT=8895 WP_ENV_TESTS_PORT=8896 npm run env start
 
 `lint:php` と `test:php` は、wp-env を起動して `npm run composer install` を流した後に使います。`test:php` と `i18n` は `npm run build` の後に流します。
 
+テーマは `eventwatch/event-card.php`・`eventwatch/event-row.php` を置くと、一覧の 1 件の描画を差し替えられます（元は `templates/`）。
+
 ## ライセンス
 
 GPL-2.0-or-later。[LICENSE](LICENSE) を参照してください。

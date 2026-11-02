@@ -1,15 +1,15 @@
 /*
  * 値はテーマの preset だけを参照する。色・書体・余白をここで決めない。
  * テーマに無い preset は currentColor や本文の大きさに落とす。
+ * 文字はその場の色を受け継ぐので、地を塗らない。テーマの地を塗ると、暗い地に白い文字のグループの中で白地に白になる。
  */
 .wp-block-eventwatch-event-list {
-	--eventwatch-accent: var(--wp--preset--color--accent, var(--wp--preset--color--contrast, currentcolor));
-	--eventwatch-contrast: var(--wp--preset--color--contrast, currentcolor);
+	--eventwatch-accent: var(--wp--preset--color--accent, currentcolor);
+	--eventwatch-contrast: currentcolor;
 	--eventwatch-muted: var(--wp--preset--color--contrast-2, currentcolor);
 	--eventwatch-border: var(--wp--preset--color--contrast-3, currentcolor);
 	--eventwatch-line: var(--wp--preset--color--line, color-mix(in srgb, currentcolor 20%, transparent));
 	--eventwatch-surface: var(--wp--preset--color--base-2, color-mix(in srgb, currentcolor 6%, transparent));
-	--eventwatch-base: var(--wp--preset--color--base, transparent);
 	--eventwatch-radius: var(--wp--custom--radius, 0);
 	--eventwatch-small: var(--wp--preset--font-size--small, 0.875em);
 	--eventwatch-current-bg: var(--wp--preset--color--contrast, transparent);
@@ -23,27 +23,31 @@
 	box-sizing: border-box;
 }
 
-/* container-type で中身の幅に頼れないので、広げる。全幅はテーマの負の余白で広げるので、幅を決めない。 */
-.wp-block-eventwatch-event-list:not(.alignfull) {
+/*
+ * container-type で中身の幅に頼れないので、広げる。
+ * 全幅と幅広はテーマが負の余白や幅で広げるので、決めない。:where はテーマの指定に勝たないように使う。
+ */
+.wp-block-eventwatch-event-list:where(:not(.alignfull, .alignwide)) {
 	width: 100%;
 }
 
 /*
- * オーナーがブロックかその外側に色を付けたら、テーマの地・弱い色・accent を重ねない。
- * 文字はそこの色を受け継ぐので、テーマの地と重なると読めなくなる（暗い地に白い文字のグループの中など）。
+ * オーナーやテーマのスタイルがブロックかその外側に色を付けたら、テーマの弱い色と accent を重ねない。
+ * セクションのスタイルは has-background を付けず is-style-* だけを付ける。
  */
 .wp-block-eventwatch-event-list.has-text-color,
 .wp-block-eventwatch-event-list.has-background,
 .has-text-color .wp-block-eventwatch-event-list,
 .has-background .wp-block-eventwatch-event-list,
-.wp-block-cover .wp-block-eventwatch-event-list {
+.wp-block-cover .wp-block-eventwatch-event-list,
+.wp-block-group[class*="is-style-"] .wp-block-eventwatch-event-list,
+.wp-block-columns[class*="is-style-"] .wp-block-eventwatch-event-list,
+.wp-block-column[class*="is-style-"] .wp-block-eventwatch-event-list {
 	--eventwatch-accent: currentcolor;
-	--eventwatch-contrast: currentcolor;
 	--eventwatch-muted: currentcolor;
 	--eventwatch-border: currentcolor;
 	--eventwatch-line: color-mix(in srgb, currentcolor 30%, transparent);
 	--eventwatch-surface: color-mix(in srgb, currentcolor 10%, transparent);
-	--eventwatch-base: transparent;
 	--eventwatch-current-bg: transparent;
 	--eventwatch-current-fg: inherit;
 }
@@ -139,7 +143,6 @@
 	padding-bottom: var(--wp--preset--spacing--40, 1rem);
 	border: 1px solid var(--eventwatch-line);
 	border-radius: var(--eventwatch-radius);
-	background: var(--eventwatch-base);
 }
 
 .eventwatch-event--card > :not(.eventwatch-event__media) {

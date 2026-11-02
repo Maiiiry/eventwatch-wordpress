@@ -6,4 +6,4 @@
  */
 
 ?>
-<a class="override-card" href="<?php echo esc_url( $args['url'] ); ?>"><?php echo esc_html( wp_strip_all_tags( $args['title'] ) ); ?></a>
+<a class="override-card" href="<?php echo esc_url( $args['url'] ); ?>"><?php echo wp_kses_post( $args['title'] ); ?></a>

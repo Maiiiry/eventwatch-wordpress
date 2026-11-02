@@ -3,7 +3,7 @@
  * イベント 1 件のカード。
  *
  * テーマの eventwatch/event-card.php を置くと差し替えられる。
- * $args の値は Event_List::item_data() を参照。image は HTML で、ほかは文字列。
+ * $args の値は Event_List::item_data() を参照。image は HTML。title はタグの無い文字列だが実体参照を含むので wp_kses_post で出す。
  *
  * 読み上げがイベント名から始まるよう、DOM ではイベント名を先に置き、見た目の順は CSS で決める。
  *
