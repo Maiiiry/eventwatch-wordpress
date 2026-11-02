@@ -44,6 +44,22 @@ Classic themes can use the same search with a shortcode:
 
 `[eventwatch_search layout="list" per_page="6"]`
 
+= Event pages =
+
+Each published event has its own page at `/event/your-event/`. The page shows the title, featured image, content, dates, venue, organizer (your site name), map links, and buttons to add the event to a calendar and to share it. You can change the `event` part of the URL in Settings > EventWatch. Old URLs redirect to the new ones. Password-protected events show only the title and the password form until the visitor enters the password.
+
+Block themes can rearrange the page in the Site Editor: edit the Single Event template. The Event Detail block has a variation for each part of the page, and the Event Actions block holds the buttons. A template named `single-eventwatch_event.html` in your theme takes priority.
+
+Classic themes use `templates/single-event.php`. To change it, copy it to an `eventwatch` folder in your theme, or add a `single-eventwatch_event.php` template to your theme.
+
+The page also outputs schema.org `Event` data, a description, and Open Graph tags. If Yoast SEO, Rank Math, All in One SEO, SEOPress, or The SEO Framework is active, the description and Open Graph tags are left to that plugin. Use the filters `eventwatch_output_meta_tags` and `eventwatch_output_json_ld` to change this.
+
+= Maps =
+
+By default, the event page only links to Google Maps and OpenStreetMap, and opening the page does not connect to any outside service. If you enter a Google Maps API key in Settings > EventWatch, the page embeds a Google map of the venue, and **your visitors' browsers connect to Google when they open the page**. Google's terms and pricing apply to the key, and you are responsible for reviewing them: https://cloud.google.com/maps-platform/terms . The privacy policy is at https://policies.google.com/privacy .
+
+The links under "Share" and "Add to calendar" open Google Calendar, X, LINE, or Facebook only when a visitor chooses them.
+
 = Scheduled events =
 
 WordPress publishes scheduled events with WP-Cron, which only runs when someone visits your site. On a site with few visitors, a scheduled event may be published later than the time you set. To publish on time, run WP-Cron from your server's cron.

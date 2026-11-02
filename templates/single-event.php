@@ -17,7 +17,7 @@ get_header();
 while ( have_posts() ) {
 	the_post();
 	// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- ブロックの描画の中で値ごとにエスケープしている。
-	echo do_blocks( \EventWatch\Event_Detail::default_content() );
+	echo do_blocks( \EventWatch\Event_Detail::default_content( 'article' ) );
 }
 
 get_footer();

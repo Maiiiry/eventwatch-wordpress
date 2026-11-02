@@ -54,37 +54,38 @@ msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] "%1$s（ほか %2$d 日程）"
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-list.php:515
+#: includes/class-event-ical.php:165
+#: includes/class-event-list.php:594
 msgid "Online"
 msgstr "オンライン"
 
 #. translators: 1: when the event starts, 2: the day the event ends.
-#: includes/class-event-dates.php:98
+#: includes/class-event-dates.php:174
 #, php-format
 msgctxt "event date range"
 msgid "%1$s – %2$s"
 msgstr "%1$s〜%2$s"
 
 #. translators: PHP date format for the start of an event in the current year.
-#: includes/class-event-dates.php:114
+#: includes/class-event-dates.php:190
 msgctxt "event start this year"
 msgid "D, M j, Y, g:i A"
 msgstr "n月j日(D) G:i"
 
 #. translators: PHP date format for the start of an event in another year.
-#: includes/class-event-dates.php:117
+#: includes/class-event-dates.php:193
 msgctxt "event start in another year"
 msgid "D, M j, Y, g:i A"
 msgstr "Y年n月j日(D) G:i"
 
 #. translators: PHP date format for the last day of an event in the current year.
-#: includes/class-event-dates.php:130
+#: includes/class-event-dates.php:206
 msgctxt "event end this year"
 msgid "D, M j, Y"
 msgstr "n月j日(D)"
 
 #. translators: PHP date format for the last day of an event in another year.
-#: includes/class-event-dates.php:133
+#: includes/class-event-dates.php:209
 msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr "Y年n月j日(D)"
@@ -96,25 +97,25 @@ msgid "No upcoming events yet."
 msgstr "予定しているイベントはまだありません。"
 
 #. translators: %d: the number of other dates of the event.
-#: includes/class-event-list.php:394
+#: includes/class-event-list.php:473
 #, php-format
 msgid "+%d more date"
 msgid_plural "+%d more dates"
 msgstr[0] "ほか %d 日程"
 
-#: includes/class-event-list.php:475
+#: includes/class-event-list.php:554
 msgid "Previous"
 msgstr "前へ"
 
-#: includes/class-event-list.php:476
+#: includes/class-event-list.php:555
 msgid "Next"
 msgstr "次へ"
 
-#: includes/class-event-list.php:480
+#: includes/class-event-list.php:559
 msgid "Pagination"
 msgstr "ページ送り"
 
-#: includes/class-event-list.php:520
+#: includes/class-event-list.php:599
 msgid "Venue to be announced"
 msgstr "場所未定"
 
@@ -362,79 +363,79 @@ msgstr "鹿児島県"
 msgid "Okinawa"
 msgstr "沖縄県"
 
-#: includes/class-post-type.php:40
+#: includes/class-post-type.php:58
 msgid "Events"
 msgstr "イベント"
 
-#: includes/class-post-type.php:41
+#: includes/class-post-type.php:59
 msgid "Event"
 msgstr "イベント"
 
-#: includes/class-post-type.php:42
+#: includes/class-post-type.php:60
 msgid "Add New Event"
 msgstr "イベントを追加"
 
-#: includes/class-post-type.php:43
+#: includes/class-post-type.php:61
 msgid "Edit Event"
 msgstr "イベントを編集"
 
-#: includes/class-post-type.php:44
+#: includes/class-post-type.php:62
 msgid "New Event"
 msgstr "新しいイベント"
 
-#: includes/class-post-type.php:45
+#: includes/class-post-type.php:63
 msgid "View Event"
 msgstr "イベントを表示"
 
-#: includes/class-post-type.php:46
+#: includes/class-post-type.php:64
 msgid "View Events"
 msgstr "イベントを表示"
 
-#: includes/class-post-type.php:47
+#: includes/class-post-type.php:65
 msgid "Search Events"
 msgstr "イベントを検索"
 
-#: includes/class-post-type.php:48
+#: includes/class-post-type.php:66
 msgid "No events found."
 msgstr "イベントが見つかりませんでした。"
 
-#: includes/class-post-type.php:49
+#: includes/class-post-type.php:67
 msgid "No events found in Trash."
 msgstr "ゴミ箱にイベントはありません。"
 
-#: includes/class-post-type.php:50
+#: includes/class-post-type.php:68
 msgid "All Events"
 msgstr "イベント一覧"
 
-#: includes/class-post-type.php:51
+#: includes/class-post-type.php:69
 msgid "Event published."
 msgstr "イベントを公開しました。"
 
-#: includes/class-post-type.php:52
+#: includes/class-post-type.php:70
 msgid "Event scheduled."
 msgstr "イベントの公開を予約しました。"
 
-#: includes/class-post-type.php:53
+#: includes/class-post-type.php:71
 msgid "Event updated."
 msgstr "イベントを更新しました。"
 
-#: includes/class-post-type.php:54
+#: includes/class-post-type.php:72
 msgid "Event reverted to draft."
 msgstr "イベントを下書きに戻しました。"
 
-#: includes/class-post-type.php:94
+#: includes/class-post-type.php:112
 msgid "Event Categories"
 msgstr "イベントカテゴリー"
 
-#: includes/class-post-type.php:95
+#: includes/class-post-type.php:113
 msgid "Event Category"
 msgstr "イベントカテゴリー"
 
-#: includes/class-post-type.php:109
+#: includes/class-post-type.php:127
 msgid "Event Tags"
 msgstr "イベントタグ"
 
-#: includes/class-post-type.php:110
+#: includes/class-post-type.php:128
 msgid "Event Tag"
 msgstr "イベントタグ"
 
@@ -670,6 +671,8 @@ msgctxt "block description"
 msgid "Show the upcoming events of your site. The list follows your theme's colors and fonts."
 msgstr "サイトの開催予定のイベントを一覧で出します。色と書体はテーマに合わせます。"
 
+#: build/blocks/event-actions/block.json
+#: build/blocks/event-field/block.json
 #: build/blocks/event-list/block.json
 #: build/blocks/event-search/block.json
 #: build/blocks/past-events/block.json
@@ -677,6 +680,8 @@ msgctxt "block keyword"
 msgid "event"
 msgstr "イベント"
 
+#: build/blocks/event-actions/block.json
+#: build/blocks/event-field/block.json
 #: build/blocks/event-list/block.json
 msgctxt "block keyword"
 msgid "calendar"
@@ -766,11 +771,11 @@ msgstr "今月のイベントはありません。"
 msgid "No events in the next 30 days."
 msgstr "30 日以内のイベントはありません。"
 
-#: includes/class-event-patterns.php:34
+#: includes/class-event-patterns.php:33
 msgid "Past events"
 msgstr "終了したイベント"
 
-#: includes/class-event-patterns.php:35
+#: includes/class-event-patterns.php:34
 msgid "Events that have ended, newest first."
 msgstr "終わったイベントを、新しい順に並べています。"
 
@@ -779,32 +784,33 @@ msgstr "終わったイベントを、新しい順に並べています。"
 msgid "Events This Month"
 msgstr "今月のイベント"
 
-#: includes/class-event-patterns.php:45
+#: includes/class-event-patterns.php:44
 msgid "Events this month"
 msgstr "今月のイベント"
 
-#: includes/class-event-patterns.php:52
+#: includes/class-event-patterns.php:51
 #: build/blocks/event-list/index.js:1
 msgid "Coming Soon"
 msgstr "近日のイベント"
 
-#: includes/class-event-patterns.php:56
+#: includes/class-event-patterns.php:54
 msgctxt "heading of the next events"
 msgid "Coming soon"
 msgstr "近日のイベント"
 
-#: includes/class-event-patterns.php:63
+#: includes/class-event-patterns.php:64
 msgid "Past Events"
 msgstr "終了したイベント"
 
-#: includes/class-event-patterns.php:68
+#: includes/class-event-patterns.php:69
 msgid "Upcoming and Past Events"
 msgstr "開催予定と終了したイベント"
 
-#: includes/class-event-patterns.php:71
+#: includes/class-event-patterns.php:72
 msgid "Upcoming events"
 msgstr "開催予定のイベント"
 
+#: includes/class-event-detail.php:336
 #: templates/event-card.php:21
 #: templates/event-row.php:22
 msgctxt "label on an event that has ended"
@@ -878,3 +884,262 @@ msgstr "過去"
 msgctxt "block keyword"
 msgid "archive"
 msgstr "アーカイブ"
+
+#: build/blocks/event-actions/render.php:24
+msgid "Event actions"
+msgstr "このイベントの操作"
+
+#: includes/class-event-detail.php:94
+msgid "Single Event"
+msgstr "イベントの詳細"
+
+#: includes/class-event-detail.php:95
+msgid "Displays a single event."
+msgstr "1 件のイベントを表示します。"
+
+#: includes/class-event-detail.php:234
+msgid "Organizer"
+msgstr "主催"
+
+#: includes/class-event-detail.php:271
+msgid " (opens in a new tab)"
+msgstr "（新しいタブで開きます）"
+
+#: includes/class-event-detail.php:300
+#: build/blocks/event-field/index.js:1
+msgid "Back to events"
+msgstr "イベント一覧へ戻る"
+
+#: includes/class-event-detail.php:344
+msgid "Date & time"
+msgstr "日時"
+
+#: includes/class-event-detail.php:357
+msgid "See the description and the official page for how to join."
+msgstr "参加の方法は、本文と公式ページをご覧ください。"
+
+#: includes/class-event-detail.php:365
+msgid "Venue"
+msgstr "会場"
+
+#. translators: %s: the venue name or address.
+#: includes/class-event-detail.php:411
+#, php-format
+msgid "Venue map: %s"
+msgstr "会場の地図：%s"
+
+#: includes/class-event-detail.php:417
+msgid "Open in Google Maps"
+msgstr "Google マップで開く"
+
+#: includes/class-event-detail.php:427
+msgid "Open in OpenStreetMap"
+msgstr "OpenStreetMap で開く"
+
+#: includes/class-event-detail.php:489
+msgid "Download iCal (.ics)"
+msgstr "iCal（.ics）をダウンロード"
+
+#: includes/class-event-detail.php:492
+msgid "Google Calendar"
+msgstr "Google カレンダー"
+
+#: includes/class-event-detail.php:506
+#: includes/class-event-detail.php:507
+#: build/blocks/event-field/index.js:1
+msgid "Add to calendar"
+msgstr "カレンダーに追加"
+
+#: includes/class-event-detail.php:560
+#: build/blocks/event-field/index.js:1
+msgctxt "mark an event you are interested in"
+msgid "Save"
+msgstr "気になる"
+
+#: includes/class-event-detail.php:564
+msgid "Get a reminder in the app"
+msgstr "開催前にアプリでお知らせします"
+
+#: includes/class-event-detail.php:565
+msgid "Close"
+msgstr "閉じる"
+
+#: includes/class-event-detail.php:567
+msgid "Save this event in the EventWatch app, and we’ll send you a notification before it starts so you don’t forget."
+msgstr "EventWatch のアプリで気になるに入れると、行きたいイベントを忘れないよう、開催前に通知でお知らせします。"
+
+#: includes/class-event-detail.php:568
+msgid "Open in app"
+msgstr "アプリで開く"
+
+#: includes/class-event-detail.php:570
+msgid "Don’t have the app? Get it here."
+msgstr "アプリを入れていないときは、ここから入手できます。"
+
+#: includes/class-event-detail.php:571
+msgid "Get it on the App Store"
+msgstr "App Store で入手"
+
+#: includes/class-event-detail.php:571
+msgid "Get it on Google Play"
+msgstr "Google Play で入手"
+
+#: includes/class-event-detail.php:590
+msgid "Share on X"
+msgstr "X で共有"
+
+#: includes/class-event-detail.php:600
+msgid "Send on LINE"
+msgstr "LINE で送る"
+
+#: includes/class-event-detail.php:604
+msgid "Share on Facebook"
+msgstr "Facebook で共有"
+
+#: includes/class-event-detail.php:612
+msgid "Copy link"
+msgstr "リンクをコピー"
+
+#: includes/class-event-detail.php:628
+msgid "Link copied"
+msgstr "リンクをコピーしました"
+
+#: includes/class-event-detail.php:629
+msgid "The link could not be copied."
+msgstr "リンクをコピーできませんでした。"
+
+#: includes/class-event-detail.php:633
+#: includes/class-event-detail.php:634
+#: build/blocks/event-field/index.js:1
+msgid "Share"
+msgstr "共有"
+
+#: includes/class-event-detail.php:655
+#: build/blocks/event-field/index.js:1
+msgid "Visit official page"
+msgstr "公式ページを見る"
+
+#: includes/class-event-permalink.php:84
+msgid "Use only lowercase letters, numbers, and hyphens for the URL prefix."
+msgstr "URL の接頭辞には、半角の小文字・数字・ハイフンだけを使えます。"
+
+#: includes/class-event-permalink.php:86
+msgid "WordPress uses this word in its own URLs. Choose another URL prefix."
+msgstr "この語は WordPress が URL で使っています。別の接頭辞を選んでください。"
+
+#: includes/class-settings.php:115
+msgid "The Google Maps API key can contain only letters, numbers, hyphens, and underscores."
+msgstr "Google Maps の API キーに使えるのは、半角の英数字・ハイフン・アンダースコアだけです。"
+
+#: includes/class-settings.php:136
+msgid "Event pages"
+msgstr "イベントのページ"
+
+#: includes/class-settings.php:140
+msgid "URL prefix"
+msgstr "URL の接頭辞"
+
+#: includes/class-settings.php:148
+msgid "Event list page"
+msgstr "イベント一覧のページ"
+
+#: includes/class-settings.php:156
+msgid "Google Maps API key (optional)"
+msgstr "Google Maps の API キー（任意）"
+
+#: includes/class-settings.php:203
+msgid "Lowercase letters, numbers, and hyphens. When you change it, the old URLs redirect to the new ones."
+msgstr "半角の小文字・数字・ハイフンで入れます。変えると、旧い URL は新しい URL へ転送されます。"
+
+#: includes/class-settings.php:208
+msgid "This has no effect while your permalinks use the Plain setting."
+msgstr "パーマリンクの設定が「基本」の間は効きません。"
+
+#: includes/class-settings.php:224
+msgid "— Not set —"
+msgstr "— 選ばない —"
+
+#: includes/class-settings.php:230
+msgid "The “Back to events” link on event pages goes here. The link is hidden until you choose a page."
+msgstr "イベントのページの「イベント一覧へ戻る」の行き先です。選ぶまでリンクは出ません。"
+
+#: includes/class-settings.php:244
+msgid "Not set"
+msgstr "まだ入れていません"
+
+#: includes/class-settings.php:248
+msgid "When set, a venue map is embedded on event detail pages. When empty, only map links are shown."
+msgstr "入れると、イベントの詳細に会場の地図を埋め込みます。空のときは地図のリンクだけを出します。"
+
+#: includes/class-settings.php:249
+msgid "Embedding a map makes visitors’ browsers load the map from Google. The key appears in the page HTML, so restrict it to your site’s domain with an HTTP referrer restriction."
+msgstr "地図を埋め込むと、閲覧者のブラウザーが Google から地図を読み込みます。キーはページの HTML に出るので、HTTP リファラーの制限でサイトのドメインに絞ってください。"
+
+#: includes/class-settings.php:250
+msgid "Create the key in Google Cloud (with the Maps Embed API enabled). As the site owner, you’re responsible for reviewing Google’s terms and pricing. This key is not sent to EventWatch."
+msgstr "キーは Google Cloud で作ります（Maps Embed API を有効にしたキー）。Google の利用規約と料金は、サイトのオーナーの責任で確かめてください。このキーは EventWatch には送りません。"
+
+#: includes/class-settings.php:259
+msgid "How to get an API key (Google)"
+msgstr "API キーの取り方（Google）"
+
+#: build/blocks/event-field/index.js:1
+msgid "Event category"
+msgstr "イベントのカテゴリ"
+
+#: build/blocks/event-field/index.js:1
+msgid "Event date & time"
+msgstr "イベントの日時"
+
+#: build/blocks/event-field/index.js:1
+msgid "Event venue"
+msgstr "イベントの会場"
+
+#: build/blocks/event-field/index.js:1
+msgid "Event organizer"
+msgstr "イベントの主催"
+
+#: build/blocks/event-field/index.js:1
+msgid "Event map"
+msgstr "イベントの地図"
+
+#: build/blocks/event-actions/block.json
+msgctxt "block title"
+msgid "Event Actions"
+msgstr "イベントの操作"
+
+#: build/blocks/event-actions/block.json
+msgctxt "block description"
+msgid "A row of event actions: add to calendar, save, and share."
+msgstr "イベントの操作の列です（カレンダーに追加・気になる・共有）。"
+
+#: build/blocks/event-actions/block.json
+#: build/blocks/event-field/block.json
+msgctxt "block keyword"
+msgid "share"
+msgstr "共有"
+
+#: build/blocks/event-field/block.json
+msgctxt "block title"
+msgid "Event Detail"
+msgstr "イベントの詳細の欄"
+
+#: build/blocks/event-field/block.json
+msgctxt "block description"
+msgid "Show one part of the event's details, such as its dates or venue."
+msgstr "日時や会場など、イベントの詳細の 1 つの欄を出します。"
+
+#: build/blocks/event-field/block.json
+msgctxt "block keyword"
+msgid "date"
+msgstr "日時"
+
+#: build/blocks/event-field/block.json
+msgctxt "block keyword"
+msgid "venue"
+msgstr "会場"
+
+#: build/blocks/event-field/block.json
+msgctxt "block keyword"
+msgid "map"
+msgstr "地図"

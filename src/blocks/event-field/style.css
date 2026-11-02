@@ -70,12 +70,18 @@
 	border-bottom: 1px solid var(--eventwatch-line);
 }
 
-/* 区切りは最初の行の上に置く。 */
-.eventwatch-detail-facts > :first-child .eventwatch-detail__row {
+/* 区切りは最初の行の上に置く。クラシックテーマのグループは内側に要素を 1 つ挟む。 */
+.eventwatch-detail-facts .wp-block-eventwatch-event-field:first-child .eventwatch-detail__row {
 	border-top: 1px solid var(--eventwatch-line);
 }
 
-@container (min-width: 36rem) {
+/* 行の間にテーマの余白を入れない。クラシックテーマはグループの子に余白を付ける。 */
+.eventwatch-detail-facts .wp-block-eventwatch-event-field.wp-block-eventwatch-event-field {
+	margin-block: 0;
+}
+
+/* 本文の幅が狭いテーマでも、窓が 640 以上なら左に置けるよう閾値を低めにする。 */
+@container (min-width: 28rem) {
 
 	.eventwatch-detail__row {
 		grid-template-columns: 7em minmax(0, 1fr);
@@ -276,7 +282,7 @@
 }
 
 .eventwatch-detail__status:empty {
-	margin-top: -0.5rem;
+	position: absolute;
 }
 
 .eventwatch-detail__primary {
@@ -386,6 +392,16 @@
 	display: flex;
 	flex-wrap: wrap;
 	gap: 0.5rem;
+}
+
+/*
+ * Twenty Twenty-One はアイキャッチの画像にインラインで max-width と height を付ける。
+ * 枠に広げるには !important が要る。
+ */
+.eventwatch-detail-page .wp-block-post-featured-image img {
+	width: 100%;
+	max-width: 100% !important;
+	height: 100% !important;
 }
 
 /* テーマの指定に勝たないよう、幅だけを本文の幅へ寄せる（クラシックテーマに content-size が無いとき）。 */

@@ -147,6 +147,18 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * クラシックテーマのヘッダーが開く main と入れ子にならないよう、外側の要素を変えられる。
+	 */
+	public function test_default_content_outer_element() {
+		$html = Event_Detail::default_content( 'article' );
+
+		$this->assertStringNotContainsString( '<main', $html );
+		$this->assertStringNotContainsString( '</main', $html );
+		$this->assertStringContainsString( '<article class="wp-block-group eventwatch-detail-page"', $html );
+		$this->assertStringContainsString( '<main class="wp-block-group eventwatch-detail-page"', Event_Detail::default_content() );
+	}
+
+	/**
 	 * テンプレートがこの投稿タイプに登録される。
 	 */
 	public function test_block_template_is_registered() {

@@ -26,6 +26,7 @@ PHP と Composer は wp-env のコンテナの中で動かす。先に `npm run 
 - 最小の版は WordPress 6.7・PHP 7.4。上げるときは本体のヘッダーと `readme.txt` と CI の行列を一緒に直す
 - 配布物は `package.json` の `files` に書いたものだけ。実行に要るファイルを足したら、ここにも足す
 - `templates/` の `$args` はテーマが上書きで使う契約なので、キーを消す・意味を変えるときは readme も直す
+- 詳細のページの既定の並びは `Event_Detail::default_content()` の 1 か所。ブロックテーマのテンプレートと `templates/single-event.php` が共有する
 - cron のフックを足したら `Plugin::CRON_HOOKS` にも足す（無効化で外すため）
 - コードのコメントは日本語、画面の文言は英語を原文にする
 - wp-env のポートは 8885 / 8886。8888 は EventWatch の API サーバーが使う

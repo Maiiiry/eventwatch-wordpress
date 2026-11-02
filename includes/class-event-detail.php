@@ -80,13 +80,12 @@ class Event_Detail {
 			register_block_type( $build . 'event-field' );
 			register_block_type( $build . 'event-actions' );
 
-			foreach ( array( self::FIELD_BLOCK, self::ACTIONS_BLOCK ) as $name ) {
-				wp_set_script_translations(
-					generate_block_asset_handle( $name, 'editorScript' ),
-					'eventwatch',
-					plugin_dir_path( PLUGIN_FILE ) . 'languages'
-				);
-			}
+			// 操作の列の JS には文言が無い。題と説明は block.json からサーバーが訳す。
+			wp_set_script_translations(
+				generate_block_asset_handle( self::FIELD_BLOCK, 'editorScript' ),
+				'eventwatch',
+				plugin_dir_path( PLUGIN_FILE ) . 'languages'
+			);
 		}
 
 		register_block_template(
@@ -116,13 +115,14 @@ class Event_Detail {
 	 *
 	 * 余白は値で書く。blockGap はテーマが有効にしないと出力されず、spacing の preset もテーマが持つとは限らない。
 	 *
+	 * @param string $tag 外側の要素。クラシックテーマはヘッダーが main を開くので、入れ子にしない。
 	 * @return string
 	 */
-	public static function default_content() {
+	public static function default_content( $tag = 'main' ) {
 		$gap = '{"style":{"spacing":{"margin":{"top":"1.5rem"}}}';
 
-		return '<!-- wp:group {"tagName":"main","className":"eventwatch-detail-page","style":{"spacing":{"margin":{"top":"2rem","bottom":"3rem"}}},"layout":{"type":"constrained"}} -->' . "\n"
-			. '<main class="wp-block-group eventwatch-detail-page" style="margin-top:2rem;margin-bottom:3rem">'
+		return '<!-- wp:group {"tagName":"' . $tag . '","className":"eventwatch-detail-page","style":{"spacing":{"margin":{"top":"2rem","bottom":"3rem"}}},"layout":{"type":"constrained"}} -->' . "\n"
+			. '<' . $tag . ' class="wp-block-group eventwatch-detail-page" style="margin-top:2rem;margin-bottom:3rem">'
 			. '<!-- wp:eventwatch/event-field {"field":"back"} /-->' . "\n"
 			. '<!-- wp:eventwatch/event-field {"field":"category","style":{"spacing":{"margin":{"top":"1rem"}}}} /-->' . "\n"
 			. '<!-- wp:post-title {"level":1,"style":{"spacing":{"margin":{"top":"0.25rem"}}}} /-->' . "\n"
@@ -142,7 +142,7 @@ class Event_Detail {
 			. '<!-- wp:eventwatch/event-field {"field":"share"} /-->' . "\n"
 			. '<!-- /wp:eventwatch/event-actions -->' . "\n"
 			. '<!-- wp:eventwatch/event-field {"field":"official",' . substr( $gap, 1 ) . '} /-->'
-			. '</main>' . "\n"
+			. '</' . $tag . '>' . "\n"
 			. '<!-- /wp:group -->';
 	}
 
@@ -696,8 +696,8 @@ class Event_Detail {
 			return;
 		}
 
-		// JS が無いときは、メニューを開かずに中のリンクをそのまま見せる。
-		echo '<noscript><style>.eventwatch-detail__action > .eventwatch-detail__button[data-eventwatch-menu-trigger],.eventwatch-detail__action > .eventwatch-detail__button[data-eventwatch-dialog-open],.eventwatch-detail__copy,.eventwatch-detail__close{display:none}.eventwatch-detail__menu[hidden]{display:block;position:static}.eventwatch-detail__dialog{display:block;position:static}</style></noscript>' . "\n";
+		// JS が無いときは、メニューを開かずに中のリンクをそのまま見せる。CSS は head のこの後で読まれるので !important を付ける。
+		echo '<noscript><style>[data-eventwatch-menu-trigger],[data-eventwatch-dialog-open],.eventwatch-detail__copy,.eventwatch-detail__close{display:none!important}.eventwatch-detail__menu[hidden]{display:flex!important;position:static!important;border:0!important;background:none!important;color:inherit!important}.eventwatch-detail__dialog{display:flex!important;flex-direction:column;gap:1rem;position:static!important;width:auto!important;margin:0!important;padding:0!important;background:none!important;color:inherit!important}</style></noscript>' . "\n";
 
 		$post = get_queried_object();
 		if ( ! $post instanceof WP_Post || post_password_required( $post ) ) {
