@@ -578,6 +578,61 @@ class Event_List_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 同梱のテンプレートは、渡された値をそのまま信じない。テーマや保存の経路が変わっても守る。
+	 */
+	public function test_templates_escape_their_values() {
+		$data = array(
+			'id'       => 1,
+			'title'    => '<script>alert(1)</script>Concert',
+			'url'      => 'javascript:alert(2)',
+			'image'    => '',
+			'date'     => '<b>date</b>',
+			'datetime' => '"><i>',
+			'more'     => '<b>more</b>',
+			'venue'    => '<img src=x onerror=alert(3)>',
+			'category' => '<u>category</u>',
+		);
+
+		foreach ( array( 'event-card.php', 'event-row.php' ) as $name ) {
+			ob_start();
+			load_template( dirname( __DIR__, 2 ) . '/templates/' . $name, false, $data );
+			$html = (string) ob_get_clean();
+
+			$this->assertStringNotContainsString( '<script', $html, $name );
+			$this->assertStringNotContainsString( 'javascript:', $html, $name );
+			$this->assertStringNotContainsString( '<b>', $html, $name );
+			$this->assertStringNotContainsString( '<i>', $html, $name );
+			$this->assertStringNotContainsString( '<img', $html, $name );
+			$this->assertStringNotContainsString( '<u>', $html, $name );
+		}
+	}
+
+	/**
+	 * テンプレートへ渡す題から、危ないタグを落とす。テーマのテンプレートがそのまま出しても安全なように。
+	 */
+	public function test_item_title_is_sanitized_for_theme_templates() {
+		$post_id = $this->event( 'Concert', $this->future() );
+
+		// 保存の経路は権限のある人なら生の HTML を残せるので、読むときの値を差し替えて確かめる。
+		$raw = static function () {
+			return '<script>alert(1)</script>Concert';
+		};
+		add_filter( 'the_title', $raw );
+		$title = Event_List::item_data( get_post( $post_id ) )['title'];
+		remove_filter( 'the_title', $raw );
+
+		$this->assertStringNotContainsString( '<script', $title );
+		$this->assertStringContainsString( 'Concert', $title );
+	}
+
+	/**
+	 * 0 件の文は HTML として出さない。
+	 */
+	public function test_empty_text_is_escaped() {
+		$this->assertStringContainsString( 'A &amp; B', Event_List::render( array( 'emptyText' => 'A & B' ) ) );
+	}
+
+	/**
 	 * テーマのテンプレートでカードの描画を差し替えられる。リストは差し替えていないので、そのまま。
 	 */
 	public function test_theme_template_replaces_the_card() {
