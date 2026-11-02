@@ -587,6 +587,48 @@ class Past_Events_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 動く期間は、期間に入る最初の組の順に並ぶ。過ぎた回があるイベントが直近を押し出さない。
+	 */
+	public function test_period_orders_by_the_first_date_in_the_period() {
+		$this->event(
+			'series',
+			array(
+				array(
+					'start' => $this->wall( '-100 days 10:00' ),
+					'end'   => '',
+				),
+				array(
+					'start' => $this->wall( '+29 days 10:00' ),
+					'end'   => '',
+				),
+			)
+		);
+		$this->event( 'b', $this->dates( '+2 days 10:00' ) );
+		$this->event( 'a', $this->dates( '+1 day 10:00' ) );
+		$this->event( 'a2', $this->dates( '+1 day 10:00' ) );
+
+		$this->assertSame( array( 'a', 'a2', 'b', 'series' ), $this->upcoming( array( 'period' => 'next30Days' ) ) );
+		$this->assertSame(
+			array( 'series', 'b', 'a2', 'a' ),
+			$this->upcoming(
+				array(
+					'period' => 'next30Days',
+					'order'  => 'desc',
+				)
+			)
+		);
+		$this->assertSame(
+			array( 'a', 'a2' ),
+			$this->upcoming(
+				array(
+					'period'  => 'next30Days',
+					'perPage' => 2,
+				)
+			)
+		);
+	}
+
+	/**
 	 * 動く期間でもページ送りの件数は組で絞った後の数になる。当たりが無ければ 0 件。
 	 */
 	public function test_period_pagination_counts_filtered_events() {

@@ -251,7 +251,8 @@ class Event_List {
 	 * イベントを引く。既定は開催予定で、scope が past なら終了したものを終了の新しい順に引く。
 	 *
 	 * 配列のメタは比べられないので、判定と並べ替えは UTC の整数のメタで行う。日程の無いイベントはこのメタを持たないので出ない。
-	 * 期間は最初の開始と最後の終了の範囲で比べるので、組と組の間の期間にも当たる。並びも最初の開始なので、過ぎた回があるイベントは先に並ぶ。
+	 * 固定の日付は最初の開始と最後の終了の範囲で比べるので、組と組の間の期間にも当たる。並びも最初の開始なので、過ぎた回があるイベントは先に並ぶ。
+	 * 動く期間は組の単位で比べ、期間に入る最初の組の順に並べる。
 	 *
 	 * @param array $attributes normalize() を通した属性。
 	 * @param int   $page       ページ。
@@ -345,7 +346,7 @@ class Event_List {
 				'ID'                => $order,
 			);
 
-		// phpcs:disable WordPress.DB.SlowDBQuery -- 判定と絞り込みはメタとタームにしか持てない。件数は MAX_SIZE までに抑えている。
+		// phpcs:disable WordPress.DB.SlowDBQuery -- 判定と絞り込みはメタとタームにしか持てない。
 		$args = array(
 			'post_type'           => Post_Type::POST_TYPE,
 			// ログイン中でも、下書きや非公開を公開のページに混ぜない。
@@ -366,24 +367,28 @@ class Event_List {
 			$args['post__in'] = self::ids_in_period(
 				$args,
 				max( Event_Dates::upcoming_boundary(), $from->getTimestamp() ),
-				$to->modify( '+1 day' )->getTimestamp()
+				$to->modify( '+1 day' )->getTimestamp(),
+				$order
 			);
+			$args['orderby']  = 'post__in';
 		}
 
 		return new WP_Query( $args );
 	}
 
 	/**
-	 * 範囲に重なる組を持つイベントの ID。
+	 * 範囲に重なる組を持つイベントの ID を、範囲に入る最初の組の順に返す。
 	 *
-	 * メタの比較は最初の開始と最後の終了しか見ないので、組と組の間の期間にも当たる。「今月」と見出しを付けて、来月の回だけのイベントを出さないよう、組ごとに確かめる。
+	 * メタの比較は最初の開始と最後の終了しか見ないので、組と組の間の期間にも当たり、並びも過ぎた回の順になる。
+	 * 「今月」と見出しを付けて来月の回だけのイベントを出したり、件数を絞った「近日」で直近のイベントを押し出したりしないよう、組ごとに確かめる。
 	 *
-	 * @param array $args  絞り込みの条件を入れた WP_Query の引数。
-	 * @param int   $from  範囲の始まりの UTC の整数。
-	 * @param int   $until 範囲の終わりの UTC の整数。この時刻は含まない。
+	 * @param array  $args  絞り込みの条件を入れた WP_Query の引数。
+	 * @param int    $from  範囲の始まりの UTC の整数。
+	 * @param int    $until 範囲の終わりの UTC の整数。この時刻は含まない。
+	 * @param string $order ASC か DESC。
 	 * @return int[] 無ければ、どの投稿にも当たらない値。
 	 */
-	private static function ids_in_period( array $args, $from, $until ) {
+	private static function ids_in_period( array $args, $from, $until, $order ) {
 		$query = new WP_Query(
 			array_merge(
 				$args,
@@ -397,14 +402,26 @@ class Event_List {
 			)
 		);
 
-		$ids = array();
+		// fields => ids はメタを読み込まないので、1 件ごとに問い合わせないよう先に読む。
+		update_meta_cache( 'post', $query->posts );
+
+		$found = array();
 		foreach ( $query->posts as $post_id ) {
-			if ( Event_Dates::has_occurrence_between( (int) $post_id, $from, $until ) ) {
-				$ids[] = (int) $post_id;
+			$start = Event_Dates::first_start_between( (int) $post_id, $from, $until );
+			if ( null !== $start ) {
+				$found[] = array( $start, (int) $post_id );
 			}
 		}
 
-		return $ids ? $ids : array( 0 );
+		// 開始と ID で比べる。同じ開始でもページをまたいで順が動かない。
+		usort(
+			$found,
+			static function ( array $a, array $b ) use ( $order ) {
+				return 'DESC' === $order ? $b <=> $a : $a <=> $b;
+			}
+		);
+
+		return $found ? array_column( $found, 1 ) : array( 0 );
 	}
 
 	/**
