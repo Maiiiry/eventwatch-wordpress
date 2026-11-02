@@ -149,13 +149,13 @@ class Event_Search {
 	}
 
 	/**
-	 * キーワードを語に分ける。全角の空白でも分ける。
+	 * キーワードを語に分ける。u の指定で \s が全角の空白にも当たる。
 	 *
 	 * @param string $keyword キーワード。
 	 * @return string[]
 	 */
 	public static function keyword_terms( $keyword ) {
-		$terms = preg_split( '/[\s\x{3000}]+/u', $keyword, -1, PREG_SPLIT_NO_EMPTY );
+		$terms = preg_split( '/\s+/u', $keyword, -1, PREG_SPLIT_NO_EMPTY );
 
 		return array_slice( $terms ? $terms : array(), 0, self::MAX_KEYWORD_TERMS );
 	}

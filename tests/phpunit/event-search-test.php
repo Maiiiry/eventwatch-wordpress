@@ -367,6 +367,10 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'No events match your search.', $html );
 		$this->assertStringContainsString( 'eventwatch-search__hint', $html );
 		$this->assertSame( 2, substr_count( $html, 'eventwatch-search__clear" href="/search/?keep=1"' ) );
+
+		$_SERVER['REQUEST_URI'] = '/search/?a=1&b=2';
+		$this->reset_instances();
+		$this->assertSame( 2, substr_count( $this->render(), 'eventwatch-search__clear" href="/search/?a=1&#038;b=2"' ) );
 	}
 
 	/**
@@ -545,6 +549,10 @@ class Event_Search_Test extends WP_UnitTestCase {
 
 		$this->assertSame( $block, $shortcode );
 		$this->assertStringContainsString( 'is-layout-list', $shortcode );
+
+		$this->event( '別の会' );
+		$this->reset_instances();
+		$this->assertSame( 1, substr_count( do_shortcode( '[' . Event_Search_Block::SHORTCODE . ' per_page="1"]' ), 'eventwatch-events__item"' ) );
 	}
 
 	/**
