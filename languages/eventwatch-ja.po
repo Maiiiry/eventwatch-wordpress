@@ -1,0 +1,662 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: EventWatch Events 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventwatch\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Japanese\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2026-11-02T06:52:15+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Language: \n"
+"X-Generator: WP-CLI 2.12.0\n"
+"X-Domain: eventwatch\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. Plugin Name of the plugin
+#: eventwatch.php
+msgid "EventWatch Events"
+msgstr "EventWatch Events"
+
+#. Plugin URI of the plugin
+#: eventwatch.php
+msgid "https://github.com/eventwatch/eventwatch-wordpress"
+msgstr "https://github.com/eventwatch/eventwatch-wordpress"
+
+#. Description of the plugin
+#: eventwatch.php
+msgid "Publish your events on your WordPress site and list them on EventWatch."
+msgstr "イベントを WordPress のサイトで公開し、EventWatch にも掲載できます。"
+
+#. Author of the plugin
+#: eventwatch.php
+msgid "EventWatch"
+msgstr "EventWatch"
+
+#: includes/class-admin-columns.php:51
+msgid "Event date"
+msgstr "開催日"
+
+#: includes/class-admin-columns.php:52
+#: build/blocks/event-list/index.js:1
+#: build/index.js:7
+msgid "Prefecture"
+msgstr "都道府県"
+
+#. translators: 1: the first date of the event, 2: the number of other dates.
+#: includes/class-admin-columns.php:147
+#, php-format
+msgid "%1$s (+%2$d more date)"
+msgid_plural "%1$s (+%2$d more dates)"
+msgstr[0] "%1$s（ほか %2$d 日程）"
+
+#: includes/class-admin-columns.php:161
+#: includes/class-event-list.php:318
+msgid "Online"
+msgstr "オンライン"
+
+#. translators: 1: when the event starts, 2: the day the event ends.
+#: includes/class-event-dates.php:97
+#, php-format
+msgctxt "event date range"
+msgid "%1$s – %2$s"
+msgstr "%1$s〜%2$s"
+
+#. translators: PHP date format for the start of an event in the current year.
+#: includes/class-event-dates.php:113
+msgctxt "event start this year"
+msgid "D, M j, Y, g:i A"
+msgstr "n月j日(D) G:i"
+
+#. translators: PHP date format for the start of an event in another year.
+#: includes/class-event-dates.php:116
+msgctxt "event start in another year"
+msgid "D, M j, Y, g:i A"
+msgstr "Y年n月j日(D) G:i"
+
+#. translators: PHP date format for the last day of an event in the current year.
+#: includes/class-event-dates.php:129
+msgctxt "event end this year"
+msgid "D, M j, Y"
+msgstr "n月j日(D)"
+
+#. translators: PHP date format for the last day of an event in another year.
+#: includes/class-event-dates.php:132
+msgctxt "event end in another year"
+msgid "D, M j, Y"
+msgstr "Y年n月j日(D)"
+
+#: includes/class-event-list.php:70
+#: build/blocks/event-list/index.js:1
+msgid "No upcoming events yet."
+msgstr "予定しているイベントはまだありません。"
+
+#. translators: %d: the number of other dates of the event.
+#: includes/class-event-list.php:226
+#, php-format
+msgid "+%d more date"
+msgid_plural "+%d more dates"
+msgstr[0] "ほか %d 日程"
+
+#: includes/class-event-list.php:278
+msgid "Previous"
+msgstr "前へ"
+
+#: includes/class-event-list.php:279
+msgid "Next"
+msgstr "次へ"
+
+#: includes/class-event-list.php:283
+msgid "Pagination"
+msgstr "ページ送り"
+
+#: includes/class-event-list.php:323
+msgid "Venue to be announced"
+msgstr "場所未定"
+
+#: includes/class-event-meta.php:511
+msgid "Add at least one date before publishing this event."
+msgstr "公開する前に、日程を 1 つ以上入れてください。"
+
+#: includes/class-event-meta.php:520
+msgid "Enter both the venue name and the venue address, or leave both empty."
+msgstr "会場名と会場の住所は両方入れるか、両方空にしてください。"
+
+#: includes/class-event-meta.php:607
+msgid "One of the dates does not exist. Check the dates of this event."
+msgstr "存在しない日付があります。このイベントの日程を確かめてください。"
+
+#: includes/class-event-meta.php:613
+msgid "A date ends before it starts. Check the dates of this event."
+msgstr "開始より前に終わる日程があります。このイベントの日程を確かめてください。"
+
+#: includes/class-event-meta.php:625
+msgid "Two dates overlap or touch. Leave a gap between them, or combine them into one date."
+msgstr "重なっている、または続いている日程があります。間を空けるか、1 つの日程にまとめてください。"
+
+#: includes/class-event-options.php:31
+msgid "Competitions & contests"
+msgstr "大会・コンテスト"
+
+#: includes/class-event-options.php:32
+msgid "Performances & stage"
+msgstr "パフォーマンス・ステージ"
+
+#: includes/class-event-options.php:33
+msgid "Seminars & study groups"
+msgstr "セミナー・勉強会"
+
+#: includes/class-event-options.php:34
+msgid "Volunteering & charity"
+msgstr "ボランティア・チャリティ"
+
+#: includes/class-event-options.php:35
+msgid "Festivals & markets"
+msgstr "お祭り・マルシェ"
+
+#: includes/class-event-options.php:36
+msgid "Parties & meetups"
+msgstr "パーティ・交流会"
+
+#: includes/class-event-options.php:37
+msgid "Exhibitions & viewings"
+msgstr "展覧・鑑賞会"
+
+#: includes/class-event-options.php:38
+msgid "Hands-on & play"
+msgstr "体験・遊び"
+
+#: includes/class-event-options.php:39
+msgid "Other"
+msgstr "その他"
+
+#: includes/class-event-options.php:50
+msgid "Hokkaido"
+msgstr "北海道"
+
+#: includes/class-event-options.php:51
+msgid "Aomori"
+msgstr "青森県"
+
+#: includes/class-event-options.php:52
+msgid "Iwate"
+msgstr "岩手県"
+
+#: includes/class-event-options.php:53
+msgid "Miyagi"
+msgstr "宮城県"
+
+#: includes/class-event-options.php:54
+msgid "Akita"
+msgstr "秋田県"
+
+#: includes/class-event-options.php:55
+msgid "Yamagata"
+msgstr "山形県"
+
+#: includes/class-event-options.php:56
+msgid "Fukushima"
+msgstr "福島県"
+
+#: includes/class-event-options.php:57
+msgid "Ibaraki"
+msgstr "茨城県"
+
+#: includes/class-event-options.php:58
+msgid "Tochigi"
+msgstr "栃木県"
+
+#: includes/class-event-options.php:59
+msgid "Gunma"
+msgstr "群馬県"
+
+#: includes/class-event-options.php:60
+msgid "Saitama"
+msgstr "埼玉県"
+
+#: includes/class-event-options.php:61
+msgid "Chiba"
+msgstr "千葉県"
+
+#: includes/class-event-options.php:62
+msgid "Tokyo"
+msgstr "東京都"
+
+#: includes/class-event-options.php:63
+msgid "Kanagawa"
+msgstr "神奈川県"
+
+#: includes/class-event-options.php:64
+msgid "Niigata"
+msgstr "新潟県"
+
+#: includes/class-event-options.php:65
+msgid "Toyama"
+msgstr "富山県"
+
+#: includes/class-event-options.php:66
+msgid "Ishikawa"
+msgstr "石川県"
+
+#: includes/class-event-options.php:67
+msgid "Fukui"
+msgstr "福井県"
+
+#: includes/class-event-options.php:68
+msgid "Yamanashi"
+msgstr "山梨県"
+
+#: includes/class-event-options.php:69
+msgid "Nagano"
+msgstr "長野県"
+
+#: includes/class-event-options.php:70
+msgid "Gifu"
+msgstr "岐阜県"
+
+#: includes/class-event-options.php:71
+msgid "Shizuoka"
+msgstr "静岡県"
+
+#: includes/class-event-options.php:72
+msgid "Aichi"
+msgstr "愛知県"
+
+#: includes/class-event-options.php:73
+msgid "Mie"
+msgstr "三重県"
+
+#: includes/class-event-options.php:74
+msgid "Shiga"
+msgstr "滋賀県"
+
+#: includes/class-event-options.php:75
+msgid "Kyoto"
+msgstr "京都府"
+
+#: includes/class-event-options.php:76
+msgid "Osaka"
+msgstr "大阪府"
+
+#: includes/class-event-options.php:77
+msgid "Hyogo"
+msgstr "兵庫県"
+
+#: includes/class-event-options.php:78
+msgid "Nara"
+msgstr "奈良県"
+
+#: includes/class-event-options.php:79
+msgid "Wakayama"
+msgstr "和歌山県"
+
+#: includes/class-event-options.php:80
+msgid "Tottori"
+msgstr "鳥取県"
+
+#: includes/class-event-options.php:81
+msgid "Shimane"
+msgstr "島根県"
+
+#: includes/class-event-options.php:82
+msgid "Okayama"
+msgstr "岡山県"
+
+#: includes/class-event-options.php:83
+msgid "Hiroshima"
+msgstr "広島県"
+
+#: includes/class-event-options.php:84
+msgid "Yamaguchi"
+msgstr "山口県"
+
+#: includes/class-event-options.php:85
+msgid "Tokushima"
+msgstr "徳島県"
+
+#: includes/class-event-options.php:86
+msgid "Kagawa"
+msgstr "香川県"
+
+#: includes/class-event-options.php:87
+msgid "Ehime"
+msgstr "愛媛県"
+
+#: includes/class-event-options.php:88
+msgid "Kochi"
+msgstr "高知県"
+
+#: includes/class-event-options.php:89
+msgid "Fukuoka"
+msgstr "福岡県"
+
+#: includes/class-event-options.php:90
+msgid "Saga"
+msgstr "佐賀県"
+
+#: includes/class-event-options.php:91
+msgid "Nagasaki"
+msgstr "長崎県"
+
+#: includes/class-event-options.php:92
+msgid "Kumamoto"
+msgstr "熊本県"
+
+#: includes/class-event-options.php:93
+msgid "Oita"
+msgstr "大分県"
+
+#: includes/class-event-options.php:94
+msgid "Miyazaki"
+msgstr "宮崎県"
+
+#: includes/class-event-options.php:95
+msgid "Kagoshima"
+msgstr "鹿児島県"
+
+#: includes/class-event-options.php:96
+msgid "Okinawa"
+msgstr "沖縄県"
+
+#: includes/class-post-type.php:40
+msgid "Events"
+msgstr "イベント"
+
+#: includes/class-post-type.php:41
+msgid "Event"
+msgstr "イベント"
+
+#: includes/class-post-type.php:42
+msgid "Add New Event"
+msgstr "イベントを追加"
+
+#: includes/class-post-type.php:43
+msgid "Edit Event"
+msgstr "イベントを編集"
+
+#: includes/class-post-type.php:44
+msgid "New Event"
+msgstr "新しいイベント"
+
+#: includes/class-post-type.php:45
+msgid "View Event"
+msgstr "イベントを表示"
+
+#: includes/class-post-type.php:46
+msgid "View Events"
+msgstr "イベントを表示"
+
+#: includes/class-post-type.php:47
+msgid "Search Events"
+msgstr "イベントを検索"
+
+#: includes/class-post-type.php:48
+msgid "No events found."
+msgstr "イベントが見つかりませんでした。"
+
+#: includes/class-post-type.php:49
+msgid "No events found in Trash."
+msgstr "ゴミ箱にイベントはありません。"
+
+#: includes/class-post-type.php:50
+msgid "All Events"
+msgstr "イベント一覧"
+
+#: includes/class-post-type.php:51
+msgid "Event published."
+msgstr "イベントを公開しました。"
+
+#: includes/class-post-type.php:52
+msgid "Event scheduled."
+msgstr "イベントの公開を予約しました。"
+
+#: includes/class-post-type.php:53
+msgid "Event updated."
+msgstr "イベントを更新しました。"
+
+#: includes/class-post-type.php:54
+msgid "Event reverted to draft."
+msgstr "イベントを下書きに戻しました。"
+
+#: includes/class-post-type.php:94
+msgid "Event Categories"
+msgstr "イベントカテゴリー"
+
+#: includes/class-post-type.php:95
+msgid "Event Category"
+msgstr "イベントカテゴリー"
+
+#: includes/class-post-type.php:109
+msgid "Event Tags"
+msgstr "イベントタグ"
+
+#: includes/class-post-type.php:110
+msgid "Event Tag"
+msgstr "イベントタグ"
+
+#: build/blocks/event-list/index.js:1
+msgid "All"
+msgstr "すべて"
+
+#: build/blocks/event-list/index.js:1
+msgid "Display"
+msgstr "表示"
+
+#: build/blocks/event-list/index.js:1
+msgid "Layout"
+msgstr "表示形式"
+
+#: build/blocks/event-list/index.js:1
+msgid "Cards"
+msgstr "カード"
+
+#: build/blocks/event-list/index.js:1
+msgid "List"
+msgstr "リスト"
+
+#: build/blocks/event-list/index.js:1
+msgid "Events per page"
+msgstr "1 ページの件数"
+
+#: build/blocks/event-list/index.js:1
+msgid "Order"
+msgstr "並び"
+
+#: build/blocks/event-list/index.js:1
+msgid "Soonest first"
+msgstr "開催が近い順"
+
+#: build/blocks/event-list/index.js:1
+msgid "Latest first"
+msgstr "開催が遠い順"
+
+#: build/blocks/event-list/index.js:1
+msgid "Text when there are no events"
+msgstr "0 件のときの文"
+
+#: build/blocks/event-list/index.js:1
+msgid "Filters"
+msgstr "絞り込み"
+
+#: build/blocks/event-list/index.js:1
+msgid "Category"
+msgstr "カテゴリ"
+
+#: build/blocks/event-list/index.js:1
+msgid "Tag"
+msgstr "タグ"
+
+#: build/blocks/event-list/index.js:1
+msgid "From"
+msgstr "期間の始まり"
+
+#: build/blocks/event-list/index.js:1
+msgid "To"
+msgstr "期間の終わり"
+
+#. translators: %d: the position of the date in the list.
+#: build/index.js:2
+#, js-format
+msgid "Date %d"
+msgstr "日程 %d"
+
+#. translators: %d: the position of the date in the list.
+#: build/index.js:3
+#, js-format
+msgid "Remove this date (Date %d)"
+msgstr "この日程を消す（日程 %d）"
+
+#: build/index.js:3
+msgid "Remove this date"
+msgstr "この日程を消す"
+
+#: build/index.js:3
+msgid "Start"
+msgstr "開始"
+
+#. translators: %d: the position of the date in the list.
+#: build/index.js:4
+#, js-format
+msgid "Date %d: start date"
+msgstr "日程 %d：開始の日付"
+
+#. translators: %d: the position of the date in the list.
+#: build/index.js:5
+#, js-format
+msgid "Date %d: start time"
+msgstr "日程 %d：開始の時刻"
+
+#: build/index.js:5
+msgid "End"
+msgstr "終了"
+
+#. translators: %d: the position of the date in the list.
+#: build/index.js:6
+#, js-format
+msgid "Date %d: end date"
+msgstr "日程 %d：終了の日付"
+
+#. translators: %d: the position of the date in the list.
+#: build/index.js:7
+#, js-format
+msgid "Date %d: end time"
+msgstr "日程 %d：終了の時刻"
+
+#: build/index.js:7
+msgid "Enter both the start date and the start time."
+msgstr "開始の日付と時刻を両方入れてください。"
+
+#: build/index.js:7
+msgid "Enter both the end date and the end time, or leave both empty."
+msgstr "終了の日付と時刻は両方入れるか、両方空にしてください。"
+
+#: build/index.js:7
+msgid "This date does not exist."
+msgstr "この日付は存在しません。"
+
+#: build/index.js:7
+msgid "The end can’t be before the start."
+msgstr "終了は開始より後にしてください。"
+
+#: build/index.js:7
+msgid "This date overlaps or touches another date. Leave a gap between them."
+msgstr "ほかの日程と重なっている、または続いています。間を空けてください。"
+
+#: build/index.js:7
+msgid "Dates"
+msgstr "日程"
+
+#: build/index.js:7
+msgid "Add a date"
+msgstr "日程を足す"
+
+#: build/index.js:7
+msgid "Venue name"
+msgstr "会場名"
+
+#: build/index.js:7
+msgid "Enter the venue name too, or clear the address."
+msgstr "会場名も入れるか、住所を消してください。"
+
+#: build/index.js:7
+msgid "Venue address"
+msgstr "会場の住所"
+
+#: build/index.js:7
+msgid "Enter the venue address too, or clear the venue name."
+msgstr "会場の住所も入れるか、会場名を消してください。"
+
+#: build/index.js:7
+msgid "Held online"
+msgstr "オンラインで開催する"
+
+#: build/index.js:7
+msgid "When on, “Online” is shown instead of the venue name."
+msgstr "オンにすると、会場名の代わりに「オンライン」と出します。"
+
+#: build/index.js:7
+msgid "Select a prefecture"
+msgstr "選んでください"
+
+#: build/index.js:7
+msgid "EventWatch category"
+msgstr "EventWatch のカテゴリ"
+
+#: build/index.js:7
+msgid "Required to send to EventWatch. This is separate from your site’s categories."
+msgstr "EventWatch に送るときは必須です。サイトのカテゴリーとは別に選びます。"
+
+#: build/index.js:7
+msgid "Select a category"
+msgstr "選んでください"
+
+#: build/index.js:7
+msgid "Notes on dates"
+msgstr "日程の補足"
+
+#. translators: 1: the number of characters entered, 2: the limit.
+#: build/index.js:8
+#, js-format
+msgid "%1$d / %2$d characters"
+msgstr "%1$d / %2$d 字"
+
+#: build/index.js:8
+msgid "Separate official page (optional)"
+msgstr "別の公式ページ（任意）"
+
+#: build/index.js:8
+msgid "Enter a URL that starts with https:// or http://."
+msgstr "https:// か http:// で始まる URL を入れてください。"
+
+#: build/index.js:8
+msgid "When empty, this event’s page is sent to EventWatch as the official page."
+msgstr "空のときは、このイベントのページを EventWatch に公式ページとして送ります。"
+
+#: build/index.js:8
+msgid "Saving is paused. Open “Event details” and fix the errors."
+msgstr "保存を止めています。「イベントの情報」を開いて、誤りを直してください。"
+
+#: build/index.js:8
+msgid "Event details"
+msgstr "イベントの情報"
+
+#: build/blocks/event-list/block.json
+msgctxt "block title"
+msgid "Event List"
+msgstr "イベント一覧"
+
+#: build/blocks/event-list/block.json
+msgctxt "block description"
+msgid "Show the upcoming events of your site. The list follows your theme's colors and fonts."
+msgstr "サイトの開催予定のイベントを一覧で出します。色と書体はテーマに合わせます。"
+
+#: build/blocks/event-list/block.json
+msgctxt "block keyword"
+msgid "event"
+msgstr "イベント"
+
+#: build/blocks/event-list/block.json
+msgctxt "block keyword"
+msgid "calendar"
+msgstr "カレンダー"
