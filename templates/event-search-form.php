@@ -3,6 +3,7 @@
  * 検索のフォーム。
  *
  * テーマからは差し替えられない。Router への受け渡しの属性を保つため。
+ * autocomplete を止めるのは、戻ったときにブラウザーが打った値を復元して、URL の条件と欄が食い違うのを防ぐため。
  *
  * $args: conditions（Event_Search::conditions()）・categories・prefectures（値と語）・action・hidden（名前と値）・clear_url・suffix・interactive。
  *
@@ -20,6 +21,7 @@ $eventwatch_suffix     = $args['suffix'];
 	class="eventwatch-search__form"
 	role="search"
 	method="get"
+	autocomplete="off"
 	action="<?php echo esc_url( $args['action'] ); ?>"
 	aria-label="<?php esc_attr_e( 'Search events', 'eventwatch' ); ?>"
 	<?php if ( $args['interactive'] ) : ?>

@@ -453,6 +453,16 @@ class Event_Search_Test extends WP_UnitTestCase {
 		$this->assertStringContainsString( 'override-card', $html );
 	}
 
+	/**
+	 * 名前付きの import に畳まれると、withSyncEvent の無い WordPress 6.7 でモジュールごと読めなくなる。
+	 */
+	public function test_view_module_does_not_import_names_missing_from_the_minimum_version() {
+		$view = (string) file_get_contents( dirname( __DIR__, 2 ) . '/build/blocks/event-search/view.js' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- ビルドの結果を読むだけ。
+
+		$this->assertStringContainsString( 'withSyncEvent', $view );
+		$this->assertDoesNotMatchRegularExpression( '/import\s*\{[^}]*withSyncEvent/', $view );
+	}
+
 	public function test_rendering_makes_no_http_request() {
 		$requests = 0;
 		$watch    = static function ( $preempt ) use ( &$requests ) {

@@ -2,9 +2,11 @@ import * as interactivity from '@wordpress/interactivity';
 
 const { store, getContext, getElement } = interactivity;
 
-// 名前付きで import すると、この名前の無い WordPress 6.7 でモジュールごと読めなくなる。
 // 新しい版は、これで包まないと preventDefault より先に本体の既定の動作が走る。
-const withSyncEvent = interactivity.withSyncEvent ?? ( ( action ) => action );
+// この名前の無い WordPress 6.7 でも読めるよう、名前を変数で引く。interactivity.withSyncEvent と書くと、
+// webpack が名前付きの import に畳み、6.7 でモジュールごと読めなくなる。
+const SYNC_EVENT = 'withSyncEvent';
+const withSyncEvent = interactivity[ SYNC_EVENT ] ?? ( ( action ) => action );
 
 function isPlainClick( event ) {
 	return (
