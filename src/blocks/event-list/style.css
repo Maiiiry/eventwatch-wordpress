@@ -1,5 +1,5 @@
 /*
- * 値はテーマの preset だけを参照する。色・書体・余白をここで決めない。
+ * 値はテーマの preset を参照し、色・書体・余白をここで決めない。
  * テーマに無い preset は currentColor や本文の大きさに落とす。
  * 文字はその場の色を受け継ぐので、地を塗らない。テーマの地を塗ると、暗い地に白い文字のグループの中で白地に白になる。
  */
@@ -13,10 +13,13 @@
 	--eventwatch-radius: var(--wp--custom--radius, 0);
 	--eventwatch-small: var(--wp--preset--font-size--small, 0.875em);
 
-	/* 塗りと文字の片方だけが preset に無いテーマでも、同じ色にならないようシステムの色で補う。 */
+	/*
+	 * 塗りと文字の片方だけが preset に無いときは、システムの色で補う。
+	 * システムの色はテーマの地を知らないので、片方だけを持つ暗いテーマでは読みにくいことがある。
+	 */
 	--eventwatch-current-bg: var(--wp--preset--color--contrast, canvastext);
 	--eventwatch-current-fg: var(--wp--preset--color--base, canvas);
-	--eventwatch-current-border: var(--wp--preset--color--contrast, canvastext);
+	--eventwatch-current-border: var(--wp--preset--color--contrast, currentcolor);
 
 	/* 列の切り替えはブロックの幅で決める。2 カラムの中に置いても崩れないように。 */
 	container-type: inline-size;
