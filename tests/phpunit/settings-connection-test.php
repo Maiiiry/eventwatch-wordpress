@@ -526,6 +526,29 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 固定のキーは複製でも消えないので、そのことを選ぶ前に伝える。
+	 */
+	public function test_copy_notice_explains_the_fixed_key() {
+		$this->log_in_as_admin();
+		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		add_filter(
+			'eventwatch_fixed_api_key',
+			static function () {
+				return self::KEY;
+			}
+		);
+
+		$html = $this->notices_on( 'settings_page_eventwatch' );
+
+		$this->assertStringContainsString( 'wp-config.php', $html );
+		$this->assertStringNotContainsString( self::KEY, $html );
+
+		$this->run_action( Connection_Admin::ACTION_COPY, array( Connection_Admin::class, 'handle_copy' ) );
+		$this->assertSame( self::KEY, Connection::api_key() );
+		$this->assertFalse( Site_Identity::has_changed() );
+	}
+
+	/**
 	 * 直せない編集者には出さない。
 	 */
 	public function test_notices_only_for_administrators() {

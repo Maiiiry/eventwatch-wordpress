@@ -273,7 +273,7 @@ class Settings {
 			. '.eventwatch-key details[open]{flex-basis:100%}'
 			. '.eventwatch-key__change{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}'
 			. '.eventwatch-key__change label{flex-basis:100%}'
-			. '.eventwatch-status{display:flex;gap:4px;margin:8px 0 0;max-width:40em}'
+			. '.eventwatch-status{display:flex;gap:4px;margin:8px 0 0}'
 			. '.eventwatch-status .dashicons{flex:none}'
 		);
 	}

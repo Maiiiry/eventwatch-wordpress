@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-02T13:03:38+00:00\n"
+"POT-Creation-Date: 2026-11-02T13:07:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -72,75 +72,83 @@ msgstr ""
 msgid "The new URL was saved, and sending to EventWatch has resumed."
 msgstr ""
 
-#: includes/class-connection-admin.php:103
+#: includes/class-connection-admin.php:105
+msgid "This site is now treated as a separate site. It keeps using the API key set in wp-config.php."
+msgstr ""
+
+#: includes/class-connection-admin.php:106
 msgid "This site is now treated as a separate site. Its saved API key was removed. To send events from this site, enter a key."
 msgstr ""
 
 #. translators: %s: organization name on EventWatch.
-#: includes/class-connection-admin.php:188
+#: includes/class-connection-admin.php:193
 #, php-format
 msgid "Connected to EventWatch (%s)"
 msgstr ""
 
-#: includes/class-connection-admin.php:190
+#: includes/class-connection-admin.php:195
 msgid "EventWatch rejected this API key. It may have been revoked, or the person who issued it may have left your organization or stopped being an owner. Ask an owner of your organization to issue a new key under Organization settings › Site connection, then enter it here."
 msgstr ""
 
-#: includes/class-connection-admin.php:192
+#: includes/class-connection-admin.php:197
 msgid "Your organization is suspended on EventWatch, so nothing can be sent for now. This isn’t a problem with your API key, so you don’t need to change it. Please contact EventWatch."
 msgstr ""
 
-#: includes/class-connection-admin.php:194
+#: includes/class-connection-admin.php:199
 msgid "EventWatch doesn’t allow this API key to be used for this site. Please contact EventWatch."
 msgstr ""
 
-#: includes/class-connection-admin.php:196
+#: includes/class-connection-admin.php:201
 msgid "Couldn’t confirm the connection to EventWatch. Wait a moment, then try again. Your site and events aren’t affected."
 msgstr ""
 
-#: includes/class-connection-admin.php:199
+#: includes/class-connection-admin.php:204
 msgid "Not checked yet. Use “Check connection” to confirm that this key works."
 msgstr ""
 
-#: includes/class-connection-admin.php:222
+#: includes/class-connection-admin.php:227
 msgid "Sorry, you are not allowed to manage options for this site."
 msgstr ""
 
-#: includes/class-connection-admin.php:265
+#: includes/class-connection-admin.php:270
 msgid "To list these events on EventWatch, enter an EventWatch API key. Your site works without one."
 msgstr ""
 
-#: includes/class-connection-admin.php:271
+#: includes/class-connection-admin.php:276
 msgid "Don’t show this again"
 msgstr ""
 
-#: includes/class-connection-admin.php:283
+#: includes/class-connection-admin.php:288
 msgid "Sending to EventWatch is stopped because this site’s URL has changed."
 msgstr ""
 
 #. translators: 1: site URL when it was last confirmed, 2: current site URL.
-#: includes/class-connection-admin.php:287
+#: includes/class-connection-admin.php:292
 #, php-format
 msgid "Saved URL: %1$s. Current URL: %2$s. Nothing is sent until you choose, so a copy of your site can’t change your live listings."
 msgstr ""
 
-#: includes/class-connection-admin.php:301
+#: includes/class-connection-admin.php:308
+msgid "If this is a copy, it becomes a separate site. The API key set in wp-config.php can’t be removed here, so this copy keeps sending events with that key. Remove it from wp-config.php first if this copy shouldn’t send events."
+msgstr ""
+
+#: includes/class-connection-admin.php:309
 msgid "If this is a copy, it becomes a separate site. Its saved API key is removed, and you enter a key again only if this copy should send events."
 msgstr ""
 
-#: includes/class-connection-admin.php:302
+#: includes/class-connection-admin.php:311
 msgid "If the site moved, sending continues as the same site."
 msgstr ""
 
-#: includes/class-connection-admin.php:304
+#: includes/class-connection-admin.php:313
 msgid "This is a copy"
 msgstr ""
 
-#: includes/class-connection-admin.php:306
+#: includes/class-connection-admin.php:315
 msgid "The site moved"
 msgstr ""
 
-#: includes/class-connection-admin.php:319
+#: includes/class-connection-admin.php:328
 msgid "Open EventWatch settings"
 msgstr ""
 

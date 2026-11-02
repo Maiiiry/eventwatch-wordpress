@@ -53,7 +53,7 @@ class Connection_Admin {
 
 		if ( Connection::CONNECTED === $state['status'] ) {
 			self::report( self::status_text( $state ), 'success' );
-		} elseif ( Connection::UNREACHABLE === $state['status'] ) {
+		} elseif ( in_array( $state['status'], array( Connection::UNREACHABLE, Connection::FORBIDDEN ), true ) ) {
 			self::report( self::status_text( $state ), 'warning' );
 		}
 		// 失効と停止は、通知が同じ内容を出す。
@@ -100,7 +100,12 @@ class Connection_Admin {
 		self::authorize( self::ACTION_COPY );
 
 		Site_Identity::use_as_copy();
-		self::report( __( 'This site is now treated as a separate site. Its saved API key was removed. To send events from this site, enter a key.', 'eventwatch' ), 'success' );
+		self::report(
+			'' !== Connection::fixed_key()
+				? __( 'This site is now treated as a separate site. It keeps using the API key set in wp-config.php.', 'eventwatch' )
+				: __( 'This site is now treated as a separate site. Its saved API key was removed. To send events from this site, enter a key.', 'eventwatch' ),
+			'success'
+		);
 
 		self::back_to_settings();
 	}
@@ -298,7 +303,11 @@ class Connection_Admin {
 
 		printf(
 			'<ul><li>%1$s</li><li>%2$s</li></ul><p class="eventwatch-buttons"><button type="submit" class="button" form="%3$s">%4$s</button> <button type="submit" class="button" form="%5$s">%6$s</button></p></div>',
-			esc_html__( 'If this is a copy, it becomes a separate site. Its saved API key is removed, and you enter a key again only if this copy should send events.', 'eventwatch' ),
+			esc_html(
+				'' !== Connection::fixed_key()
+					? __( 'If this is a copy, it becomes a separate site. The API key set in wp-config.php can’t be removed here, so this copy keeps sending events with that key. Remove it from wp-config.php first if this copy shouldn’t send events.', 'eventwatch' )
+					: __( 'If this is a copy, it becomes a separate site. Its saved API key is removed, and you enter a key again only if this copy should send events.', 'eventwatch' )
+			),
 			esc_html__( 'If the site moved, sending continues as the same site.', 'eventwatch' ),
 			esc_attr( self::ACTION_COPY ),
 			esc_html__( 'This is a copy', 'eventwatch' ),
