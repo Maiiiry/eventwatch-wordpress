@@ -1,0 +1,519 @@
+import {
+	Button,
+	SelectControl,
+	TextControl,
+	TextareaControl,
+	ToggleControl,
+} from '@wordpress/components';
+import { useEntityProp } from '@wordpress/core-data';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
+import {
+	PluginDocumentSettingPanel,
+	store as editorStore,
+} from '@wordpress/editor';
+import { useEffect, useRef, useState } from '@wordpress/element';
+import { __, sprintf } from '@wordpress/i18n';
+import { store as preferencesStore } from '@wordpress/preferences';
+
+import {
+	ERROR_END_BEFORE_START,
+	ERROR_END_INCOMPLETE,
+	ERROR_INVALID_DATE,
+	ERROR_OVERLAP,
+	ERROR_START_INCOMPLETE,
+	MAX_ADDRESS,
+	MAX_NOTE,
+	MAX_RANGES,
+	MAX_URL,
+	MAX_VENUE_NAME,
+	countCharacters,
+	emptyRow,
+	evaluateRows,
+	isValidUrl,
+	isVenueIncomplete,
+	rowsFromOccurrences,
+} from './validate';
+
+export const PLUGIN_NAME = 'eventwatch-event-details';
+const PANEL_NAME = 'event-details';
+const POST_TYPE = 'eventwatch_event';
+const LOCK_NAME = 'eventwatch-event-details';
+const PREFERENCE_SCOPE = 'eventwatch';
+const PREFERENCE_OPENED = 'eventDetailsOpenedOnce';
+
+const OCCURRENCES = 'eventwatch_occurrences';
+
+const { categories = [], prefectures = [] } = window.eventwatchEditor ?? {};
+
+const fieldId = ( index, field ) =>
+	`eventwatch-occurrence-${ index }-${ field }`;
+
+const rowErrorText = ( code ) =>
+	( {
+		[ ERROR_START_INCOMPLETE ]: __(
+			'Enter both the start date and the start time.',
+			'eventwatch'
+		),
+		[ ERROR_END_INCOMPLETE ]: __(
+			'Enter both the end date and the end time, or leave both empty.',
+			'eventwatch'
+		),
+		[ ERROR_INVALID_DATE ]: __( 'This date does not exist.', 'eventwatch' ),
+		[ ERROR_END_BEFORE_START ]: __(
+			'The end can’t be before the start.',
+			'eventwatch'
+		),
+		[ ERROR_OVERLAP ]: __(
+			'This date overlaps or touches another date. Leave a gap between them.',
+			'eventwatch'
+		),
+	} )[ code ];
+
+const FieldError = ( { id, children } ) => (
+	<span id={ id } className="eventwatch-field-error">
+		<svg
+			width="16"
+			height="16"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="1.8"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			aria-hidden="true"
+		>
+			<path d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+		</svg>
+		<span>{ children }</span>
+	</span>
+);
+
+const OccurrenceRow = ( {
+	index,
+	row,
+	error,
+	canRemove,
+	onChange,
+	onRemove,
+} ) => {
+	const number = index + 1;
+	const errorId = error ? fieldId( index, 'error' ) : undefined;
+	const describe = {
+		'aria-describedby': errorId,
+		'aria-invalid': error ? true : undefined,
+	};
+	const input = ( field, type, label ) => (
+		<TextControl
+			__next40pxDefaultSize
+			__nextHasNoMarginBottom
+			id={ fieldId( index, field ) }
+			type={ type }
+			label={ label }
+			hideLabelFromVision
+			value={ row[ field ] }
+			onChange={ ( value ) => onChange( index, field, value ) }
+			{ ...describe }
+		/>
+	);
+
+	return (
+		<div
+			className={
+				'eventwatch-occurrence' +
+				( error ? ' eventwatch-occurrence--error' : '' )
+			}
+		>
+			<div className="eventwatch-occurrence__head">
+				<span className="eventwatch-occurrence__title">
+					{ sprintf(
+						/* translators: %d: the position of the date in the list. */
+						__( 'Date %d', 'eventwatch' ),
+						number
+					) }
+				</span>
+				{ canRemove && (
+					<Button
+						id={ fieldId( index, 'remove' ) }
+						variant="link"
+						isDestructive
+						onClick={ () => onRemove( index ) }
+						// 読み上げの名前は、見えている文から始める。
+						label={ sprintf(
+							/* translators: %d: the position of the date in the list. */
+							__( 'Remove this date (Date %d)', 'eventwatch' ),
+							number
+						) }
+						showTooltip={ false }
+					>
+						{ __( 'Remove this date', 'eventwatch' ) }
+					</Button>
+				) }
+			</div>
+			<div className="eventwatch-occurrence__grid">
+				<span aria-hidden="true">{ __( 'Start', 'eventwatch' ) }</span>
+				{ input(
+					'startDate',
+					'date',
+					sprintf(
+						/* translators: %d: the position of the date in the list. */
+						__( 'Date %d: start date', 'eventwatch' ),
+						number
+					)
+				) }
+				{ input(
+					'startTime',
+					'time',
+					sprintf(
+						/* translators: %d: the position of the date in the list. */
+						__( 'Date %d: start time', 'eventwatch' ),
+						number
+					)
+				) }
+				<span aria-hidden="true">{ __( 'End', 'eventwatch' ) }</span>
+				{ input(
+					'endDate',
+					'date',
+					sprintf(
+						/* translators: %d: the position of the date in the list. */
+						__( 'Date %d: end date', 'eventwatch' ),
+						number
+					)
+				) }
+				{ input(
+					'endTime',
+					'time',
+					sprintf(
+						/* translators: %d: the position of the date in the list. */
+						__( 'Date %d: end time', 'eventwatch' ),
+						number
+					)
+				) }
+			</div>
+			{ error && (
+				<FieldError id={ errorId }>
+					{ rowErrorText( error ) }
+				</FieldError>
+			) }
+		</div>
+	);
+};
+
+const EventFields = () => {
+	const [ meta, setMeta ] = useEntityProp( 'postType', POST_TYPE, 'meta' );
+	const stored = meta?.[ OCCURRENCES ];
+
+	const [ rows, setRows ] = useState( () => rowsFromOccurrences( stored ) );
+	const [ focusTarget, setFocusTarget ] = useState( null );
+	const lastWritten = useRef( JSON.stringify( stored ?? [] ) );
+
+	// 保存後の並べ替えや取り消しでメタが変わったら、欄を読み直す。自分が書いた値では読み直さない。
+	useEffect( () => {
+		const serialized = JSON.stringify( stored ?? [] );
+		if ( serialized !== lastWritten.current ) {
+			lastWritten.current = serialized;
+			setRows( rowsFromOccurrences( stored ) );
+		}
+	}, [ stored ] );
+
+	useEffect( () => {
+		if ( focusTarget ) {
+			document.getElementById( focusTarget )?.focus();
+			setFocusTarget( null );
+		}
+	}, [ focusTarget ] );
+
+	const setField = ( key, value ) => setMeta( { ...meta, [ key ]: value } );
+
+	const { errors: rowErrors } = evaluateRows( rows );
+
+	const updateRows = ( next ) => {
+		setRows( next );
+		const { errors, occurrences } = evaluateRows( next );
+		// 誤りのある間はメタを変えない。保存を止めているので、最後の正しい値が残る。
+		if ( Object.keys( errors ).length ) {
+			return;
+		}
+		const serialized = JSON.stringify( occurrences );
+		if ( serialized !== lastWritten.current ) {
+			lastWritten.current = serialized;
+			setField( OCCURRENCES, occurrences );
+		}
+	};
+
+	const changeRow = ( index, field, value ) =>
+		updateRows(
+			rows.map( ( row, i ) =>
+				i === index ? { ...row, [ field ]: value } : row
+			)
+		);
+
+	const addRow = () => {
+		setFocusTarget( fieldId( rows.length, 'startDate' ) );
+		updateRows( [ ...rows, emptyRow() ] );
+	};
+
+	// 押したボタンが消えるので、次の組の同じボタンか、無ければ前の組の最初の欄へ移す。
+	const removeRow = ( index ) => {
+		const next = rows.filter( ( _row, i ) => i !== index );
+		if ( next.length === 1 ) {
+			setFocusTarget( fieldId( 0, 'startDate' ) );
+		} else if ( index < next.length ) {
+			setFocusTarget( fieldId( index, 'remove' ) );
+		} else {
+			setFocusTarget( fieldId( index - 1, 'startDate' ) );
+		}
+		updateRows( next );
+	};
+
+	const venueName = meta?.eventwatch_venue_name ?? '';
+	const venueAddress = meta?.eventwatch_venue_address ?? '';
+	const url = meta?.eventwatch_url ?? '';
+	const note = meta?.eventwatch_schedule_note ?? '';
+
+	const venueIncomplete = isVenueIncomplete( venueName, venueAddress );
+	const urlInvalid = ! isValidUrl( url );
+	const hasErrors =
+		Object.keys( rowErrors ).length > 0 || venueIncomplete || urlInvalid;
+
+	const { lockPostSaving, unlockPostSaving } = useDispatch( editorStore );
+	useEffect( () => {
+		if ( hasErrors ) {
+			lockPostSaving( LOCK_NAME );
+		} else {
+			unlockPostSaving( LOCK_NAME );
+		}
+		return () => unlockPostSaving( LOCK_NAME );
+	}, [ hasErrors, lockPostSaving, unlockPostSaving ] );
+
+	return (
+		<div className="eventwatch-fields">
+			<fieldset className="eventwatch-occurrences">
+				<legend>{ __( 'Dates', 'eventwatch' ) }</legend>
+				{ rows.map( ( row, index ) => (
+					<OccurrenceRow
+						key={ index }
+						index={ index }
+						row={ row }
+						error={ rowErrors[ index ] }
+						canRemove={ rows.length > 1 }
+						onChange={ changeRow }
+						onRemove={ removeRow }
+					/>
+				) ) }
+				<Button
+					__next40pxDefaultSize
+					variant="secondary"
+					className="eventwatch-occurrences__add"
+					disabled={ rows.length >= MAX_RANGES }
+					accessibleWhenDisabled
+					onClick={ addRow }
+				>
+					{ __( 'Add a date', 'eventwatch' ) }
+				</Button>
+			</fieldset>
+
+			<TextControl
+				__next40pxDefaultSize
+				__nextHasNoMarginBottom
+				id="eventwatch-field-venue-name"
+				className={
+					venueIncomplete && ! venueName.trim()
+						? 'eventwatch-control--error'
+						: undefined
+				}
+				label={ __( 'Venue name', 'eventwatch' ) }
+				maxLength={ MAX_VENUE_NAME }
+				value={ venueName }
+				onChange={ ( value ) =>
+					setField( 'eventwatch_venue_name', value )
+				}
+				help={
+					venueIncomplete && ! venueName.trim() ? (
+						<FieldError>
+							{ __(
+								'Enter the venue name too, or clear the address.',
+								'eventwatch'
+							) }
+						</FieldError>
+					) : undefined
+				}
+			/>
+			<TextareaControl
+				__nextHasNoMarginBottom
+				id="eventwatch-field-venue-address"
+				className={
+					venueIncomplete && ! venueAddress.trim()
+						? 'eventwatch-control--error'
+						: undefined
+				}
+				label={ __( 'Venue address', 'eventwatch' ) }
+				rows={ 2 }
+				maxLength={ MAX_ADDRESS }
+				value={ venueAddress }
+				onChange={ ( value ) =>
+					setField( 'eventwatch_venue_address', value )
+				}
+				help={
+					venueIncomplete && ! venueAddress.trim() ? (
+						<FieldError>
+							{ __(
+								'Enter the venue address too, or clear the venue name.',
+								'eventwatch'
+							) }
+						</FieldError>
+					) : undefined
+				}
+			/>
+			<ToggleControl
+				__nextHasNoMarginBottom
+				id="eventwatch-field-online"
+				label={ __( 'Held online', 'eventwatch' ) }
+				help={ __(
+					'When on, “Online” is shown instead of the venue name.',
+					'eventwatch'
+				) }
+				checked={ Boolean( meta?.eventwatch_online ) }
+				onChange={ ( value ) => setField( 'eventwatch_online', value ) }
+			/>
+			<SelectControl
+				__next40pxDefaultSize
+				__nextHasNoMarginBottom
+				id="eventwatch-field-prefecture"
+				label={ __( 'Prefecture', 'eventwatch' ) }
+				value={ String( meta?.eventwatch_prefecture ?? 0 ) }
+				options={ [
+					{
+						value: '0',
+						label: __( 'Select a prefecture', 'eventwatch' ),
+					},
+					...prefectures,
+				] }
+				onChange={ ( value ) =>
+					setField( 'eventwatch_prefecture', Number( value ) )
+				}
+			/>
+			<SelectControl
+				__next40pxDefaultSize
+				__nextHasNoMarginBottom
+				id="eventwatch-field-category"
+				label={ __( 'EventWatch category', 'eventwatch' ) }
+				help={ __(
+					'Required to send to EventWatch. This is separate from your site’s categories.',
+					'eventwatch'
+				) }
+				value={ String( meta?.eventwatch_category ?? 0 ) }
+				options={ [
+					{
+						value: '0',
+						label: __( 'Select a category', 'eventwatch' ),
+					},
+					...categories,
+				] }
+				onChange={ ( value ) =>
+					setField( 'eventwatch_category', Number( value ) )
+				}
+			/>
+			<TextareaControl
+				__nextHasNoMarginBottom
+				id="eventwatch-field-schedule-note"
+				label={ __( 'Notes on dates', 'eventwatch' ) }
+				rows={ 2 }
+				maxLength={ MAX_NOTE }
+				value={ note }
+				onChange={ ( value ) =>
+					setField( 'eventwatch_schedule_note', value )
+				}
+				help={ sprintf(
+					/* translators: 1: the number of characters entered, 2: the limit. */
+					__( '%1$d / %2$d characters', 'eventwatch' ),
+					countCharacters( note ),
+					MAX_NOTE
+				) }
+			/>
+			<TextControl
+				__next40pxDefaultSize
+				__nextHasNoMarginBottom
+				id="eventwatch-field-url"
+				className={
+					urlInvalid ? 'eventwatch-control--error' : undefined
+				}
+				type="url"
+				label={ __(
+					'Separate official page (optional)',
+					'eventwatch'
+				) }
+				placeholder="https://"
+				maxLength={ MAX_URL }
+				value={ url }
+				onChange={ ( value ) => setField( 'eventwatch_url', value ) }
+				help={
+					<>
+						{ urlInvalid && (
+							<FieldError>
+								{ __(
+									'Enter a URL that starts with https:// or http://.',
+									'eventwatch'
+								) }
+							</FieldError>
+						) }
+						{ __(
+							'When empty, this event’s page is sent to EventWatch as the official page.',
+							'eventwatch'
+						) }
+					</>
+				}
+			/>
+		</div>
+	);
+};
+
+const useOpenPanelOnce = () => {
+	const opened = useSelect(
+		( select ) =>
+			select( preferencesStore ).get(
+				PREFERENCE_SCOPE,
+				PREFERENCE_OPENED
+			),
+		[]
+	);
+	const registry = useRegistry();
+
+	// 既定では閉じて出る。最初の 1 度だけ開き、あとは利用者の開閉を覚えさせる。
+	useEffect( () => {
+		if ( opened ) {
+			return;
+		}
+		// toggle が 2 回走ると閉じてしまうので、先に印を立て、開閉はその時点の値を読む。
+		registry
+			.dispatch( preferencesStore )
+			.set( PREFERENCE_SCOPE, PREFERENCE_OPENED, true );
+		const panel = `${ PLUGIN_NAME }/${ PANEL_NAME }`;
+		if ( ! registry.select( editorStore ).isEditorPanelOpened( panel ) ) {
+			registry.dispatch( editorStore ).toggleEditorPanelOpened( panel );
+		}
+	}, [ opened, registry ] );
+};
+
+const EventPanelContent = () => {
+	useOpenPanelOnce();
+
+	return (
+		<PluginDocumentSettingPanel
+			name={ PANEL_NAME }
+			title={ __( 'Event details', 'eventwatch' ) }
+		>
+			<EventFields />
+		</PluginDocumentSettingPanel>
+	);
+};
+
+const EventPanel = () => {
+	const postType = useSelect(
+		( select ) => select( editorStore ).getCurrentPostType(),
+		[]
+	);
+
+	return postType === POST_TYPE ? <EventPanelContent /> : null;
+};
+
+export default EventPanel;

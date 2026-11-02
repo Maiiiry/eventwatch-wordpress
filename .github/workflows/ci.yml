@@ -27,6 +27,7 @@ jobs:
           tools: composer
       - run: npm ci
       - run: npm run lint:js
+      - run: npm run test:js
       - run: npm run build
       - run: composer install --no-interaction --no-progress
       - run: vendor/bin/phpcs
