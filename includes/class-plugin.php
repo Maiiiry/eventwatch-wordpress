@@ -48,6 +48,7 @@ class Plugin {
 		Event_Permalink::boot();
 		Event_Detail::boot();
 		Settings::boot();
+		Connection_Admin::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
 	}
@@ -74,6 +75,7 @@ class Plugin {
 			foreach ( static::network_site_ids() as $site_id ) {
 				switch_to_blog( $site_id );
 				Capabilities::grant();
+				Site_Identity::ensure();
 				// switch_to_blog では rewrite の定義が切り替わらないので、flush せずに消して次の読み込みで作らせる。
 				delete_option( 'rewrite_rules' );
 				restore_current_blog();
@@ -82,6 +84,7 @@ class Plugin {
 		}
 
 		Capabilities::grant();
+		Site_Identity::ensure();
 		Post_Type::register();
 		flush_rewrite_rules();
 	}
@@ -129,6 +132,7 @@ class Plugin {
 
 		switch_to_blog( (int) $site->id );
 		Capabilities::grant();
+		Site_Identity::ensure();
 		restore_current_blog();
 	}
 

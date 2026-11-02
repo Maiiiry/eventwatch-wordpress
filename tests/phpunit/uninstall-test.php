@@ -59,6 +59,21 @@ class Uninstall_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 通知を閉じた印を、すべてのユーザーから消す。ほかのメタは残す。
+	 */
+	public function test_removes_the_hidden_notice_mark() {
+		$user_id = self::factory()->user->create();
+		update_user_meta( $user_id, 'eventwatch_hide_no_key_notice', 1 );
+		update_user_meta( $user_id, 'unrelated_meta', 'keep' );
+
+		$this->run_uninstall();
+
+		wp_cache_flush();
+		$this->assertSame( '', get_user_meta( $user_id, 'eventwatch_hide_no_key_notice', true ) );
+		$this->assertSame( 'keep', get_user_meta( $user_id, 'unrelated_meta', true ) );
+	}
+
+	/**
 	 * 既定ではイベントの投稿とタームを残し、権限はすべての役割から外す。
 	 */
 	public function test_keeps_events_by_default_and_removes_capabilities() {
