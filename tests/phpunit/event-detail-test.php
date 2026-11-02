@@ -776,6 +776,58 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 次の組は終了で見る。始まっていて終わっていない組と、今日の 0 時ちょうどに終わる組は、まだ次の組。
+	 */
+	public function test_next_occurrence_uses_the_end_and_the_boundary() {
+		$running = $this->event(
+			array(
+				Event_Meta::OCCURRENCES => array(
+					array(
+						'start' => $this->day( -1, '10:00' ),
+						'end'   => $this->day( 1, '10:00' ),
+					),
+				),
+			)
+		);
+		$this->assertNotNull( Event_Dates::next_occurrence( $running->ID ) );
+
+		$midnight = $this->event(
+			array(
+				Event_Meta::OCCURRENCES => array(
+					array(
+						'start' => $this->day( -1, '23:00' ),
+						'end'   => $this->day( 0, '00:00' ),
+					),
+				),
+			)
+		);
+		$this->assertNotNull( Event_Dates::next_occurrence( $midnight->ID ) );
+	}
+
+	/**
+	 * 主催の名前をエスケープする。保存の sanitize に隠れないよう、読み出しへ直接入れる。
+	 */
+	public function test_organizer_is_escaped() {
+		$raw = static function () {
+			return '<script>alert(1)</script>';
+		};
+		add_filter( 'option_blogname', $raw );
+		$html = Event_Detail::render_field( 'organizer', $this->event() );
+		remove_filter( 'option_blogname', $raw );
+
+		$this->assertStringNotContainsString( '<script', $html );
+	}
+
+	/**
+	 * 掲載のスラッグは URL のパスを壊さない。
+	 */
+	public function test_listing_url_encodes_the_slug() {
+		$post = $this->event( array( Event_Detail::LISTING_SLUG => 'a/b?c' ) );
+
+		$this->assertSame( 'https://eventwatch.app/en/events/a%2Fb%3Fc', Event_Detail::listing_url( $post->ID ) );
+	}
+
+	/**
 	 * HTML ではない出力先に、題と説明の実体参照を文字のまま出さない。
 	 */
 	public function test_plain_outputs_decode_entities() {

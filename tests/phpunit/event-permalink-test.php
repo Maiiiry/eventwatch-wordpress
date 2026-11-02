@@ -299,7 +299,7 @@ class Event_Permalink_Test extends WP_UnitTestCase {
 		};
 		add_filter( 'home_url', $home );
 		$target_inside  = Event_Permalink::redirect_target( '/blog/event/sample/' );
-		$target_outside = Event_Permalink::redirect_target( '/event/sample/' );
+		$target_outside = Event_Permalink::redirect_target( '/xxxxx/event/sample/' );
 		remove_filter( 'home_url', $home );
 
 		$this->assertNotNull( $target_inside );
