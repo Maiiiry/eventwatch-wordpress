@@ -74,6 +74,56 @@ class Event_Dates {
 	}
 
 	/**
+	 * 全組。読めない時刻の組は飛ばす。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return array<int, array{start: int, end: int|null, text: string, datetime: string, end_datetime: string}>
+	 */
+	public static function occurrences( $post_id ) {
+		$rows = get_post_meta( $post_id, Event_Meta::OCCURRENCES, true );
+		if ( ! is_array( $rows ) ) {
+			return array();
+		}
+
+		$zone = self::zone( $post_id );
+		$list = array();
+		foreach ( $rows as $row ) {
+			$start = Event_Meta::to_utc( $row['start'], $zone->getName() );
+			if ( null === $start ) {
+				continue;
+			}
+
+			$end    = '' !== $row['end'] ? Event_Meta::to_utc( $row['end'], $zone->getName() ) : null;
+			$list[] = array(
+				'start'        => $start,
+				'end'          => $end,
+				'text'         => self::format_row( $row, $start, $zone ),
+				'datetime'     => (string) wp_date( 'c', $start, $zone ),
+				'end_datetime' => null !== $end ? (string) wp_date( 'c', $end, $zone ) : '',
+			);
+		}
+
+		return $list;
+	}
+
+	/**
+	 * まだ終わっていない最初の組。境目は一覧の「開催予定」と同じ。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return array{start: int, end: int|null, text: string, datetime: string, end_datetime: string}|null
+	 */
+	public static function next_occurrence( $post_id ) {
+		$boundary = self::upcoming_boundary();
+		foreach ( self::occurrences( $post_id ) as $row ) {
+			if ( ( null !== $row['end'] ? $row['end'] : $row['start'] ) >= $boundary ) {
+				return $row;
+			}
+		}
+
+		return null;
+	}
+
+	/**
 	 * 範囲に重なる最初の組の開始。組は開始の順に保存されている。
 	 *
 	 * @param int $post_id 投稿の ID。

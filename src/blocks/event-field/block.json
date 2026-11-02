@@ -1,0 +1,44 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eventwatch/event-field",
+	"version": "0.1.0",
+	"title": "Event Detail",
+	"category": "theme",
+	"icon": "calendar-alt",
+	"description": "Show one part of the event's details, such as its dates or venue.",
+	"keywords": [ "event", "date", "venue", "map", "calendar", "share" ],
+	"textdomain": "eventwatch",
+	"attributes": {
+		"field": {
+			"type": "string",
+			"enum": [
+				"back",
+				"category",
+				"dates",
+				"venue",
+				"organizer",
+				"map",
+				"calendar",
+				"interested",
+				"share",
+				"official"
+			],
+			"default": "dates"
+		}
+	},
+	"usesContext": [ "postId", "postType" ],
+	"supports": {
+		"html": false,
+		"spacing": {
+			"margin": true
+		},
+		"typography": {
+			"fontSize": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"viewScriptModule": "file:./view.js",
+	"style": [ "file:./style-index.css", "eventwatch-event-list-style" ],
+	"render": "file:./render.php"
+}
