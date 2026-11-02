@@ -85,8 +85,11 @@ class Connection_Admin {
 	public static function handle_moved() {
 		self::authorize( self::ACTION_MOVED );
 
-		Site_Identity::use_as_moved();
-		self::report( __( 'The new URL was saved, and sending to EventWatch has resumed.', 'eventwatch' ), 'success' );
+		// 古いタブからの押し直しで、もう解決した選択をやり直さない。
+		if ( Site_Identity::has_changed() ) {
+			Site_Identity::use_as_moved();
+			self::report( __( 'The new URL was saved, and sending to EventWatch has resumed.', 'eventwatch' ), 'success' );
+		}
 
 		self::back_to_settings();
 	}
@@ -99,13 +102,16 @@ class Connection_Admin {
 	public static function handle_copy() {
 		self::authorize( self::ACTION_COPY );
 
-		Site_Identity::use_as_copy();
-		self::report(
-			'' !== Connection::fixed_key()
-				? __( 'This site is now treated as a separate site. It keeps using the API key set in wp-config.php.', 'eventwatch' )
-				: __( 'This site is now treated as a separate site. Its saved API key was removed. To send events from this site, enter a key.', 'eventwatch' ),
-			'success'
-		);
+		// 古いタブからの押し直しで、サイト ID とキーを失わない。
+		if ( Site_Identity::has_changed() ) {
+			Site_Identity::use_as_copy();
+			self::report(
+				'' !== Connection::fixed_key()
+					? __( 'This site is now treated as a separate site. It keeps using the API key set in wp-config.php.', 'eventwatch' )
+					: __( 'This site is now treated as a separate site. Its saved API key was removed. To send events from this site, enter a key.', 'eventwatch' ),
+				'success'
+			);
+		}
 
 		self::back_to_settings();
 	}
@@ -192,6 +198,9 @@ class Connection_Admin {
 				/* translators: %s: organization name on EventWatch. */
 				return sprintf( __( 'Connected to EventWatch (%s)', 'eventwatch' ), $state['organization'] );
 			case Connection::UNAUTHORIZED:
+				if ( '' !== Connection::fixed_key() ) {
+					return __( 'EventWatch rejected this API key. It may have been revoked, or the person who issued it may have left your organization or stopped being an owner. Ask an owner of your organization to issue a new key under Organization settings › Site connection, then update it in wp-config.php.', 'eventwatch' );
+				}
 				return __( 'EventWatch rejected this API key. It may have been revoked, or the person who issued it may have left your organization or stopped being an owner. Ask an owner of your organization to issue a new key under Organization settings › Site connection, then enter it here.', 'eventwatch' );
 			case Connection::SUSPENDED:
 				return __( 'Your organization is suspended on EventWatch, so nothing can be sent for now. This isn’t a problem with your API key, so you don’t need to change it. Please contact EventWatch.', 'eventwatch' );

@@ -69,7 +69,12 @@ class Connection {
 	public static function masked_key() {
 		$key = self::api_key();
 
-		return '' === $key ? '' : substr( $key, 0, 12 ) . str_repeat( '•', 20 );
+		if ( '' === $key ) {
+			return '';
+		}
+
+		// 形を確かめない定数の値は、短いと接頭辞だけで全部が出てしまう。
+		return ( strlen( $key ) > 12 ? substr( $key, 0, 12 ) : '' ) . str_repeat( '•', 20 );
 	}
 
 	/**

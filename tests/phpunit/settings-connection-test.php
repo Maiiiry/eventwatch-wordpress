@@ -590,6 +590,50 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * URL が変わっていないのに古いタブから押しても、サイト ID とキーを失わない。
+	 *
+	 * @testWith ["eventwatch_site_copied", "handle_copy"]
+	 *           ["eventwatch_site_moved", "handle_moved"]
+	 *
+	 * @param string $action 操作。
+	 * @param string $method 受ける処理。
+	 */
+	public function test_stale_choice_changes_nothing( $action, $method ) {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$id = Site_Identity::id();
+
+		$this->run_action( $action, array( Connection_Admin::class, $method ) );
+
+		$this->assertSame( $id, Site_Identity::id() );
+		$this->assertSame( self::KEY, Connection::api_key() );
+		$this->assertSame( array(), $this->reported() );
+	}
+
+	/**
+	 * 定数のキーが失効したら、直す先は wp-config.php だと案内する。
+	 */
+	public function test_revoked_fixed_key_points_to_wp_config() {
+		add_filter(
+			'eventwatch_fixed_api_key',
+			static function () {
+				return self::KEY;
+			}
+		);
+
+		$text = Connection_Admin::status_text(
+			array(
+				'status'       => Connection::UNAUTHORIZED,
+				'organization' => '',
+				'checked_at'   => 1,
+			)
+		);
+
+		$this->assertStringContainsString( 'wp-config.php', $text );
+		$this->assertStringNotContainsString( 'enter it here', $text );
+	}
+
+	/**
 	 * 同じサイトの見え方の違いでは止まらない。
 	 */
 	public function test_same_site_does_not_stop() {

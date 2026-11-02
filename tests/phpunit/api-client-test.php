@@ -561,6 +561,15 @@ class Api_Client_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( substr( self::KEY, 12, 4 ), str_replace( substr( self::KEY, 0, 12 ), '', $masked ) );
 		$this->assertStringEndsWith( '••••', $masked );
 
+		add_filter(
+			'eventwatch_fixed_api_key',
+			static function () {
+				return 'short-secret';
+			}
+		);
+		$this->assertStringNotContainsString( 'short', Connection::masked_key() );
+		remove_all_filters( 'eventwatch_fixed_api_key' );
+
 		delete_option( Connection::KEY_OPTION );
 		$this->assertSame( '', Connection::masked_key() );
 	}
