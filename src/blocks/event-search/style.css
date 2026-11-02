@@ -1,0 +1,261 @@
+/*
+ * 外側の要素に一覧のクラスも付けるので、色の判定と --eventwatch-* は一覧の CSS が定める。
+ * 欄の地を塗らない。テーマの地を塗ると、暗い地のグループの中で白地に白になる。
+ */
+.wp-block-eventwatch-event-search {
+	--eventwatch-submit-bg: var(--wp--preset--color--accent, var(--wp--preset--color--contrast, canvastext));
+	--eventwatch-submit-fg: var(--wp--preset--color--accent-contrast, var(--wp--preset--color--base, canvas));
+	--eventwatch-submit-border: transparent;
+}
+
+.wp-block-eventwatch-event-search.has-text-color,
+.wp-block-eventwatch-event-search.has-background,
+.has-text-color .wp-block-eventwatch-event-search,
+.has-background .wp-block-eventwatch-event-search,
+.wp-block-cover .wp-block-eventwatch-event-search,
+.wp-block-group[class*="is-style-"] .wp-block-eventwatch-event-search,
+.wp-block-columns[class*="is-style-"] .wp-block-eventwatch-event-search,
+.wp-block-column[class*="is-style-"] .wp-block-eventwatch-event-search {
+	--eventwatch-submit-bg: transparent;
+	--eventwatch-submit-fg: inherit;
+	--eventwatch-submit-border: currentcolor;
+}
+
+.eventwatch-search__form {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--wp--preset--spacing--40, 1rem);
+	box-sizing: border-box;
+	padding: var(--wp--preset--spacing--50, 1.5rem);
+	border: 1px solid var(--eventwatch-line);
+	border-radius: var(--eventwatch-radius);
+	background: var(--eventwatch-surface);
+}
+
+.eventwatch-search__field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+/* クラシックテーマは label に余白を付けるので、ブロックの名前から消す。 */
+.wp-block-eventwatch-event-search .eventwatch-search__label {
+	margin: 0;
+	padding: 0;
+	font-size: var(--eventwatch-small);
+	font-weight: 700;
+}
+
+/* legend は flex の項目にならないので、隣の欄と揃うよう gap と同じ分を空ける。 */
+.wp-block-eventwatch-event-search .eventwatch-search__field > legend {
+	margin-bottom: 4px;
+}
+
+.eventwatch-search__period {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	align-items: center;
+	justify-items: start;
+	gap: 4px var(--wp--preset--spacing--20, 0.5rem);
+}
+
+/* テーマの input の指定に負けないよう、ブロックの名前から指定する。 */
+.wp-block-eventwatch-event-search .eventwatch-search__input {
+	box-sizing: border-box;
+	width: 100%;
+	min-height: 44px;
+	margin: 0;
+	padding: 0 var(--wp--preset--spacing--30, 0.75rem);
+	border: 1px solid var(--eventwatch-border);
+	border-radius: var(--eventwatch-radius);
+	background-color: transparent;
+	color: inherit;
+	font: inherit;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-search__input::placeholder {
+	color: var(--eventwatch-muted);
+	opacity: 1;
+}
+
+/* ブラウザーのカレンダーの印は黒く描かれ、暗い地で読めない。その場の文字の色で描き直す。 */
+.eventwatch-search__input::-webkit-calendar-picker-indicator {
+	background-color: currentcolor;
+	background-image: none;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3.75' y='5.25' width='16.5' height='15' rx='2'/%3E%3Cpath d='M3.75 10h16.5M8 3v4M16 3v4'/%3E%3C/svg%3E") center / contain no-repeat;
+	opacity: 1;
+	cursor: pointer;
+}
+
+/*
+ * mask は印の輪郭も切るので、印にフォーカスがあるときは欄に輪郭を出す。
+ * 印には :focus-visible が効かず、キーボードとマウスを分けられない。このとき欄は :focus-within だけが成り立つ。
+ */
+.wp-block-eventwatch-event-search .eventwatch-search__input:focus-within:not(:focus-visible) {
+	outline: 2px solid var(--eventwatch-contrast);
+	outline-offset: 2px;
+}
+
+/* ブラウザーの印は padding が効かず右端に寄るので、消して板の 16px の印を描く。currentcolor を使うため mask にする。 */
+.eventwatch-search__select {
+	position: relative;
+}
+
+.eventwatch-search__select::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	right: var(--wp--preset--spacing--30, 0.75rem);
+	width: 16px;
+	height: 16px;
+	background-color: currentcolor;
+	mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m19.5 8.25-7.5 7.5-7.5-7.5'/%3E%3C/svg%3E") center / contain no-repeat;
+	transform: translateY(-50%);
+	pointer-events: none;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-search__select select {
+	appearance: none;
+	background-image: none;
+	padding-inline-end: calc(var(--wp--preset--spacing--30, 0.75rem) + 24px);
+}
+
+/* 強制カラーでは background-color が地の色に置き換わり、印が消える。 */
+@media (forced-colors: active) {
+
+	.eventwatch-search__select::after {
+		background-color: canvastext;
+		forced-color-adjust: none;
+	}
+
+	.eventwatch-search__input::-webkit-calendar-picker-indicator {
+		background-color: canvastext;
+		forced-color-adjust: none;
+	}
+}
+
+/* 開いた一覧はブラウザーが地を決めるので、select の文字の色を受け継ぐと白地に白になる。 */
+.eventwatch-search__input option {
+	background-color: canvas;
+	color: canvastext;
+}
+
+.eventwatch-search__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: var(--wp--preset--spacing--30, 0.75rem);
+}
+
+.wp-block-eventwatch-event-search .eventwatch-search__submit {
+	flex: 1 1 auto;
+	box-sizing: border-box;
+	min-height: 44px;
+	padding: 0 var(--wp--preset--spacing--50, 1.5rem);
+	border: 1px solid var(--eventwatch-submit-border);
+	border-radius: var(--eventwatch-radius);
+	background: var(--eventwatch-submit-bg);
+	color: var(--eventwatch-submit-fg);
+	font: inherit;
+	font-weight: 700;
+	cursor: pointer;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-search__clear {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-height: 44px;
+	padding: 0 var(--wp--preset--spacing--20, 0.5rem);
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 0.25em;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-events__empty .eventwatch-search__clear {
+	padding: 0 var(--wp--preset--spacing--50, 1.5rem);
+	border: 1px solid currentcolor;
+	border-radius: var(--eventwatch-radius);
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-search__input:focus-visible,
+.wp-block-eventwatch-event-search .eventwatch-search__submit:focus-visible,
+.wp-block-eventwatch-event-search .eventwatch-search__clear:focus-visible,
+.wp-block-eventwatch-event-search .eventwatch-search__status:focus-visible {
+	outline: 2px solid var(--eventwatch-contrast);
+	outline-offset: 2px;
+}
+
+.eventwatch-search__status {
+	margin: 0;
+	font-size: var(--eventwatch-small);
+	font-weight: 700;
+}
+
+.eventwatch-search__results {
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--preset--spacing--50, 1.5rem);
+}
+
+/* 不透明度だけを変え、動かさない。 */
+.eventwatch-search__results[aria-busy="true"] {
+	opacity: 0.6;
+}
+
+.wp-block-eventwatch-event-search .eventwatch-events__empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: var(--wp--preset--spacing--30, 0.75rem);
+}
+
+.wp-block-eventwatch-event-search .eventwatch-events__empty .eventwatch-search__hint {
+	color: var(--eventwatch-muted);
+	font-size: var(--eventwatch-small);
+	font-weight: 400;
+}
+
+@container (min-width: 36rem) {
+
+	.eventwatch-search__form {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.eventwatch-search__field--wide,
+	.eventwatch-search__actions {
+		grid-column: 1 / -1;
+	}
+
+	.eventwatch-search__period {
+		grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+		justify-items: stretch;
+	}
+
+	.eventwatch-search__actions {
+		justify-content: flex-start;
+	}
+
+	.wp-block-eventwatch-event-search .eventwatch-search__submit {
+		flex: none;
+	}
+}
+
+@container (min-width: 56rem) {
+
+	.eventwatch-search__form {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+
+	.eventwatch-search__field--wide,
+	.eventwatch-search__actions {
+		grid-column: span 2;
+	}
+}

@@ -26,6 +26,11 @@ class Event_List {
 	const MAX_SIZE     = 24;
 
 	/**
+	 * キーワードの語を渡すクエリの変数。
+	 */
+	const KEYWORD_VAR = 'eventwatch_keyword';
+
+	/**
 	 * テーマが置く上書きのテンプレートの置き場。
 	 */
 	const THEME_DIR = 'eventwatch';
@@ -47,16 +52,8 @@ class Event_List {
 		$hash   = substr( md5( (string) wp_json_encode( $identity ) ), 0, 8 );
 		$param  = 'eventwatch_page_' . $hash;
 		$anchor = 'eventwatch-events-' . $hash;
-		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページの番号を読むだけで、状態を変えない。
-		$page  = isset( $_GET[ $param ] ) ? max( 1, absint( $_GET[ $param ] ) ) : 1;
-		$query = self::query( $attributes, $page );
 
-		// 件数が減ると、共有されたリンクのページが範囲外になる。「まだありません」と誤って出さない。
-		// 結果が空だと WP_Query は found_posts を数えないので、件数では判定できない。
-		if ( ! $query->posts && $page > 1 ) {
-			$page  = 1;
-			$query = self::query( $attributes, $page );
-		}
+		list( $query, $page ) = self::query_for_request( $attributes, $param );
 
 		$html = '<div ' . get_block_wrapper_attributes(
 			array(
@@ -66,18 +63,55 @@ class Event_List {
 		) . '>';
 
 		if ( $query->posts ) {
-			$html .= '<ul class="eventwatch-events__items">';
-			foreach ( $query->posts as $post ) {
-				$html .= '<li class="eventwatch-events__item">' . self::render_item( $attributes, $post ) . '</li>';
-			}
-			$html .= '</ul>';
-			$html .= self::render_pagination( $param, $anchor, $page, (int) $query->max_num_pages );
+			$html .= self::render_results( $attributes, $query, $param, $anchor, $page );
 		} else {
 			$text  = '' !== $attributes['emptyText'] ? $attributes['emptyText'] : __( 'No upcoming events yet.', 'eventwatch' );
 			$html .= '<div class="eventwatch-events__empty"><p>' . esc_html( $text ) . '</p></div>';
 		}
 
 		return $html . '</div>';
+	}
+
+	/**
+	 * 要求のページ番号でイベントを引く。
+	 *
+	 * @param array  $attributes normalize() を通した属性。
+	 * @param string $param      ページのクエリの名前。
+	 * @return array{0: WP_Query, 1: int} クエリと、実際に引いたページ。
+	 */
+	public static function query_for_request( array $attributes, $param ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページの番号を読むだけで、状態を変えない。
+		$raw   = isset( $_GET[ $param ] ) && is_scalar( $_GET[ $param ] ) ? absint( $_GET[ $param ] ) : 1;
+		$page  = max( 1, $raw );
+		$query = self::query( $attributes, $page );
+
+		// 件数が減ると、共有されたリンクのページが範囲外になる。「まだありません」と誤って出さない。
+		// 結果が空だと WP_Query は found_posts を数えないので、件数では判定できない。
+		if ( ! $query->posts && $page > 1 ) {
+			$page  = 1;
+			$query = self::query( $attributes, $page );
+		}
+
+		return array( $query, $page );
+	}
+
+	/**
+	 * 項目の並びとページ送りを描く。
+	 *
+	 * @param array    $attributes normalize() を通した属性。
+	 * @param WP_Query $query      結果のあるクエリ。
+	 * @param string   $param      ページのクエリの名前。
+	 * @param string   $anchor     ページ送りの着地先の id。
+	 * @param int      $page       今のページ。
+	 * @return string
+	 */
+	public static function render_results( array $attributes, WP_Query $query, $param, $anchor, $page ) {
+		$html = '<ul class="eventwatch-events__items">';
+		foreach ( $query->posts as $post ) {
+			$html .= '<li class="eventwatch-events__item">' . self::render_item( $attributes, $post ) . '</li>';
+		}
+
+		return $html . '</ul>' . self::render_pagination( $param, $anchor, $page, (int) $query->max_num_pages );
 	}
 
 	/**
@@ -174,6 +208,14 @@ class Event_List {
 			);
 		}
 
+		if ( ! empty( $attributes['eventCategory'] ) ) {
+			$meta_query[] = array(
+				'key'   => Event_Meta::CATEGORY,
+				'value' => (int) $attributes['eventCategory'],
+				'type'  => 'NUMERIC',
+			);
+		}
+
 		$tax_query = array();
 		foreach ( array(
 			Post_Type::TAX_CATEGORY => $attributes['categoryId'],
@@ -202,6 +244,7 @@ class Event_List {
 				'ignore_sticky_posts' => true,
 				'meta_query'          => $meta_query,
 				'tax_query'           => $tax_query,
+				self::KEYWORD_VAR     => empty( $attributes['keyword'] ) ? array() : array_values( $attributes['keyword'] ),
 				'orderby'             => array(
 					'eventwatch_starts' => $order,
 					'ID'                => $order,
@@ -209,6 +252,31 @@ class Event_List {
 			)
 		);
 		// phpcs:enable
+	}
+
+	/**
+	 * キーワードの条件を足す。
+	 *
+	 * 本体の検索はメタを見ないので、会場名に当てるために自分で組む。語はすべて含むものに当てる。
+	 *
+	 * @param string   $where WHERE の文。
+	 * @param WP_Query $query クエリ。
+	 * @return string
+	 */
+	public static function filter_where( $where, $query ) {
+		$terms = $query->get( self::KEYWORD_VAR );
+		if ( ! is_array( $terms ) || ! $terms ) {
+			return $where;
+		}
+
+		global $wpdb;
+		foreach ( $terms as $term ) {
+			$like = '%' . $wpdb->esc_like( (string) $term ) . '%';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.NotPrepared -- 表の名前は $wpdb の値で、語は prepare を通している。
+			$where .= $wpdb->prepare( " AND ({$wpdb->posts}.post_title LIKE %s OR {$wpdb->posts}.post_content LIKE %s OR EXISTS (SELECT 1 FROM {$wpdb->postmeta} AS eventwatch_venue WHERE eventwatch_venue.post_id = {$wpdb->posts}.ID AND eventwatch_venue.meta_key = %s AND eventwatch_venue.meta_value LIKE %s))", $like, $like, Event_Meta::VENUE_NAME, $like );
+		}
+
+		return $where;
 	}
 
 	/**
@@ -262,6 +330,21 @@ class Event_List {
 	}
 
 	/**
+	 * 今の要求のパスとクエリ。
+	 *
+	 * REQUEST_URI は `//example.com/` の形で届くことがあり、そのままリンクにすると別のサイトを指す。パスとクエリだけを取り出す。
+	 *
+	 * @return string
+	 */
+	public static function current_uri() {
+		$uri   = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
+		$parts = wp_parse_url( $uri );
+		$path  = is_array( $parts ) && isset( $parts['path'] ) ? $parts['path'] : '';
+
+		return '/' . ltrim( $path, '/' ) . ( is_array( $parts ) && isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
+	}
+
+	/**
 	 * ページ送り。1 ページしかなければ出さない。
 	 *
 	 * クエリの名前は属性ごとに分かれるので、1 ページに複数置いても互いに動かない。属性まで同じブロックは連動する。
@@ -279,7 +362,7 @@ class Event_List {
 
 		$links = paginate_links(
 			array(
-				'base'         => add_query_arg( $param, '%#%' ),
+				'base'         => add_query_arg( $param, '%#%', self::current_uri() ),
 				'format'       => '',
 				'current'      => $page,
 				'total'        => $total,
@@ -357,7 +440,7 @@ class Event_List {
 	 * @param mixed $value 値。
 	 * @return DateTimeImmutable|null 実在しない日や書式違いは null。
 	 */
-	private static function parse_date( $value ) {
+	public static function parse_date( $value ) {
 		if ( ! is_string( $value ) || '' === $value ) {
 			return null;
 		}

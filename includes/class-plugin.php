@@ -36,6 +36,8 @@ class Plugin {
 		add_action( 'init', array( static::class, 'load_translations' ), 0 );
 		add_action( 'init', array( Post_Type::class, 'register' ) );
 		add_action( 'init', array( Event_List_Block::class, 'register' ) );
+		add_action( 'init', array( Event_Search_Block::class, 'register' ) );
+		add_filter( 'posts_where', array( Event_List::class, 'filter_where' ), 10, 2 );
 		add_action( 'after_setup_theme', array( Post_Type::class, 'add_thumbnail_support' ), 100 );
 		// 本体の wp_initialize_site（優先度 10）が表を作った後に動かす。
 		add_action( 'wp_initialize_site', array( static::class, 'initialize_site' ), 100 );

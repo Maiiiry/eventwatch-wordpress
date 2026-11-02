@@ -28,6 +28,12 @@ All attributes are optional. `layout` is `cards` or `list`, `order` is `asc` or 
 
 To change how one event is drawn, copy `templates/event-card.php` or `templates/event-row.php` from the plugin to an `eventwatch` folder in your theme.
 
+Add the Event Search block to let visitors search your upcoming events by keyword, dates, category, and prefecture. The results replace the old ones without reloading the page, and the search also works without JavaScript. The search is kept in the page URL, so visitors can share it and use the back button. Keywords match event titles, event content, and venue names.
+
+Classic themes can use the same search with a shortcode:
+
+`[eventwatch_search layout="list" per_page="6"]`
+
 = Scheduled events =
 
 WordPress publishes scheduled events with WP-Cron, which only runs when someone visits your site. On a site with few visitors, a scheduled event may be published later than the time you set. To publish on time, run WP-Cron from your server's cron.

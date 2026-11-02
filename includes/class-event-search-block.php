@@ -1,0 +1,74 @@
+<?php
+/**
+ * イベントの検索のブロックとショートコードの登録。
+ *
+ * @package EventWatch
+ */
+
+namespace EventWatch;
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+/**
+ * ショートコードはブロックと同じ経路を通す。
+ */
+class Event_Search_Block {
+
+	const NAME      = 'eventwatch/event-search';
+	const SHORTCODE = 'eventwatch_search';
+
+	/**
+	 * ブロックとショートコードを登録する。一覧の CSS のハンドルを使うので、一覧の後に呼ぶ。
+	 *
+	 * @return void
+	 */
+	public static function register() {
+		add_shortcode( self::SHORTCODE, array( self::class, 'render_shortcode' ) );
+
+		$dir = plugin_dir_path( PLUGIN_FILE ) . 'build/blocks/event-search';
+		// ビルドしていない作業ツリーでも、サイトを壊さない。
+		if ( ! is_readable( $dir . '/block.json' ) ) {
+			return;
+		}
+
+		register_block_type( $dir );
+
+		wp_set_script_translations(
+			generate_block_asset_handle( self::NAME, 'editorScript' ),
+			'eventwatch',
+			plugin_dir_path( PLUGIN_FILE ) . 'languages'
+		);
+	}
+
+	/**
+	 * ショートコードを描く。
+	 *
+	 * @param array|string $atts ショートコードの属性。
+	 * @return string
+	 */
+	public static function render_shortcode( $atts ) {
+		$atts = shortcode_atts(
+			array(
+				'layout'   => Event_List::LAYOUT_CARDS,
+				'per_page' => Event_List::DEFAULT_SIZE,
+			),
+			$atts,
+			self::SHORTCODE
+		);
+
+		return render_block(
+			array(
+				'blockName'    => self::NAME,
+				'attrs'        => array(
+					'layout'  => $atts['layout'],
+					'perPage' => (int) $atts['per_page'],
+				),
+				'innerBlocks'  => array(),
+				'innerHTML'    => '',
+				'innerContent' => array(),
+			)
+		);
+	}
+}

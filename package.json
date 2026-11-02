@@ -18,8 +18,8 @@
 		"LICENSE"
 	],
 	"scripts": {
-		"build": "wp-scripts build",
-		"start": "wp-scripts start",
+		"build": "wp-scripts build --experimental-modules",
+		"start": "wp-scripts start --experimental-modules",
 		"lint:js": "wp-scripts lint-js --no-error-on-unmatched-pattern",
 		"test:js": "wp-scripts test-unit-js",
 		"plugin-zip": "wp-scripts plugin-zip && zip -dq eventwatch.zip eventwatch/package.json eventwatch/README.md",
