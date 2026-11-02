@@ -1,6 +1,10 @@
 {
 	"phpVersion": null,
 	"plugins": [],
+	"themes": [
+		"./tests/fixtures/themes/eventwatch-sample",
+		"./tests/fixtures/themes/eventwatch-override"
+	],
 	"mappings": {
 		"wp-content/plugins/eventwatch": "."
 	},

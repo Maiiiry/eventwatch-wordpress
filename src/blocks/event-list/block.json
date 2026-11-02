@@ -1,0 +1,78 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eventwatch/event-list",
+	"version": "0.1.0",
+	"title": "Event List",
+	"category": "widgets",
+	"icon": "calendar-alt",
+	"description": "Show the upcoming events of your site. The list follows your theme's colors and fonts.",
+	"keywords": [ "event", "calendar" ],
+	"textdomain": "eventwatch",
+	"attributes": {
+		"layout": {
+			"type": "string",
+			"enum": [ "cards", "list" ],
+			"default": "cards"
+		},
+		"perPage": {
+			"type": "integer",
+			"default": 6
+		},
+		"order": {
+			"type": "string",
+			"enum": [ "asc", "desc" ],
+			"default": "asc"
+		},
+		"categoryId": {
+			"type": "integer",
+			"default": 0
+		},
+		"tagId": {
+			"type": "integer",
+			"default": 0
+		},
+		"prefecture": {
+			"type": "integer",
+			"default": 0
+		},
+		"dateFrom": {
+			"type": "string",
+			"default": ""
+		},
+		"dateTo": {
+			"type": "string",
+			"default": ""
+		},
+		"emptyText": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"color": {
+			"background": true,
+			"text": true,
+			"link": false
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"__experimentalBorder": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "file:./style-index.css",
+	"render": "file:./render.php"
+}

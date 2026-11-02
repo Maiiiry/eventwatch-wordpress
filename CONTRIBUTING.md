@@ -14,8 +14,10 @@
 npm run lint:js
 npm run test:js
 npm run lint:php
+npm run build
 npm run test:php
 npm run test:php:multisite
+npm run i18n:check
 npm run plugin-zip
 ```
 

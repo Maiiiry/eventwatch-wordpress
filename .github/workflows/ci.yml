@@ -59,10 +59,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      # ブロックの登録に build/ が要る。翻訳の確かめもビルド後の JS を読む。
+      - run: npm run build
       - run: npm run env start
       - run: npm run composer install -- --no-interaction --no-progress
       - run: npm run test:php
       - run: npm run test:php:multisite
+      - run: npm run i18n:check
 
   plugin-zip:
     name: plugin zip and Plugin Check
