@@ -55,7 +55,7 @@ foreach ( $eventwatch_source->entries as $eventwatch_key => $eventwatch_entry ) 
 }
 
 // 本体は JSON の名前をスクリプトの相対パスの md5 で引く。文字列を持つスクリプトの分がそろっていること。
-foreach ( array( 'build/index.js', 'build/blocks/event-list/index.js', 'build/blocks/event-search/index.js' ) as $eventwatch_script ) {
+foreach ( array( 'build/index.js', 'build/blocks/event-list/index.js', 'build/blocks/event-search/index.js', 'build/blocks/past-events/index.js' ) as $eventwatch_script ) {
 	$eventwatch_json = $eventwatch_root . '/languages/eventwatch-ja-' . md5( $eventwatch_script ) . '.json';
 	if ( ! is_readable( $eventwatch_json ) ) {
 		$eventwatch_problems[] = 'Missing script translations for ' . $eventwatch_script;

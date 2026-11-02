@@ -131,6 +131,31 @@
 	line-height: 1.5;
 }
 
+/* 終了（板 3a）。色だけで分けないよう、線の印と語を添える。 */
+.eventwatch-event.is-ended .eventwatch-event__date {
+	align-items: center;
+	gap: 4px var(--wp--preset--spacing--20, 0.5rem);
+}
+
+.eventwatch-event.is-ended time {
+	color: var(--eventwatch-muted);
+}
+
+.eventwatch-event__ended {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0 0.5em;
+	border: 1px solid var(--eventwatch-muted);
+	border-radius: var(--eventwatch-radius);
+	color: var(--eventwatch-muted);
+	font-weight: 700;
+}
+
+.eventwatch-event__ended svg {
+	flex: none;
+}
+
 .eventwatch-event__media {
 	overflow: hidden;
 	background: var(--eventwatch-surface);

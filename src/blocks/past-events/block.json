@@ -1,0 +1,58 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "eventwatch/past-events",
+	"version": "0.1.0",
+	"title": "Past Events",
+	"category": "widgets",
+	"icon": "backup",
+	"description": "Show the events of your site that have ended, newest first.",
+	"keywords": [ "event", "past", "archive" ],
+	"textdomain": "eventwatch",
+	"attributes": {
+		"layout": {
+			"type": "string",
+			"enum": [ "cards", "list" ],
+			"default": "list"
+		},
+		"perPage": {
+			"type": "integer",
+			"default": 6
+		},
+		"monthsBack": {
+			"type": "integer",
+			"enum": [ 3, 6, 12, 24, 0 ],
+			"default": 12
+		},
+		"emptyText": {
+			"type": "string",
+			"default": ""
+		}
+	},
+	"supports": {
+		"html": false,
+		"align": [ "wide", "full" ],
+		"color": {
+			"background": true,
+			"text": true,
+			"link": false
+		},
+		"typography": {
+			"fontSize": true,
+			"lineHeight": true
+		},
+		"spacing": {
+			"margin": true,
+			"padding": true
+		},
+		"__experimentalBorder": {
+			"color": true,
+			"radius": true,
+			"style": true,
+			"width": true
+		}
+	},
+	"editorScript": "file:./index.js",
+	"style": "eventwatch-event-list-style",
+	"render": "file:./render.php"
+}
