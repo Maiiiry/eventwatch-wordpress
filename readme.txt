@@ -24,9 +24,19 @@ Classic themes can use the same list with a shortcode:
 
 `[eventwatch_events layout="list" per_page="6" order="asc" category="slug" tag="slug" prefecture="13" from="2026-12-01" to="2026-12-31" empty_text="No events yet."]`
 
-All attributes are optional. `layout` is `cards` or `list`, `order` is `asc` or `desc`, and `prefecture` is a number from 1 to 47 in the JIS order.
+All attributes are optional. `layout` is `cards` or `list`, `order` is `asc` or `desc`, and `prefecture` is a number from 1 to 47 in the JIS order. `period` is `thisMonth` or `next30Days`. It is worked out from today's date each time the list is shown, and it replaces `from` and `to`.
 
-To change how one event is drawn, copy `templates/event-card.php` or `templates/event-row.php` from the plugin to an `eventwatch` folder in your theme.
+To change how one event is drawn, copy `templates/event-card.php` or `templates/event-row.php` from the plugin to an `eventwatch` folder in your theme. The `ended` value in `$args` is true for an event that has ended.
+
+Add the Past Events block to show the events that have ended, newest first. An event moves here the day after it ends. Choose cards or a list, the number of events per page, and how far back to go. The default is one year.
+
+Classic themes can use the same list with a shortcode:
+
+`[eventwatch_past_events layout="list" per_page="6" months="12" empty_text="No past events yet."]`
+
+`months` is `3`, `6`, `12`, `24`, or `0` for all past events.
+
+The EventWatch pattern category has ready-made sections: Events This Month, Coming Soon, Past Events, and Upcoming and Past Events. The headings use your theme's colors and fonts, and you can edit them. The Event List block also has the variations Events This Month and Coming Soon.
 
 Add the Event Search block to let visitors search your upcoming events by keyword, dates, category, and prefecture. The results replace the old ones without reloading the page, and the search also works without JavaScript. The search is kept in the page URL, so visitors can share it and use the back button. Keywords match event titles, event content, and venue names.
 
