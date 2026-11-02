@@ -13,6 +13,7 @@ import {
 } from '@wordpress/editor';
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
+import { store as noticesStore } from '@wordpress/notices';
 import { store as preferencesStore } from '@wordpress/preferences';
 
 import {
@@ -36,6 +37,11 @@ import {
 
 export const PLUGIN_NAME = 'eventwatch-event-details';
 const PANEL_NAME = 'event-details';
+const PANEL_ID = `${ PLUGIN_NAME }/${ PANEL_NAME }`;
+const DOCUMENT_SIDEBAR = 'edit-post/document';
+const NOTICE_ID = 'eventwatch-event-details-paused';
+// @wordpress/interface は本体が単独のスクリプトとして配らないので、ストアを名前で引く。
+const INTERFACE_STORE = 'core/interface';
 const POST_TYPE = 'eventwatch_event';
 const LOCK_NAME = 'eventwatch-event-details';
 const PREFERENCE_SCOPE = 'eventwatch';
@@ -216,13 +222,6 @@ const useEventFields = () => {
 		}
 	}, [ stored ] );
 
-	useEffect( () => {
-		if ( focusTarget ) {
-			document.getElementById( focusTarget )?.focus();
-			setFocusTarget( null );
-		}
-	}, [ focusTarget ] );
-
 	const setField = ( key, value ) => setMeta( { ...meta, [ key ]: value } );
 
 	const { errors: rowErrors } = evaluateRows( rows );
@@ -303,8 +302,37 @@ const useEventFields = () => {
 		unlockPostAutosaving,
 	] );
 
+	const panelVisible = useSelect( ( select ) => {
+		const editor = select( editorStore );
+		return (
+			editor.isEditorPanelEnabled( PANEL_ID ) &&
+			editor.isEditorPanelOpened( PANEL_ID ) &&
+			select( INTERFACE_STORE ).getActiveComplementaryArea( 'core' ) ===
+				DOCUMENT_SIDEBAR
+		);
+	}, [] );
+	const { createErrorNotice, removeNotice } = useDispatch( noticesStore );
+
+	// 誤りの文はパネルの中にある。パネルが見えない間は、保存が止まっている理由を通知で出す。
+	useEffect( () => {
+		if ( hasErrors && ! panelVisible ) {
+			createErrorNotice(
+				__(
+					'Saving is paused. Open “Event details” and fix the errors.',
+					'eventwatch'
+				),
+				{ id: NOTICE_ID, isDismissible: false }
+			);
+		} else {
+			removeNotice( NOTICE_ID );
+		}
+		return () => removeNotice( NOTICE_ID );
+	}, [ hasErrors, panelVisible, createErrorNotice, removeNotice ] );
+
 	return {
 		meta,
+		focusTarget,
+		clearFocusTarget: () => setFocusTarget( null ),
 		setField,
 		rows,
 		rowErrors,
@@ -323,6 +351,8 @@ const useEventFields = () => {
 const EventFields = ( {
 	fields: {
 		meta,
+		focusTarget,
+		clearFocusTarget,
 		setField,
 		rows,
 		rowErrors,
@@ -337,6 +367,15 @@ const EventFields = ( {
 		urlInvalid,
 	},
 } ) => {
+	// パネルの中身は Slot が遅れて描くので、新しい組の要素を待てるこの中で動かす。
+	useEffect( () => {
+		if ( focusTarget ) {
+			document.getElementById( focusTarget )?.focus();
+			clearFocusTarget();
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- 毎回作る clearFocusTarget では動かさない。
+	}, [ focusTarget ] );
+
 	const nameMissing = venueIncomplete && ! venueName.trim();
 	const addressMissing = venueIncomplete && ! venueAddress.trim();
 
@@ -541,9 +580,12 @@ const useOpenPanelOnce = () => {
 		registry
 			.dispatch( preferencesStore )
 			.set( PREFERENCE_SCOPE, PREFERENCE_OPENED, true );
-		const panel = `${ PLUGIN_NAME }/${ PANEL_NAME }`;
-		if ( ! registry.select( editorStore ).isEditorPanelOpened( panel ) ) {
-			registry.dispatch( editorStore ).toggleEditorPanelOpened( panel );
+		if (
+			! registry.select( editorStore ).isEditorPanelOpened( PANEL_ID )
+		) {
+			registry
+				.dispatch( editorStore )
+				.toggleEditorPanelOpened( PANEL_ID );
 		}
 	}, [ opened, registry ] );
 };

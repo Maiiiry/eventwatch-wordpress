@@ -587,6 +587,67 @@ class Event_Meta_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * タイムゾーンが空のリビジョンから戻しても、サイトのタイムゾーンを補って UTC の整数を計算する。
+	 */
+	public function test_restoring_a_revision_without_zone_calculates_utc() {
+		$post_id = $this->create_event();
+		wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_content' => 'changed',
+			)
+		);
+		$revision = wp_get_post_revisions( $post_id );
+		$revision = reset( $revision );
+		add_metadata( 'post', $revision->ID, Event_Meta::OCCURRENCES, array( $this->range( '2026-12-01 09:00' ) ) );
+		add_metadata( 'post', $revision->ID, Event_Meta::ZONE, '' );
+
+		wp_restore_post_revision( $revision->ID );
+
+		$this->assertSame( array( 'Asia/Tokyo' ), get_post_meta( $post_id, Event_Meta::ZONE, false ) );
+		$this->assertSame( strtotime( '2026-12-01 00:00 UTC' ), (int) get_post_meta( $post_id, Event_Meta::FIRST_START, true ) );
+	}
+
+	/**
+	 * タイムゾーンの行が無いリビジョンから戻しても、タイムゾーンを補う。戻す処理が今の行を消すため。
+	 */
+	public function test_restoring_a_revision_with_no_zone_row_fills_the_zone() {
+		$post_id = $this->create_event();
+		update_post_meta( $post_id, Event_Meta::OCCURRENCES, array( $this->range( '2026-12-20 09:00' ) ) );
+		wp_update_post(
+			array(
+				'ID'           => $post_id,
+				'post_content' => 'changed',
+			)
+		);
+		$revision = wp_get_post_revisions( $post_id );
+		$revision = reset( $revision );
+		delete_metadata( 'post', $revision->ID, Event_Meta::ZONE );
+		update_metadata( 'post', $revision->ID, Event_Meta::OCCURRENCES, array( $this->range( '2026-12-01 09:00' ) ) );
+
+		wp_restore_post_revision( $revision->ID );
+
+		$this->assertSame( array( 'Asia/Tokyo' ), get_post_meta( $post_id, Event_Meta::ZONE, false ) );
+		$this->assertSame( strtotime( '2026-12-01 00:00 UTC' ), (int) get_post_meta( $post_id, Event_Meta::FIRST_START, true ) );
+	}
+
+	/**
+	 * タイムゾーンの行が日程より先にある投稿を消しても、メタの行が残らない。
+	 */
+	public function test_deleting_a_post_leaves_no_meta_when_zone_row_comes_first() {
+		global $wpdb;
+
+		$post_id = $this->create_event();
+		update_post_meta( $post_id, Event_Meta::ZONE, 'Asia/Tokyo' );
+		update_post_meta( $post_id, Event_Meta::OCCURRENCES, array( $this->range( '2026-12-01 09:00' ) ) );
+
+		wp_delete_post( $post_id, true );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 孤立した行を DB で直接数える。
+		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->postmeta} WHERE post_id = %d", $post_id ) ) );
+	}
+
+	/**
 	 * 自動保存は誤りのあるメタで断らず、メタだけを落とす。本体が検証の結果を見ずに先へ進むため。
 	 *
 	 * 本物の経路は DOING_AUTOSAVE を定義してプロセスに残すので、フィルターを直接呼ぶ。

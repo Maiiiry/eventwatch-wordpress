@@ -389,8 +389,9 @@ class Event_Meta {
 		if ( Post_Type::POST_TYPE !== get_post_type( $post_id ) ) {
 			return;
 		}
-		// 戻す途中はタイムゾーンが一度消える。ここで補うと、戻す値が 2 行目になって読まれない。
-		if ( doing_action( 'wp_restore_post_revision' ) ) {
+		// タイムゾーンの行が消えたときは補わない。投稿を消す途中で補うと、消えた後に行が残る。
+		// リビジョンから戻す途中で補うと、戻す値が 2 行目になって読まれない。
+		if ( self::ZONE === $key && 'deleted_post_meta' === current_filter() ) {
 			return;
 		}
 
@@ -428,9 +429,8 @@ class Event_Meta {
 
 		$zone = (string) get_post_meta( $post_id, self::ZONE, true );
 		if ( '' === $zone ) {
-			// このメタの追加でフックがもう一度呼ばれ、そちらが整数を入れる。
-			update_post_meta( $post_id, self::ZONE, wp_timezone_string() );
-			return;
+			$zone = wp_timezone_string();
+			update_post_meta( $post_id, self::ZONE, $zone );
 		}
 
 		$last  = end( $rows );
