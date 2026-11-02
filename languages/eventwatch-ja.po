@@ -364,6 +364,7 @@ msgid "Okinawa"
 msgstr "沖縄県"
 
 #: includes/class-post-type.php:58
+#: includes/class-settings.php:249
 msgid "Events"
 msgstr "イベント"
 
@@ -810,7 +811,7 @@ msgstr "開催予定と終了したイベント"
 msgid "Upcoming events"
 msgstr "開催予定のイベント"
 
-#: includes/class-event-detail.php:336
+#: includes/class-event-detail.php:379
 #: templates/event-card.php:21
 #: templates/event-row.php:22
 msgctxt "label on an event that has ended"
@@ -889,132 +890,132 @@ msgstr "アーカイブ"
 msgid "Event actions"
 msgstr "このイベントの操作"
 
-#: includes/class-event-detail.php:94
+#: includes/class-event-detail.php:102
 msgid "Single Event"
 msgstr "イベントの詳細"
 
-#: includes/class-event-detail.php:95
+#: includes/class-event-detail.php:103
 msgid "Displays a single event."
 msgstr "1 件のイベントを表示します。"
 
-#: includes/class-event-detail.php:234
+#: includes/class-event-detail.php:277
 msgid "Organizer"
 msgstr "主催"
 
-#: includes/class-event-detail.php:271
+#: includes/class-event-detail.php:314
 msgid " (opens in a new tab)"
 msgstr "（新しいタブで開きます）"
 
-#: includes/class-event-detail.php:300
+#: includes/class-event-detail.php:343
 #: build/blocks/event-field/index.js:1
 msgid "Back to events"
 msgstr "イベント一覧へ戻る"
 
-#: includes/class-event-detail.php:344
+#: includes/class-event-detail.php:387
 msgid "Date & time"
 msgstr "日時"
 
-#: includes/class-event-detail.php:357
+#: includes/class-event-detail.php:400
 msgid "See the description and the official page for how to join."
 msgstr "参加の方法は、本文と公式ページをご覧ください。"
 
-#: includes/class-event-detail.php:365
+#: includes/class-event-detail.php:408
 msgid "Venue"
 msgstr "会場"
 
 #. translators: %s: the venue name or address.
-#: includes/class-event-detail.php:411
+#: includes/class-event-detail.php:454
 #, php-format
 msgid "Venue map: %s"
 msgstr "会場の地図：%s"
 
-#: includes/class-event-detail.php:417
+#: includes/class-event-detail.php:460
 msgid "Open in Google Maps"
 msgstr "Google マップで開く"
 
-#: includes/class-event-detail.php:427
+#: includes/class-event-detail.php:470
 msgid "Open in OpenStreetMap"
 msgstr "OpenStreetMap で開く"
 
-#: includes/class-event-detail.php:489
+#: includes/class-event-detail.php:532
 msgid "Download iCal (.ics)"
 msgstr "iCal（.ics）をダウンロード"
 
-#: includes/class-event-detail.php:492
+#: includes/class-event-detail.php:535
 msgid "Google Calendar"
 msgstr "Google カレンダー"
 
-#: includes/class-event-detail.php:506
-#: includes/class-event-detail.php:507
+#: includes/class-event-detail.php:549
+#: includes/class-event-detail.php:550
 #: build/blocks/event-field/index.js:1
 msgid "Add to calendar"
 msgstr "カレンダーに追加"
 
-#: includes/class-event-detail.php:560
+#: includes/class-event-detail.php:603
 #: build/blocks/event-field/index.js:1
 msgctxt "mark an event you are interested in"
 msgid "Save"
 msgstr "気になる"
 
-#: includes/class-event-detail.php:564
+#: includes/class-event-detail.php:607
 msgid "Get a reminder in the app"
 msgstr "開催前にアプリでお知らせします"
 
-#: includes/class-event-detail.php:565
+#: includes/class-event-detail.php:608
 msgid "Close"
 msgstr "閉じる"
 
-#: includes/class-event-detail.php:567
+#: includes/class-event-detail.php:610
 msgid "Save this event in the EventWatch app, and we’ll send you a notification before it starts so you don’t forget."
 msgstr "EventWatch のアプリで気になるに入れると、行きたいイベントを忘れないよう、開催前に通知でお知らせします。"
 
-#: includes/class-event-detail.php:568
+#: includes/class-event-detail.php:611
 msgid "Open in app"
 msgstr "アプリで開く"
 
-#: includes/class-event-detail.php:570
+#: includes/class-event-detail.php:613
 msgid "Don’t have the app? Get it here."
 msgstr "アプリを入れていないときは、ここから入手できます。"
 
-#: includes/class-event-detail.php:571
+#: includes/class-event-detail.php:614
 msgid "Get it on the App Store"
 msgstr "App Store で入手"
 
-#: includes/class-event-detail.php:571
+#: includes/class-event-detail.php:614
 msgid "Get it on Google Play"
 msgstr "Google Play で入手"
 
-#: includes/class-event-detail.php:590
+#: includes/class-event-detail.php:633
 msgid "Share on X"
 msgstr "X で共有"
 
-#: includes/class-event-detail.php:600
+#: includes/class-event-detail.php:643
 msgid "Send on LINE"
 msgstr "LINE で送る"
 
-#: includes/class-event-detail.php:604
+#: includes/class-event-detail.php:647
 msgid "Share on Facebook"
 msgstr "Facebook で共有"
 
-#: includes/class-event-detail.php:612
+#: includes/class-event-detail.php:655
 msgid "Copy link"
 msgstr "リンクをコピー"
 
-#: includes/class-event-detail.php:628
+#: includes/class-event-detail.php:671
 msgid "Link copied"
 msgstr "リンクをコピーしました"
 
-#: includes/class-event-detail.php:629
+#: includes/class-event-detail.php:672
 msgid "The link could not be copied."
 msgstr "リンクをコピーできませんでした。"
 
-#: includes/class-event-detail.php:633
-#: includes/class-event-detail.php:634
+#: includes/class-event-detail.php:676
+#: includes/class-event-detail.php:677
 #: build/blocks/event-field/index.js:1
 msgid "Share"
 msgstr "共有"
 
-#: includes/class-event-detail.php:655
+#: includes/class-event-detail.php:698
 #: build/blocks/event-field/index.js:1
 msgid "Visit official page"
 msgstr "公式ページを見る"
@@ -1027,59 +1028,60 @@ msgstr "URL の接頭辞には、半角の小文字・数字・ハイフンだ�
 msgid "WordPress uses this word in its own URLs. Choose another URL prefix."
 msgstr "この語は WordPress が URL で使っています。別の接頭辞を選んでください。"
 
-#: includes/class-settings.php:115
+#: includes/class-settings.php:154
 msgid "The Google Maps API key can contain only letters, numbers, hyphens, and underscores."
 msgstr "Google Maps の API キーに使えるのは、半角の英数字・ハイフン・アンダースコアだけです。"
 
-#: includes/class-settings.php:136
+#: includes/class-settings.php:219
 msgid "Event pages"
 msgstr "イベントのページ"
 
-#: includes/class-settings.php:140
+#: includes/class-settings.php:223
 msgid "URL prefix"
 msgstr "URL の接頭辞"
 
-#: includes/class-settings.php:148
+#: includes/class-settings.php:231
 msgid "Event list page"
 msgstr "イベント一覧のページ"
 
-#: includes/class-settings.php:156
+#: includes/class-settings.php:239
 msgid "Google Maps API key (optional)"
 msgstr "Google Maps の API キー（任意）"
 
-#: includes/class-settings.php:203
+#: includes/class-settings.php:517
 msgid "Lowercase letters, numbers, and hyphens. When you change it, the old URLs redirect to the new ones."
 msgstr "半角の小文字・数字・ハイフンで入れます。変えると、旧い URL は新しい URL へ転送されます。"
 
-#: includes/class-settings.php:208
+#: includes/class-settings.php:522
 msgid "This has no effect while your permalinks use the Plain setting."
 msgstr "パーマリンクの設定が「基本」の間は効きません。"
 
-#: includes/class-settings.php:224
+#: includes/class-settings.php:538
 msgid "— Not set —"
 msgstr "— 選ばない —"
 
-#: includes/class-settings.php:230
+#: includes/class-settings.php:544
 msgid "The “Back to events” link on event pages goes here. The link is hidden until you choose a page."
 msgstr "イベントのページの「イベント一覧へ戻る」の行き先です。選ぶまでリンクは出ません。"
 
-#: includes/class-settings.php:244
+#: includes/class-settings.php:360
+#: includes/class-settings.php:558
 msgid "Not set"
 msgstr "まだ入れていません"
 
-#: includes/class-settings.php:248
+#: includes/class-settings.php:562
 msgid "When set, a venue map is embedded on event detail pages. When empty, only map links are shown."
 msgstr "入れると、イベントの詳細に会場の地図を埋め込みます。空のときは地図のリンクだけを出します。"
 
-#: includes/class-settings.php:249
+#: includes/class-settings.php:563
 msgid "Embedding a map makes visitors’ browsers load the map from Google. The key appears in the page HTML, so restrict it to your site’s domain with an HTTP referrer restriction."
 msgstr "地図を埋め込むと、閲覧者のブラウザーが Google から地図を読み込みます。キーはページの HTML に出るので、HTTP リファラーの制限でサイトのドメインに絞ってください。"
 
-#: includes/class-settings.php:250
+#: includes/class-settings.php:564
 msgid "Create the key in Google Cloud (with the Maps Embed API enabled). As the site owner, you’re responsible for reviewing Google’s terms and pricing. This key is not sent to EventWatch."
 msgstr "キーは Google Cloud で作ります（Maps Embed API を有効にしたキー）。Google の利用規約と料金は、サイトのオーナーの責任で確かめてください。このキーは EventWatch には送りません。"
 
-#: includes/class-settings.php:259
+#: includes/class-settings.php:573
 msgid "How to get an API key (Google)"
 msgstr "API キーの取り方（Google）"
 
@@ -1147,3 +1149,208 @@ msgstr "地図"
 #: includes/class-event-permalink.php:88
 msgid "Pages or posts on your site already use this URL. Choose another URL prefix."
 msgstr "サイトの固定ページや投稿がこの URL を使っています。別の接頭辞を選んでください。"
+
+#: includes/class-connection-admin.php:75
+msgid "The EventWatch API key was removed."
+msgstr "EventWatch の API キーを削除しました。"
+
+#: includes/class-connection-admin.php:91
+msgid "The new URL was saved, and sending to EventWatch has resumed."
+msgstr "新しい URL を保存し、EventWatch への送信を再開しました。"
+
+#: includes/class-connection-admin.php:111
+msgid "This site is now treated as a separate site. Its saved API key was removed. To send events from this site, enter a key."
+msgstr "このサイトを別のサイトとして扱います。保存していた API キーは削除しました。このサイトからイベントを送るときは、キーを入れてください。"
+
+#. translators: %s: organization name on EventWatch.
+#: includes/class-connection-admin.php:199
+#, php-format
+msgid "Connected to EventWatch (%s)"
+msgstr "EventWatch とつながっています（%s）"
+
+#: includes/class-connection-admin.php:204
+msgid "EventWatch rejected this API key. It may have been revoked, or the person who issued it may have left your organization or stopped being an owner. Ask an owner of your organization to issue a new key under Organization settings › Site connection, then enter it here."
+msgstr "EventWatch がこの API キーを受け付けませんでした。失効したか、発行した人が団体を抜けた、または管理者でなくなった可能性があります。団体の管理者に「団体の設定 › サイトとの連携」で発行し直してもらい、ここに入れてください。"
+
+#: includes/class-connection-admin.php:206
+msgid "Your organization is suspended on EventWatch, so nothing can be sent for now. This isn’t a problem with your API key, so you don’t need to change it. Please contact EventWatch."
+msgstr "EventWatch で団体が停止されているため、いまは送信できません。API キーの問題ではないので、キーを替える必要はありません。EventWatch に問い合わせてください。"
+
+#: includes/class-connection-admin.php:208
+msgid "EventWatch doesn’t allow this API key to be used for this site. Please contact EventWatch."
+msgstr "この API キーは、このサイトでの利用が許可されていません。EventWatch に問い合わせてください。"
+
+#: includes/class-connection-admin.php:210
+msgid "Couldn’t confirm the connection to EventWatch. Wait a moment, then try again. Your site and events aren’t affected."
+msgstr "EventWatch との接続を確かめられませんでした。少し待ってから、やり直してください。サイトとイベントに影響はありません。"
+
+#: includes/class-connection-admin.php:213
+msgid "Not checked yet. Use “Check connection” to confirm that this key works."
+msgstr "まだ確かめていません。「接続を確かめる」で、このキーが使えることを確かめてください。"
+
+#: includes/class-connection-admin.php:236
+msgid "Sorry, you are not allowed to manage options for this site."
+msgstr "このサイトの設定を変更する権限がありません。"
+
+#: includes/class-connection-admin.php:280
+msgid "To list these events on EventWatch, enter an EventWatch API key. Your site works without one."
+msgstr "これらのイベントを EventWatch に掲載するには、EventWatch の API キーを入れてください。キーがなくてもサイトは動きます。"
+
+#: includes/class-connection-admin.php:286
+msgid "Don’t show this again"
+msgstr "今後は表示しない"
+
+#: includes/class-connection-admin.php:298
+msgid "Sending to EventWatch is stopped because this site’s URL has changed."
+msgstr "サイトの URL が変わったので、EventWatch への送信を止めています。"
+
+#. translators: 1: site URL when it was last confirmed, 2: current site URL.
+#: includes/class-connection-admin.php:302
+#, php-format
+msgid "Saved URL: %1$s. Current URL: %2$s. Nothing is sent until you choose, so a copy of your site can’t change your live listings."
+msgstr "記録している URL: %1$s。今の URL: %2$s。選ぶまで何も送らないので、サイトの複製から掲載中の投稿が書き換わることはありません。"
+
+#: includes/class-connection-admin.php:319
+msgid "If this is a copy, it becomes a separate site. Its saved API key is removed, and you enter a key again only if this copy should send events."
+msgstr "複製なら、別のサイトとして扱います。保存していた API キーは削除します。この複製からイベントを送るときだけ、キーを入れ直してください。"
+
+#: includes/class-connection-admin.php:321
+msgid "If the site moved, sending continues as the same site."
+msgstr "移転なら、同じサイトとして送信を続けます。"
+
+#: includes/class-connection-admin.php:323
+msgid "This is a copy"
+msgstr "複製です"
+
+#: includes/class-connection-admin.php:325
+msgid "The site moved"
+msgstr "移転しました"
+
+#: includes/class-connection-admin.php:338
+msgid "Open EventWatch settings"
+msgstr "EventWatch の設定を開く"
+
+#: includes/class-settings.php:181
+msgid "That doesn’t look like an EventWatch API key. Keys start with “ewk_” and have 47 characters. Copy the whole key and try again."
+msgstr "EventWatch の API キーの形ではありません。キーは「ewk_」で始まる 47 字です。全体をコピーして、やり直してください。"
+
+#: includes/class-settings.php:193
+msgid "EventWatch Settings"
+msgstr "EventWatch の設定"
+
+#: includes/class-settings.php:202
+msgid "EventWatch connection"
+msgstr "EventWatch との接続"
+
+#: includes/class-settings.php:205
+msgid "EventWatch API key"
+msgstr "EventWatch の API キー"
+
+#: includes/class-settings.php:213
+msgid "Sending to EventWatch"
+msgstr "EventWatch への送信"
+
+#: includes/class-settings.php:246
+msgid "Removing the plugin"
+msgstr "プラグインの削除"
+
+#: includes/class-settings.php:293
+msgid "Settings that connect this site to EventWatch."
+msgstr "このサイトと EventWatch をつなぐための設定です。"
+
+#: includes/class-settings.php:328
+msgid "Check connection"
+msgstr "接続を確かめる"
+
+#: includes/class-settings.php:334
+msgid "Change key"
+msgstr "キーを替える"
+
+#: includes/class-settings.php:336
+msgid "New key. Enter it, then save your changes."
+msgstr "新しいキー。入れてから、変更を保存してください。"
+
+#: includes/class-settings.php:338
+msgid "Remove key"
+msgstr "キーを削除"
+
+#: includes/class-settings.php:346
+msgid "This key is set in wp-config.php, so it can’t be changed here."
+msgstr "このキーは wp-config.php で設定されているので、ここでは変更できません。"
+
+#: includes/class-settings.php:364
+msgid "To list your events on EventWatch, you need an EventWatch account and an API key. Your site works without them: events stay on your site and nothing is sent."
+msgstr "イベントを EventWatch に掲載するには、EventWatch のアカウントと API キーが必要です。なくてもサイトは動きます。イベントはサイトの中だけに置かれ、何も送りません。"
+
+#: includes/class-settings.php:369
+msgid "Issue an API key on EventWatch"
+msgstr "EventWatch で API キーを発行する"
+
+#: includes/class-settings.php:383
+msgid "The key you issued in EventWatch under Organization settings › Site connection. Saved keys are hidden."
+msgstr "EventWatch の「団体の設定 › サイトとの連携」で発行したキーです。保存したキーは伏せて表示します。"
+
+#: includes/class-settings.php:391
+msgid "A key saved here is also included in database backups and copies of your site. We recommend setting it in wp-config.php instead:"
+msgstr "ここに保存したキーは、データベースのバックアップやサイトの複製にも含まれます。wp-config.php での設定をおすすめします:"
+
+#: includes/class-settings.php:398
+msgid "On a multisite network, the constant applies to every site. To use a different key for each site, save the key on each site’s settings page."
+msgstr "マルチサイトでは、定数はすべてのサイトに効きます。サイトごとに別のキーを使うときは、各サイトの設定画面でキーを保存してください。"
+
+#: includes/class-settings.php:428
+msgid "Open Site connection on EventWatch"
+msgstr "EventWatch の「サイトとの連携」を開く"
+
+#: includes/class-settings.php:430
+msgid "Contact EventWatch"
+msgstr "EventWatch に問い合わせる"
+
+#. translators: %s: date and time, or "Not yet".
+#: includes/class-settings.php:456
+#, php-format
+msgid "Last successful send: %s"
+msgstr "最後に送信に成功した日時: %s"
+
+#: includes/class-settings.php:457
+msgid "Not yet"
+msgstr "まだありません"
+
+#. translators: %d: number of events.
+#: includes/class-settings.php:466
+#, php-format
+msgid "Waiting to send: %d event"
+msgid_plural "Waiting to send: %d events"
+msgstr[0] "送信待ち: %d 件"
+
+#: includes/class-settings.php:475
+msgid "DISABLE_WP_CRON is on, so WP-Cron doesn’t run on its own. If your server’s cron doesn’t run it, failed sends aren’t retried."
+msgstr "DISABLE_WP_CRON が有効なので、WP-Cron は自動では動きません。サーバーの cron から動かしていないと、失敗した送信を送り直しません。"
+
+#: includes/class-settings.php:476
+msgid "Retries use WP-Cron, which only runs when someone visits your site. To retry on time, run it from your server’s cron."
+msgstr "送り直しには WP-Cron を使います。WP-Cron はサイトへのアクセスがあるときだけ動きます。時間どおりに送り直すには、サーバーの cron から動かしてください。"
+
+#: includes/class-settings.php:479
+msgid "How to run WP-Cron from your server"
+msgstr "サーバーから WP-Cron を動かす方法"
+
+#: includes/class-settings.php:493
+msgid "Delete all events when the plugin is deleted"
+msgstr "プラグインを削除するときに、イベントもすべて削除する"
+
+#: includes/class-settings.php:497
+msgid "Off by default, so your events stay in the database. If you turn this on, deleting the plugin permanently removes the events on this site, and you can’t restore them."
+msgstr "既定はオフで、イベントはデータベースに残ります。オンにすると、プラグインの削除でこのサイトのイベントを完全に削除し、元に戻せません。"
+
+#: includes/class-connection-admin.php:110
+msgid "This site is now treated as a separate site. It keeps using the API key set in wp-config.php."
+msgstr "このサイトを別のサイトとして扱います。wp-config.php で設定した API キーは使い続けます。"
+
+#: includes/class-connection-admin.php:318
+msgid "If this is a copy, it becomes a separate site. The API key set in wp-config.php can’t be removed here, so this copy keeps sending events with that key. Remove it from wp-config.php first if this copy shouldn’t send events."
+msgstr "複製なら、別のサイトとして扱います。wp-config.php で設定した API キーはここでは削除できないので、この複製はそのキーでイベントを送り続けます。この複製から送らないときは、先に wp-config.php から削除してください。"
+
+#: includes/class-connection-admin.php:202
+msgid "EventWatch rejected this API key. It may have been revoked, or the person who issued it may have left your organization or stopped being an owner. Ask an owner of your organization to issue a new key under Organization settings › Site connection, then update it in wp-config.php."
+msgstr "EventWatch がこの API キーを受け付けませんでした。失効したか、発行した人が団体を抜けた、または管理者でなくなった可能性があります。団体の管理者に「団体の設定 › サイトとの連携」で発行し直してもらい、wp-config.php を更新してください。"

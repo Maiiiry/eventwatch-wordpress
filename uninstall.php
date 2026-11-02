@@ -81,3 +81,6 @@ if ( is_multisite() ) {
 } else {
 	$eventwatch_clean_site();
 }
+
+// 通知を閉じた印。ユーザーのメタはサイトをまたいで 1 か所にある。
+delete_metadata( 'user', 0, 'eventwatch_hide_no_key_notice', '', true );
