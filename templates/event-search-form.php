@@ -4,6 +4,7 @@
  *
  * テーマからは差し替えられない。Router への受け渡しの属性を保つため。
  * autocomplete を止めるのは、戻ったときにブラウザーが打った値を復元して、URL の条件と欄が食い違うのを防ぐため。
+ * select の value は HTML の属性ではないが、差し替えで条件と欄を揃えるために要る。Router の差分は前の描画としか比べないので、送信しなかった選択が selected だけでは戻らない。
  *
  * $args: conditions（Event_Search::conditions()）・categories・prefectures（値と語）・action・hidden（名前と値）・clear_url・suffix・interactive。
  *
@@ -65,7 +66,7 @@ $eventwatch_suffix     = $args['suffix'];
 	</fieldset>
 	<div class="eventwatch-search__field">
 		<label class="eventwatch-search__label" for="eventwatch-search-category<?php echo esc_attr( $eventwatch_suffix ); ?>"><?php esc_html_e( 'Category', 'eventwatch' ); ?></label>
-		<select class="eventwatch-search__input" id="eventwatch-search-category<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_CATEGORY ); ?>">
+		<select class="eventwatch-search__input" id="eventwatch-search-category<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_CATEGORY ); ?>" value="<?php echo esc_attr( $eventwatch_conditions['category'] ? $eventwatch_conditions['category'] : '' ); ?>">
 			<option value=""><?php esc_html_e( 'All', 'eventwatch' ); ?></option>
 			<?php foreach ( $args['categories'] as $eventwatch_value => $eventwatch_label ) : ?>
 				<option value="<?php echo esc_attr( $eventwatch_value ); ?>" <?php selected( $eventwatch_conditions['category'], $eventwatch_value ); ?>><?php echo esc_html( $eventwatch_label ); ?></option>
@@ -74,7 +75,7 @@ $eventwatch_suffix     = $args['suffix'];
 	</div>
 	<div class="eventwatch-search__field">
 		<label class="eventwatch-search__label" for="eventwatch-search-prefecture<?php echo esc_attr( $eventwatch_suffix ); ?>"><?php esc_html_e( 'Prefecture', 'eventwatch' ); ?></label>
-		<select class="eventwatch-search__input" id="eventwatch-search-prefecture<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_PREFECTURE ); ?>">
+		<select class="eventwatch-search__input" id="eventwatch-search-prefecture<?php echo esc_attr( $eventwatch_suffix ); ?>" name="<?php echo esc_attr( \EventWatch\Event_Search::PARAM_PREFECTURE ); ?>" value="<?php echo esc_attr( $eventwatch_conditions['prefecture'] ? $eventwatch_conditions['prefecture'] : '' ); ?>">
 			<option value=""><?php esc_html_e( 'All', 'eventwatch' ); ?></option>
 			<?php foreach ( $args['prefectures'] as $eventwatch_value => $eventwatch_label ) : ?>
 				<option value="<?php echo esc_attr( $eventwatch_value ); ?>" <?php selected( $eventwatch_conditions['prefecture'], $eventwatch_value ); ?>><?php echo esc_html( $eventwatch_label ); ?></option>

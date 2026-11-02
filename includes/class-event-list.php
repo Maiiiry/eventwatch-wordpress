@@ -330,6 +330,21 @@ class Event_List {
 	}
 
 	/**
+	 * 今の要求のパスとクエリ。
+	 *
+	 * REQUEST_URI は `//example.com/` の形で届くことがあり、そのままリンクにすると別のサイトを指す。パスとクエリだけを取り出す。
+	 *
+	 * @return string
+	 */
+	public static function current_uri() {
+		$uri   = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
+		$parts = wp_parse_url( $uri );
+		$path  = is_array( $parts ) && isset( $parts['path'] ) ? $parts['path'] : '';
+
+		return '/' . ltrim( $path, '/' ) . ( is_array( $parts ) && isset( $parts['query'] ) ? '?' . $parts['query'] : '' );
+	}
+
+	/**
 	 * ページ送り。1 ページしかなければ出さない。
 	 *
 	 * クエリの名前は属性ごとに分かれるので、1 ページに複数置いても互いに動かない。属性まで同じブロックは連動する。
@@ -347,7 +362,7 @@ class Event_List {
 
 		$links = paginate_links(
 			array(
-				'base'         => add_query_arg( $param, '%#%' ),
+				'base'         => add_query_arg( $param, '%#%', self::current_uri() ),
 				'format'       => '',
 				'current'      => $page,
 				'total'        => $total,

@@ -223,7 +223,8 @@ class Event_Search {
 	 * @return string
 	 */
 	private static function render_empty( array $conditions, $base ) {
-		if ( ! array_filter( $conditions ) ) {
+		// キーワードの '0' は条件なので、array_filter の真偽で判定しない。
+		if ( '' === $conditions['keyword'] && '' === $conditions['from'] && '' === $conditions['to'] && 0 === $conditions['category'] && 0 === $conditions['prefecture'] ) {
 			return '<div class="eventwatch-events__empty"><p>' . esc_html__( 'No upcoming events yet.', 'eventwatch' ) . '</p></div>';
 		}
 
@@ -238,11 +239,9 @@ class Event_Search {
 	 * @return string
 	 */
 	private static function base_url() {
-		$uri = isset( $_SERVER['REQUEST_URI'] ) ? esc_url_raw( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '/';
-
 		return remove_query_arg(
 			array( self::PARAM_KEYWORD, self::PARAM_FROM, self::PARAM_TO, self::PARAM_CATEGORY, self::PARAM_PREFECTURE, self::PARAM_PAGE ),
-			$uri
+			Event_List::current_uri()
 		);
 	}
 

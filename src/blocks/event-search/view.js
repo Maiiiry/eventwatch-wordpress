@@ -19,6 +19,14 @@ function isPlainClick( event ) {
 }
 
 function* visit( href ) {
+	// 2 つ目のブロックは region の外なので、差し替えると URL の条件と食い違う。全体を読み直す。
+	if (
+		document.querySelectorAll( '.wp-block-eventwatch-event-search' )
+			.length > 1
+	) {
+		window.location.assign( href );
+		return;
+	}
 	const context = getContext();
 	context.busy = true;
 	try {

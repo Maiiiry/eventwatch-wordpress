@@ -370,6 +370,51 @@ class Event_Search_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * キーワードの 0 も条件なので、当たらなければクリアを出す。
+	 */
+	public function test_keyword_zero_is_a_condition() {
+		$this->event( '音楽祭', '+3 days', array(), array( 'post_content' => '本文' ) );
+		$_GET = array( Event_Search::PARAM_KEYWORD => '0' );
+
+		$html = $this->render();
+
+		$this->assertStringContainsString( 'No events match your search.', $html );
+		$this->assertStringContainsString( 'value="0"', $html );
+	}
+
+	/**
+	 * `//` で始まる要求でも、送信先とリンクが別のサイトを指さない。
+	 */
+	public function test_links_stay_on_the_site_for_protocol_relative_requests() {
+		for ( $i = 0; $i < 3; $i++ ) {
+			$this->event( '音楽' . $i );
+		}
+		foreach ( array( '//evil.example/?keep=1', '///evil.example/?keep=1', '/\/evil.example/?keep=1' ) as $uri ) {
+			$_SERVER['REQUEST_URI'] = $uri;
+			$this->reset_instances();
+
+			$html = $this->render( array( 'perPage' => 2 ) );
+
+			$this->assertStringNotContainsString( 'action="//', $html, $uri );
+			$this->assertStringNotContainsString( 'href="//', $html, $uri );
+			$this->assertStringNotContainsString( 'href="/\\', $html, $uri );
+		}
+	}
+
+	/**
+	 * 差し替えで欄を揃えるために、select が今の条件を value に持つ。
+	 */
+	public function test_selects_carry_the_current_condition_as_value() {
+		$this->event( '東京', '+3 days', array( Event_Meta::PREFECTURE => 13 ) );
+		$_GET = array( Event_Search::PARAM_PREFECTURE => '13' );
+
+		$html = $this->render();
+
+		$this->assertMatchesRegularExpression( '#<select[^>]*name="eventwatch_pref" value="13">#', $html );
+		$this->assertMatchesRegularExpression( '#<select[^>]*name="eventwatch_cat" value="">#', $html );
+	}
+
+	/**
 	 * 範囲外のページは 1 ページ目を出す。
 	 */
 	public function test_page_out_of_range_falls_back_to_the_first() {
