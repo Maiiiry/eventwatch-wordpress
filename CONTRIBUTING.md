@@ -12,6 +12,7 @@
 
 ```bash
 npm run lint:js
+npm run test:js
 npm run lint:php
 npm run test:php
 npm run test:php:multisite

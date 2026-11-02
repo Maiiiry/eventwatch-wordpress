@@ -13,6 +13,7 @@ PHP と Composer は wp-env のコンテナの中で動かす。先に `npm run 
 | コマンド | 内容 |
 | --- | --- |
 | `npm run lint:js` | JS の lint |
+| `npm run test:js` | JS の単体テスト（Vitest） |
 | `npm run lint:php` | PHPCS |
 | `npm run test:php` / `npm run test:php:multisite` | PHPUnit |
 | `npm run plugin-zip` | 配布用の zip |

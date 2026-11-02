@@ -31,6 +31,7 @@ WP_ENV_PORT=8895 WP_ENV_TESTS_PORT=8896 npm run env start
 | コマンド | 内容 |
 | --- | --- |
 | `npm run lint:js` | JavaScript の lint |
+| `npm run test:js` | JavaScript の単体テスト（Vitest） |
 | `npm run lint:php` | PHPCS（WordPress の規約と PHP 7.4 以上の互換） |
 | `npm run test:php` | PHPUnit（シングルサイト） |
 | `npm run test:php:multisite` | PHPUnit（マルチサイト） |

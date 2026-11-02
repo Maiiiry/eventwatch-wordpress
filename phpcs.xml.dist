@@ -39,6 +39,22 @@
 			</property>
 		</properties>
 	</rule>
+	<rule ref="WordPress.WP.Capabilities">
+		<properties>
+			<property name="custom_capabilities" type="array">
+				<element value="edit_eventwatch_events"/>
+				<element value="edit_others_eventwatch_events"/>
+				<element value="edit_private_eventwatch_events"/>
+				<element value="edit_published_eventwatch_events"/>
+				<element value="publish_eventwatch_events"/>
+				<element value="read_private_eventwatch_events"/>
+				<element value="delete_eventwatch_events"/>
+				<element value="delete_others_eventwatch_events"/>
+				<element value="delete_private_eventwatch_events"/>
+				<element value="delete_published_eventwatch_events"/>
+			</property>
+		</properties>
+	</rule>
 	<!-- テストは配布物に入らない。WordPress のテストライブラリが読む定数を定義し、テスト用のクラスを同じファイルに置く。 -->
 	<rule ref="WordPress.Files.FileName.InvalidClassFileName">
 		<exclude-pattern>/tests/*</exclude-pattern>

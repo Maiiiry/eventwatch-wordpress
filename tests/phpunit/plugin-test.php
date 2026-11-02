@@ -23,6 +23,14 @@ class Plugin_With_Cron_Hook extends Plugin {
 class Plugin_Test extends WP_UnitTestCase {
 
 	/**
+	 * 無効化が登録を外すので、ほかのテストのために戻す。
+	 */
+	public function tear_down() {
+		\EventWatch\Post_Type::register();
+		parent::tear_down();
+	}
+
+	/**
 	 * 登録したフックが無効化で外れ、登録していないフックは残る。
 	 */
 	public function test_deactivate_clears_only_registered_cron_hooks() {

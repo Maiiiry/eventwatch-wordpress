@@ -19,6 +19,7 @@
 		"build": "wp-scripts build",
 		"start": "wp-scripts start",
 		"lint:js": "wp-scripts lint-js --no-error-on-unmatched-pattern",
+		"test:js": "wp-scripts test-unit-js",
 		"plugin-zip": "wp-scripts plugin-zip && zip -dq eventwatch.zip eventwatch/package.json eventwatch/README.md",
 		"env": "wp-env",
 		"composer": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch composer",
@@ -28,6 +29,8 @@
 	},
 	"devDependencies": {
 		"@wordpress/env": "11.17.0",
-		"@wordpress/scripts": "36.1.0"
+		"@wordpress/scripts": "36.1.0",
+		"vite": "8.3.4",
+		"vitest": "5.0.5"
 	}
 }

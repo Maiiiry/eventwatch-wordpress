@@ -1,6 +1,6 @@
 <?php
 /**
- * プラグインの有効化と無効化。
+ * プラグインの読み込みと、有効化・無効化。
  *
  * @package EventWatch
  */
@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * 有効化・無効化のときの後始末を持つ。
+ * フックの登録と、有効化・無効化のときの後始末を持つ。
  *
  * 設定は無効化では消さない。消すのは削除のとき（uninstall.php）だけ。
  */
@@ -28,11 +28,40 @@ class Plugin {
 	const CRON_HOOKS = array();
 
 	/**
-	 * 有効化のときに rewrite を作り直す。
+	 * フックを登録する。
 	 *
 	 * @return void
 	 */
-	public static function activate() {
+	public static function boot() {
+		add_action( 'init', array( Post_Type::class, 'register' ) );
+		add_action( 'after_setup_theme', array( Post_Type::class, 'add_thumbnail_support' ), 100 );
+		// 本体の wp_initialize_site（優先度 10）が表を作った後に動かす。
+		add_action( 'wp_initialize_site', array( static::class, 'initialize_site' ), 100 );
+		Event_Meta::boot();
+		Admin_Columns::boot();
+		Editor_Assets::boot();
+	}
+
+	/**
+	 * 有効化のときに権限を付け、rewrite を作り直す。
+	 *
+	 * @param bool $network_wide ネットワーク全体で有効化したか。
+	 * @return void
+	 */
+	public static function activate( $network_wide = false ) {
+		if ( $network_wide && is_multisite() ) {
+			foreach ( static::network_site_ids() as $site_id ) {
+				switch_to_blog( $site_id );
+				Capabilities::grant();
+				// switch_to_blog では rewrite の定義が切り替わらないので、flush せずに消して次の読み込みで作らせる。
+				delete_option( 'rewrite_rules' );
+				restore_current_blog();
+			}
+			return;
+		}
+
+		Capabilities::grant();
+		Post_Type::register();
 		flush_rewrite_rules();
 	}
 
@@ -44,13 +73,7 @@ class Plugin {
 	 */
 	public static function deactivate( $network_wide = false ) {
 		if ( $network_wide && is_multisite() ) {
-			foreach ( get_sites(
-				array(
-					'fields'     => 'ids',
-					'number'     => 0,
-					'network_id' => get_current_network_id(),
-				)
-			) as $site_id ) {
+			foreach ( static::network_site_ids() as $site_id ) {
 				switch_to_blog( $site_id );
 				static::clear_cron_hooks();
 				// switch_to_blog では rewrite の定義が切り替わらないので、flush せずに消して次の読み込みで作らせる。
@@ -61,7 +84,46 @@ class Plugin {
 		}
 
 		static::clear_cron_hooks();
+		// 登録が残ったまま flush すると、イベントの rewrite が作り直した規則に残る。
+		Post_Type::unregister();
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * ネットワーク全体で有効なときに、新しいサイトにも権限を付ける。
+	 *
+	 * rewrite は、新しいサイトの最初の読み込みで作られる。
+	 *
+	 * @param \WP_Site $site 作られたサイト。
+	 * @return void
+	 */
+	public static function initialize_site( $site ) {
+		if ( ! function_exists( 'is_plugin_active_for_network' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/plugin.php';
+		}
+
+		if ( ! is_plugin_active_for_network( plugin_basename( PLUGIN_FILE ) ) ) {
+			return;
+		}
+
+		switch_to_blog( (int) $site->id );
+		Capabilities::grant();
+		restore_current_blog();
+	}
+
+	/**
+	 * いまのネットワークのサイトの ID。
+	 *
+	 * @return int[]
+	 */
+	private static function network_site_ids() {
+		return get_sites(
+			array(
+				'fields'     => 'ids',
+				'number'     => 0,
+				'network_id' => get_current_network_id(),
+			)
+		);
 	}
 
 	/**
