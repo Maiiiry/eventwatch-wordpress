@@ -320,6 +320,15 @@ class Past_Events_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 今日の 0 時ちょうどに終わるイベントは、一覧の条件と同じくまだ終了の扱いにしない。
+	 */
+	public function test_event_ending_at_the_boundary_is_not_ended() {
+		$post_id = $this->event( 'edge', $this->dates( 'today 00:00' ) );
+
+		$this->assertFalse( Event_List::item_data( get_post( $post_id ) )['ended'] );
+	}
+
+	/**
 	 * 日程の無いイベントは終了の扱いにしない。
 	 */
 	public function test_event_without_dates_is_not_ended() {
@@ -554,6 +563,27 @@ class Past_Events_Test extends WP_UnitTestCase {
 				)
 			)
 		);
+	}
+
+	/**
+	 * 組の開始が範囲の終わりの翌日 0 時ちょうどなら、範囲に入らない。
+	 */
+	public function test_period_end_is_exclusive_for_each_date() {
+		$this->event(
+			'next day',
+			array(
+				array(
+					'start' => $this->wall( '-100 days 10:00' ),
+					'end'   => '',
+				),
+				array(
+					'start' => $this->wall( '+31 days 00:00' ),
+					'end'   => '',
+				),
+			)
+		);
+
+		$this->assertSame( array(), $this->upcoming( array( 'period' => 'next30Days' ) ) );
 	}
 
 	/**
