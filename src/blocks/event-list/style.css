@@ -203,7 +203,23 @@
 	padding-top: var(--wp--preset--spacing--40, 1rem);
 }
 
-/* リスト（板 1b）: 日時を先頭に置いて、日付で目を走らせやすくする。 */
+/* 同じ一覧に画像つきのカードがあれば、画像なしにも同じ大きさの枠を置き、題の高さを揃える。 */
+.eventwatch-events__items:has(.eventwatch-event__media) .eventwatch-event--card:not(:has(.eventwatch-event__media)) {
+	padding-top: 0;
+}
+
+.eventwatch-events__items:has(.eventwatch-event__media) .eventwatch-event--card:not(:has(.eventwatch-event__media))::before {
+	content: "";
+	order: -2;
+	aspect-ratio: 16 / 10;
+	margin-bottom: var(--wp--preset--spacing--20, 0.5rem);
+	background: var(--eventwatch-surface);
+}
+
+/*
+ * リスト（板 1b）: 日時を先頭に置いて、日付で目を走らせやすくする。
+ * 画像は右の列に置く。左に置くと、画像の無い行と題の始まりがずれて読みにくい（2026-11-02 にユーザーが承認した板との差）。
+ */
 .is-layout-list .eventwatch-events__items {
 	gap: 0;
 	border-top: 1px solid var(--eventwatch-line);
@@ -222,12 +238,12 @@
 }
 
 .eventwatch-event--row.has-image {
-	grid-template-columns: 72px minmax(0, 1fr);
+	grid-template-columns: minmax(0, 1fr) 72px;
 }
 
 .eventwatch-event--row .eventwatch-event__media {
 	grid-row: 1;
-	grid-column: 1;
+	grid-column: 2;
 	aspect-ratio: 1 / 1;
 }
 
@@ -236,10 +252,6 @@
 	flex-direction: column;
 	gap: 4px;
 	min-width: 0;
-}
-
-.eventwatch-event--row.has-image .eventwatch-event__body {
-	grid-column: 2;
 }
 
 .eventwatch-event--row .eventwatch-event__date {
@@ -313,7 +325,7 @@
 	}
 
 	.eventwatch-event--row.has-image {
-		grid-template-columns: 144px minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr) 144px;
 	}
 
 	.eventwatch-event--row .eventwatch-event__media {
@@ -336,6 +348,6 @@
 	}
 
 	.eventwatch-event--row.has-image {
-		grid-template-columns: 200px minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1fr) 200px;
 	}
 }
