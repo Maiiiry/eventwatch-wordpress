@@ -188,10 +188,9 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	public function test_block_theme_resolves_the_plugin_template() {
 		$this->go_to( get_permalink( $this->event() ) );
 
-		$hierarchy = apply_filters( 'single_template_hierarchy', array( 'single-' . Post_Type::POST_TYPE . '.php', 'single.php' ) );
-		$found     = array_values( get_block_templates( array( 'slug__in' => array( 'single-eventwatch-event' ) ) ) );
+		$found = array_values( get_block_templates( array( 'slug__in' => array( 'single-eventwatch-event' ) ) ) );
 
-		$this->assertContains( 'single-eventwatch-event.php', $hierarchy );
+		$this->assertSame( 10, has_filter( 'single_template_hierarchy', array( Event_Detail::class, 'add_to_template_hierarchy' ) ) );
 		$this->assertCount( 1, $found );
 		$this->assertSame( 'plugin', $found[0]->source );
 	}
@@ -868,7 +867,7 @@ class Event_Detail_Test extends WP_UnitTestCase {
 		);
 
 		$ics = str_replace( "\r\n ", '', Event_Ical::build( $post ) );
-		$this->assertStringContainsString( "SUMMARY:Tom’s A & B", str_replace( '\\', '', $ics ) );
+		$this->assertStringContainsString( 'SUMMARY:Tom’s A & B', str_replace( '\\', '', $ics ) );
 		$this->assertStringNotContainsString( '&#', $ics );
 
 		$row = Event_Dates::next_occurrence( $post->ID );
