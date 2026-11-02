@@ -20,6 +20,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+const PLUGIN_FILE = __FILE__;
+
 /*
  * 配布物に Composer の vendor を入れないので、自前で読み込む。
  * EventWatch\Foo\Bar_Baz は includes/foo/class-bar-baz.php に対応する。
@@ -43,3 +45,5 @@ spl_autoload_register(
 
 register_activation_hook( __FILE__, array( Plugin::class, 'activate' ) );
 register_deactivation_hook( __FILE__, array( Plugin::class, 'deactivate' ) );
+
+Plugin::boot();

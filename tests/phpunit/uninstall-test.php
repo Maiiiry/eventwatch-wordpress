@@ -7,12 +7,23 @@
 
 namespace EventWatch\Tests;
 
+use EventWatch\Capabilities;
+use EventWatch\Event_Meta;
+use EventWatch\Post_Type;
 use WP_UnitTestCase;
 
 /**
  * uninstall.php のテスト。
  */
 class Uninstall_Test extends WP_UnitTestCase {
+
+	/**
+	 * 基底クラスの tear_down がメタの登録を全部消すので、テストごとに登録する。
+	 */
+	public function set_up() {
+		parent::set_up();
+		Event_Meta::register();
+	}
 
 	/**
 	 * uninstall.php を流す。
@@ -45,6 +56,102 @@ class Uninstall_Test extends WP_UnitTestCase {
 		$this->assertSame( 'keep', get_option( 'eventwatchfoo_settings' ) );
 		$this->assertSame( 'keep', get_option( 'unrelated_eventwatch_settings' ) );
 		$this->assertNotNull( get_post( $post_id ) );
+	}
+
+	/**
+	 * 既定ではイベントの投稿とタームを残し、権限はすべての役割から外す。
+	 */
+	public function test_keeps_events_by_default_and_removes_capabilities() {
+		Capabilities::grant();
+		add_role( 'eventwatch_test_role', 'Test', array( 'edit_eventwatch_events' => true ) );
+		$post_id = self::factory()->post->create( array( 'post_type' => Post_Type::POST_TYPE ) );
+		$term_id = self::factory()->term->create( array( 'taxonomy' => Post_Type::TAX_TAG ) );
+
+		$this->run_uninstall();
+
+		$this->assertNotNull( get_post( $post_id ) );
+		$this->assertNotNull( get_term( $term_id, Post_Type::TAX_TAG ) );
+		foreach ( wp_roles()->role_objects as $role ) {
+			foreach ( Capabilities::PRIMITIVES as $capability ) {
+				$this->assertFalse( $role->has_cap( $capability ), $role->name . ' ' . $capability );
+			}
+		}
+
+		remove_role( 'eventwatch_test_role' );
+	}
+
+	/**
+	 * 設定を選ぶと、全状態の投稿とタームを消し、ほかの投稿と画像は残す。設定そのものも消える。
+	 */
+	public function test_deletes_events_when_option_is_set() {
+		update_option( 'eventwatch_delete_events_on_uninstall', '1' );
+
+		$event_ids = array();
+		foreach ( array( 'publish', 'draft', 'future', 'private', 'trash' ) as $status ) {
+			$event_ids[] = self::factory()->post->create(
+				array(
+					'post_type'   => Post_Type::POST_TYPE,
+					'post_status' => $status,
+					'post_date'   => 'future' === $status ? gmdate( 'Y-m-d H:i:s', time() + DAY_IN_SECONDS ) : '',
+				)
+			);
+		}
+		$term_id = self::factory()->term->create( array( 'taxonomy' => Post_Type::TAX_CATEGORY ) );
+		wp_set_object_terms( $event_ids[0], array( $term_id ), Post_Type::TAX_CATEGORY );
+		$other      = self::factory()->post->create();
+		$attachment = self::factory()->attachment->create();
+
+		$this->run_uninstall();
+
+		foreach ( $event_ids as $event_id ) {
+			$this->assertNull( get_post( $event_id ) );
+		}
+		$this->assertNull( get_term( $term_id, Post_Type::TAX_CATEGORY ) );
+		$this->assertNotNull( get_post( $other ) );
+		$this->assertNotNull( get_post( $attachment ) );
+		wp_cache_flush();
+		$this->assertFalse( get_option( 'eventwatch_delete_events_on_uninstall' ) );
+	}
+
+	/**
+	 * マルチサイトでは、ほかのサイトの権限も外れ、投稿を消すかはサイトごとの設定に従う。
+	 *
+	 * @group ms-required
+	 */
+	public function test_handles_events_and_capabilities_per_site() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite.' );
+		}
+
+		$deleting = self::factory()->blog->create();
+		switch_to_blog( $deleting );
+		Capabilities::grant();
+		update_option( 'eventwatch_delete_events_on_uninstall', '1' );
+		$deleted_post = self::factory()->post->create( array( 'post_type' => Post_Type::POST_TYPE ) );
+		restore_current_blog();
+
+		$keeping = self::factory()->blog->create();
+		switch_to_blog( $keeping );
+		Capabilities::grant();
+		$kept_post = self::factory()->post->create( array( 'post_type' => Post_Type::POST_TYPE ) );
+		restore_current_blog();
+
+		$this->run_uninstall();
+
+		wp_cache_flush();
+		switch_to_blog( $deleting );
+		$deleted_result = get_post( $deleted_post );
+		$cap_deleting   = get_role( 'editor' )->has_cap( 'edit_eventwatch_events' );
+		restore_current_blog();
+		switch_to_blog( $keeping );
+		$kept_result = get_post( $kept_post );
+		$cap_keeping = get_role( 'editor' )->has_cap( 'edit_eventwatch_events' );
+		restore_current_blog();
+
+		$this->assertNull( $deleted_result );
+		$this->assertNotNull( $kept_result );
+		$this->assertFalse( $cap_deleting );
+		$this->assertFalse( $cap_keeping );
 	}
 
 	/**
