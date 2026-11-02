@@ -8,6 +8,7 @@ import {
 } from '@wordpress/components';
 import { store as coreStore } from '@wordpress/core-data';
 import { useSelect } from '@wordpress/data';
+import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
 import ServerSideRender from '@wordpress/server-side-render';
 
@@ -22,7 +23,8 @@ function termOptions( terms ) {
 		anyOption(),
 		...( terms ?? [] ).map( ( term ) => ( {
 			value: String( term.id ),
-			label: term.name,
+			// 本体はタームの名前を実体参照にして保存し、REST もそのまま返す。
+			label: decodeEntities( term.name ),
 		} ) ),
 	];
 }

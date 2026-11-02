@@ -52,66 +52,66 @@ msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] "%1$s（ほか %2$d 日程）"
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-list.php:318
+#: includes/class-event-list.php:328
 msgid "Online"
 msgstr "オンライン"
 
 #. translators: 1: when the event starts, 2: the day the event ends.
-#: includes/class-event-dates.php:97
+#: includes/class-event-dates.php:98
 #, php-format
 msgctxt "event date range"
 msgid "%1$s – %2$s"
 msgstr "%1$s〜%2$s"
 
 #. translators: PHP date format for the start of an event in the current year.
-#: includes/class-event-dates.php:113
+#: includes/class-event-dates.php:114
 msgctxt "event start this year"
 msgid "D, M j, Y, g:i A"
 msgstr "n月j日(D) G:i"
 
 #. translators: PHP date format for the start of an event in another year.
-#: includes/class-event-dates.php:116
+#: includes/class-event-dates.php:117
 msgctxt "event start in another year"
 msgid "D, M j, Y, g:i A"
 msgstr "Y年n月j日(D) G:i"
 
 #. translators: PHP date format for the last day of an event in the current year.
-#: includes/class-event-dates.php:129
+#: includes/class-event-dates.php:130
 msgctxt "event end this year"
 msgid "D, M j, Y"
 msgstr "n月j日(D)"
 
 #. translators: PHP date format for the last day of an event in another year.
-#: includes/class-event-dates.php:132
+#: includes/class-event-dates.php:133
 msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr "Y年n月j日(D)"
 
-#: includes/class-event-list.php:70
+#: includes/class-event-list.php:76
 #: build/blocks/event-list/index.js:1
 msgid "No upcoming events yet."
 msgstr "予定しているイベントはまだありません。"
 
 #. translators: %d: the number of other dates of the event.
-#: includes/class-event-list.php:226
+#: includes/class-event-list.php:235
 #, php-format
 msgid "+%d more date"
 msgid_plural "+%d more dates"
 msgstr[0] "ほか %d 日程"
 
-#: includes/class-event-list.php:278
+#: includes/class-event-list.php:288
 msgid "Previous"
 msgstr "前へ"
 
-#: includes/class-event-list.php:279
+#: includes/class-event-list.php:289
 msgid "Next"
 msgstr "次へ"
 
-#: includes/class-event-list.php:283
+#: includes/class-event-list.php:293
 msgid "Pagination"
 msgstr "ページ送り"
 
-#: includes/class-event-list.php:323
+#: includes/class-event-list.php:333
 msgid "Venue to be announced"
 msgstr "場所未定"
 

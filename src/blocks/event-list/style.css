@@ -12,19 +12,31 @@
 	--eventwatch-base: var(--wp--preset--color--base, transparent);
 	--eventwatch-radius: var(--wp--custom--radius, 0);
 	--eventwatch-small: var(--wp--preset--font-size--small, 0.875em);
+	--eventwatch-current-bg: var(--wp--preset--color--contrast, transparent);
+	--eventwatch-current-fg: var(--wp--preset--color--base, inherit);
 
 	/* 列の切り替えはブロックの幅で決める。2 カラムの中に置いても崩れないように。 */
 	container-type: inline-size;
 	display: flex;
 	flex-direction: column;
 	gap: var(--wp--preset--spacing--50, 1.5rem);
-	width: 100%;
 	box-sizing: border-box;
 }
 
-/* オーナーが色を付けたら、テーマの弱い色と accent を重ねない（濃い地の上でコントラストが落ちるため）。 */
+/* container-type で中身の幅に頼れないので、広げる。全幅はテーマの負の余白で広げるので、幅を決めない。 */
+.wp-block-eventwatch-event-list:not(.alignfull) {
+	width: 100%;
+}
+
+/*
+ * オーナーがブロックかその外側に色を付けたら、テーマの地・弱い色・accent を重ねない。
+ * 文字はそこの色を受け継ぐので、テーマの地と重なると読めなくなる（暗い地に白い文字のグループの中など）。
+ */
 .wp-block-eventwatch-event-list.has-text-color,
-.wp-block-eventwatch-event-list.has-background {
+.wp-block-eventwatch-event-list.has-background,
+.has-text-color .wp-block-eventwatch-event-list,
+.has-background .wp-block-eventwatch-event-list,
+.wp-block-cover .wp-block-eventwatch-event-list {
 	--eventwatch-accent: currentcolor;
 	--eventwatch-contrast: currentcolor;
 	--eventwatch-muted: currentcolor;
@@ -32,6 +44,8 @@
 	--eventwatch-line: color-mix(in srgb, currentcolor 30%, transparent);
 	--eventwatch-surface: color-mix(in srgb, currentcolor 10%, transparent);
 	--eventwatch-base: transparent;
+	--eventwatch-current-bg: transparent;
+	--eventwatch-current-fg: inherit;
 }
 
 .eventwatch-events__items {
@@ -237,15 +251,12 @@
 	border-color: transparent;
 }
 
-/* 今のページは塗りで示す。塗れないときは太い枠と下線にして、色だけに頼らない。 */
+/* 今のページは塗りで示す。塗れないときも太い枠と下線が残るので、色だけに頼らない。 */
 .eventwatch-events__pagination .page-numbers.current {
 	border: 2px solid var(--eventwatch-contrast);
+	background: var(--eventwatch-current-bg);
+	color: var(--eventwatch-current-fg);
 	text-decoration: underline;
-}
-
-.wp-block-eventwatch-event-list:not(.has-text-color, .has-background) .page-numbers.current {
-	background: var(--wp--preset--color--contrast, transparent);
-	color: var(--wp--preset--color--base, inherit);
 }
 
 @container (min-width: 36rem) {

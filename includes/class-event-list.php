@@ -39,10 +39,14 @@ class Event_List {
 	 * @return string
 	 */
 	public static function render( $attributes ) {
-		$attributes = self::normalize( is_array( $attributes ) ? $attributes : array() );
-		$hash       = substr( md5( (string) wp_json_encode( $attributes ) ), 0, 8 );
-		$param      = 'eventwatch_page_' . $hash;
-		$anchor     = 'eventwatch-events-' . $hash;
+		$raw        = is_array( $attributes ) ? $attributes : array();
+		$attributes = self::normalize( $raw );
+		// 色や余白も含めて分ける。絞り込みが同じで色だけ違うブロックを、別の一覧として扱うため。
+		$identity = array_merge( $raw, $attributes );
+		ksort( $identity );
+		$hash   = substr( md5( (string) wp_json_encode( $identity ) ), 0, 8 );
+		$param  = 'eventwatch_page_' . $hash;
+		$anchor = 'eventwatch-events-' . $hash;
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- ページの番号を読むだけで、状態を変えない。
 		$page  = isset( $_GET[ $param ] ) ? max( 1, absint( $_GET[ $param ] ) ) : 1;
 		$query = self::query( $attributes, $page );
@@ -64,7 +68,7 @@ class Event_List {
 		if ( $query->posts ) {
 			$html .= '<ul class="eventwatch-events__items">';
 			foreach ( $query->posts as $post ) {
-				$html .= '<li class="eventwatch-events__item">' . self::render_item( $attributes['layout'], $post ) . '</li>';
+				$html .= '<li class="eventwatch-events__item">' . self::render_item( $attributes, $post ) . '</li>';
 			}
 			$html .= '</ul>';
 			$html .= self::render_pagination( $param, $anchor, $page, (int) $query->max_num_pages );
@@ -120,6 +124,7 @@ class Event_List {
 	 * 開催予定のイベントを引く。
 	 *
 	 * 配列のメタは比べられないので、判定と並べ替えは UTC の整数のメタで行う。日程の無いイベントはこのメタを持たないので出ない。
+	 * 期間は最初の開始と最後の終了の範囲で比べるので、組と組の間の期間にも当たる。並びも最初の開始なので、過ぎた回があるイベントは先に並ぶ。
 	 *
 	 * @param array $attributes normalize() を通した属性。
 	 * @param int   $page       ページ。
@@ -209,16 +214,18 @@ class Event_List {
 	/**
 	 * テンプレートへ渡す 1 件のデータ。
 	 *
-	 * @param WP_Post $post イベント。
+	 * @param WP_Post  $post イベント。
+	 * @param int|null $from 期間で絞っているときの始まり。
 	 * @return array{id: int, title: string, url: string, image: string, date: string, datetime: string, more: string, venue: string, category: string}
 	 */
-	public static function item_data( WP_Post $post ) {
-		$summary = Event_Dates::summary( $post->ID );
+	public static function item_data( WP_Post $post, $from = null ) {
+		$summary = Event_Dates::summary( $post->ID, $from );
 		$more    = $summary ? $summary['more'] : 0;
 
 		return array(
 			'id'       => $post->ID,
-			'title'    => wp_kses_post( get_the_title( $post ) ),
+			// カード全体がリンクなので、題の中のリンクが入れ子にならないようタグを落とす。
+			'title'    => wp_strip_all_tags( get_the_title( $post ) ),
 			'url'      => (string) get_permalink( $post ),
 			'image'    => self::image_html( $post ),
 			'date'     => $summary ? $summary['text'] : '',
@@ -237,26 +244,27 @@ class Event_List {
 	 *
 	 * the_post を呼ばない。入れ子のクエリで、固定ページの本文のループを壊さないため。
 	 *
-	 * @param string  $layout 表示形式。
-	 * @param WP_Post $post   イベント。
+	 * @param array   $attributes normalize() を通した属性。
+	 * @param WP_Post $post       イベント。
 	 * @return string
 	 */
-	private static function render_item( $layout, WP_Post $post ) {
-		$name     = self::LAYOUT_LIST === $layout ? 'event-row.php' : 'event-card.php';
+	private static function render_item( array $attributes, WP_Post $post ) {
+		$name     = self::LAYOUT_LIST === $attributes['layout'] ? 'event-row.php' : 'event-card.php';
 		$template = locate_template( self::THEME_DIR . '/' . $name );
 		if ( '' === $template ) {
 			$template = plugin_dir_path( PLUGIN_FILE ) . 'templates/' . $name;
 		}
 
 		ob_start();
-		load_template( $template, false, self::item_data( $post ) );
+		$from = self::parse_date( $attributes['dateFrom'] );
+		load_template( $template, false, self::item_data( $post, $from ? $from->getTimestamp() : null ) );
 		return (string) ob_get_clean();
 	}
 
 	/**
 	 * ページ送り。1 ページしかなければ出さない。
 	 *
-	 * クエリの名前は属性ごとに分かれるので、1 ページに複数置いても互いに動かない。
+	 * クエリの名前は属性ごとに分かれるので、1 ページに複数置いても互いに動かない。属性まで同じブロックは連動する。
 	 *
 	 * @param string $param  ページのクエリの名前。
 	 * @param string $anchor ブロックの id。移った先で一覧の頭に着地する。

@@ -38,10 +38,11 @@ class Event_Dates {
 	 *
 	 * すべて終わっていれば最後の組を返す。
 	 *
-	 * @param int $post_id 投稿の ID。
+	 * @param int      $post_id 投稿の ID。
+	 * @param int|null $from    期間で絞っているときの始まり。これより前に終わる組を飛ばす。
 	 * @return array{text: string, datetime: string, more: int}|null 日程が無ければ null。
 	 */
-	public static function summary( $post_id ) {
+	public static function summary( $post_id, $from = null ) {
 		$rows = get_post_meta( $post_id, Event_Meta::OCCURRENCES, true );
 		if ( ! is_array( $rows ) || ! $rows ) {
 			return null;
@@ -49,7 +50,7 @@ class Event_Dates {
 
 		$rows     = array_values( $rows );
 		$zone     = self::zone( $post_id );
-		$boundary = self::upcoming_boundary();
+		$boundary = max( self::upcoming_boundary(), (int) $from );
 		$index    = count( $rows ) - 1;
 
 		foreach ( $rows as $i => $row ) {

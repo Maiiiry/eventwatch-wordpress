@@ -236,6 +236,33 @@ class Event_List_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 期間で絞ると、カードの日付は期間に入る最初の組になる。
+	 */
+	public function test_period_start_selects_the_shown_occurrence() {
+		$today = new \DateTimeImmutable( 'today', wp_timezone() );
+		$first = $today->modify( '+5 days' );
+		$later = $today->modify( '+40 days' );
+		$this->event(
+			'series',
+			array(
+				array(
+					'start' => $first->format( 'Y-m-d' ) . ' 10:00',
+					'end'   => '',
+				),
+				array(
+					'start' => $later->format( 'Y-m-d' ) . ' 10:00',
+					'end'   => '',
+				),
+			)
+		);
+
+		$html = $this->render_list( array( 'dateFrom' => $today->modify( '+30 days' )->format( 'Y-m-d' ) ) );
+
+		$this->assertStringContainsString( 'datetime="' . $later->format( 'Y-m-d' ) . 'T10:00', $html );
+		$this->assertStringNotContainsString( 'datetime="' . $first->format( 'Y-m-d' ), $html );
+	}
+
+	/**
 	 * 属性を描画に使える値にそろえる。
 	 */
 	public function test_normalize_rejects_invalid_values() {
@@ -639,6 +666,33 @@ class Event_List_Test extends WP_UnitTestCase {
 
 		$this->assertStringNotContainsString( '<script', $title );
 		$this->assertStringContainsString( 'Concert', $title );
+	}
+
+	/**
+	 * 題にリンクがあっても、カードのリンクの中に入れ子にしない。
+	 */
+	public function test_item_title_has_no_nested_link() {
+		$this->event( '<a href="https://example.test/">Linked</a> title', $this->future() );
+
+		foreach ( array( 'cards', 'list' ) as $layout ) {
+			$html = $this->render_list( array( 'layout' => $layout ) );
+			$this->assertSame( 1, substr_count( $html, '<a ' ), $layout );
+			$this->assertStringContainsString( 'Linked title', $html, $layout );
+		}
+	}
+
+	/**
+	 * 色だけが違うブロックは別の一覧として扱い、同じ id にしない。
+	 */
+	public function test_blocks_differing_only_in_color_have_their_own_id() {
+		$this->event( 'event', $this->future() );
+
+		$plain   = $this->render_list( array() );
+		$colored = $this->render_list( array( 'textColor' => 'accent' ) );
+
+		preg_match( '/id="([^"]+)"/', $plain, $first );
+		preg_match( '/id="([^"]+)"/', $colored, $second );
+		$this->assertNotSame( $first[1], $second[1] );
 	}
 
 	/**
