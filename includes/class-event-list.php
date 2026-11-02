@@ -33,6 +33,8 @@ class Event_List {
 	/**
 	 * 属性を検証して描画する。
 	 *
+	 * ブロックの描画の中で呼ぶ（get_block_wrapper_attributes が描画中のブロックを読むため）。ブロックの外からは render_block を通す。
+	 *
 	 * @param array $attributes ブロックの属性。
 	 * @return string
 	 */

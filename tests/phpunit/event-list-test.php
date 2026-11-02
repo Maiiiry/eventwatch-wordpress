@@ -447,7 +447,7 @@ class Event_List_Test extends WP_UnitTestCase {
 	private function render_only( $post_id ) {
 		$term = self::factory()->term->create( array( 'taxonomy' => Post_Type::TAX_TAG ) );
 		wp_set_object_terms( $post_id, $term, Post_Type::TAX_TAG );
-		return Event_List::render( array( 'tagId' => $term ) );
+		return $this->render_list( array( 'tagId' => $term ) );
 	}
 
 	/**
@@ -475,13 +475,29 @@ class Event_List_Test extends WP_UnitTestCase {
 			$this->block(
 				array(
 					'textColor' => 'accent',
-					'style'     => array( 'spacing' => array( 'padding' => array( 'top' => '10px' ) ) ),
+					'fontSize'  => 'small',
+					'style'     => array(
+						'spacing' => array( 'padding' => array( 'top' => '10px' ) ),
+						'border'  => array( 'radius' => '7px' ),
+					),
 				)
 			)
 		);
 
 		$this->assertMatchesRegularExpression( '/^<div [^>]*class="[^"]*wp-block-eventwatch-event-list[^"]*has-accent-color/', $html );
 		$this->assertMatchesRegularExpression( '/^<div [^>]*style="[^"]*padding-top:10px/', $html );
+		$this->assertMatchesRegularExpression( '/^<div [^>]*style="[^"]*border-radius:7px/', $html );
+		$this->assertMatchesRegularExpression( '/^<div [^>]*class="[^"]*has-small-font-size/', $html );
+	}
+
+	/**
+	 * 本番と同じくブロックの描画の中で描く。
+	 *
+	 * @param array $attrs 属性。
+	 * @return string
+	 */
+	private function render_list( array $attrs ) {
+		return render_block( $this->block( $attrs ) );
 	}
 
 	/**
@@ -545,9 +561,9 @@ class Event_List_Test extends WP_UnitTestCase {
 	 * 0 件のときは文を出す。既定と、オーナーの文。
 	 */
 	public function test_empty_text() {
-		$this->assertStringContainsString( 'No upcoming events yet.', Event_List::render( array() ) );
+		$this->assertStringContainsString( 'No upcoming events yet.', $this->render_list( array() ) );
 
-		$html = Event_List::render( array( 'emptyText' => 'Nothing <b>yet</b>' ) );
+		$html = $this->render_list( array( 'emptyText' => 'Nothing <b>yet</b>' ) );
 		$this->assertStringContainsString( 'Nothing yet', $html );
 		$this->assertStringNotContainsString( 'No upcoming events yet.', $html );
 		$this->assertStringNotContainsString( '<b>', $html );
@@ -571,7 +587,7 @@ class Event_List_Test extends WP_UnitTestCase {
 		);
 
 		foreach ( array( 'cards', 'list' ) as $layout ) {
-			$html = Event_List::render( array( 'layout' => $layout ) );
+			$html = $this->render_list( array( 'layout' => $layout ) );
 			$this->assertStringNotContainsString( '<script', $html );
 			$this->assertStringNotContainsString( '<img src=x', $html );
 		}
@@ -629,7 +645,7 @@ class Event_List_Test extends WP_UnitTestCase {
 	 * 0 件の文は HTML として出さない。
 	 */
 	public function test_empty_text_is_escaped() {
-		$this->assertStringContainsString( 'A &amp; B', Event_List::render( array( 'emptyText' => 'A & B' ) ) );
+		$this->assertStringContainsString( 'A &amp; B', $this->render_list( array( 'emptyText' => 'A & B' ) ) );
 	}
 
 	/**
@@ -643,8 +659,8 @@ class Event_List_Test extends WP_UnitTestCase {
 		wp_clean_themes_cache();
 		switch_theme( 'eventwatch-override' );
 
-		$cards = Event_List::render( array() );
-		$list  = Event_List::render( array( 'layout' => 'list' ) );
+		$cards = $this->render_list( array() );
+		$list  = $this->render_list( array( 'layout' => 'list' ) );
 
 		switch_theme( WP_DEFAULT_THEME );
 
@@ -661,16 +677,16 @@ class Event_List_Test extends WP_UnitTestCase {
 		$this->event( 'b', $this->future( '+2 days' ) );
 		$this->event( 'c', $this->future( '+3 days' ) );
 
-		$this->assertStringNotContainsString( 'eventwatch-events__pagination', Event_List::render( array( 'perPage' => 3 ) ) );
+		$this->assertStringNotContainsString( 'eventwatch-events__pagination', $this->render_list( array( 'perPage' => 3 ) ) );
 
-		$html = Event_List::render( array( 'perPage' => 2 ) );
+		$html = $this->render_list( array( 'perPage' => 2 ) );
 		$this->assertStringContainsString( 'eventwatch-events__pagination', $html );
 		$this->assertStringContainsString( 'aria-current="page"', $html );
 		$this->assertMatchesRegularExpression( '/href="[^"]*eventwatch_page_[0-9a-f]{8}=2#eventwatch-events-[0-9a-f]{8}"/', $html );
 
 		preg_match( '/eventwatch_page_[0-9a-f]{8}/', $html, $param );
 		$_GET[ $param[0] ] = '2';
-		$second            = Event_List::render( array( 'perPage' => 2 ) );
+		$second            = $this->render_list( array( 'perPage' => 2 ) );
 		unset( $_GET[ $param[0] ] );
 
 		$this->assertStringContainsString( '>c<', $second );
@@ -683,12 +699,12 @@ class Event_List_Test extends WP_UnitTestCase {
 	public function test_page_out_of_range_falls_back_to_the_first() {
 		$this->event( 'a', $this->future() );
 
-		$html = Event_List::render( array() );
+		$html = $this->render_list( array() );
 		preg_match( '/id="eventwatch-events-([0-9a-f]{8})"/', $html, $hash );
 		$param = 'eventwatch_page_' . $hash[1];
 
 		$_GET[ $param ] = '99';
-		$result         = Event_List::render( array() );
+		$result         = $this->render_list( array() );
 		unset( $_GET[ $param ] );
 
 		$this->assertStringContainsString( '>a<', $result );
@@ -704,7 +720,7 @@ class Event_List_Test extends WP_UnitTestCase {
 
 		$this->go_to( get_permalink( $page ) );
 		the_post();
-		Event_List::render( array() );
+		$this->render_list( array() );
 
 		$this->assertSame( $page, get_the_ID() );
 	}
@@ -721,7 +737,7 @@ class Event_List_Test extends WP_UnitTestCase {
 			return $preempt;
 		};
 		add_filter( 'pre_http_request', $watch );
-		Event_List::render( array() );
+		$this->render_list( array() );
 		do_shortcode( '[eventwatch_events]' );
 		remove_filter( 'pre_http_request', $watch );
 
