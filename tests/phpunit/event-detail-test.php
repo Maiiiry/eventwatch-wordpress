@@ -165,8 +165,35 @@ class Event_Detail_Test extends WP_UnitTestCase {
 		$template = \WP_Block_Templates_Registry::get_instance()->get_registered( Event_Detail::TEMPLATE_NAME );
 
 		$this->assertNotNull( $template );
-		$this->assertSame( 'single-eventwatch_event', $template->slug );
+		$this->assertSame( 'single-eventwatch-event', $template->slug );
 		$this->assertSame( array( Post_Type::POST_TYPE ), $template->post_types );
+	}
+
+	/**
+	 * イベントの階層に、テーマの名前の次にプラグインのテンプレートが並ぶ。ほかの投稿には足さない。
+	 */
+	public function test_template_hierarchy() {
+		$this->assertSame(
+			array( 'single-eventwatch_event-a.php', 'single-eventwatch_event.php', 'single-eventwatch-event.php', 'single.php', 'singular.php' ),
+			Event_Detail::add_to_template_hierarchy( array( 'single-eventwatch_event-a.php', 'single-eventwatch_event.php', 'single.php', 'singular.php' ) )
+		);
+
+		$other = array( 'single-post.php', 'single.php', 'singular.php' );
+		$this->assertSame( $other, Event_Detail::add_to_template_hierarchy( $other ) );
+	}
+
+	/**
+	 * 本体がイベントのページでプラグインのテンプレートを選ぶ。
+	 */
+	public function test_block_theme_resolves_the_plugin_template() {
+		$this->go_to( get_permalink( $this->event() ) );
+
+		$hierarchy = apply_filters( 'single_template_hierarchy', array( 'single-' . Post_Type::POST_TYPE . '.php', 'single.php' ) );
+		$found     = array_values( get_block_templates( array( 'slug__in' => array( 'single-eventwatch-event' ) ) ) );
+
+		$this->assertContains( 'single-eventwatch-event.php', $hierarchy );
+		$this->assertCount( 1, $found );
+		$this->assertSame( 'plugin', $found[0]->source );
 	}
 
 	/**

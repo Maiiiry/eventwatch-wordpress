@@ -22,7 +22,13 @@ class Event_Detail {
 
 	const FIELD_BLOCK   = 'eventwatch/event-field';
 	const ACTIONS_BLOCK = 'eventwatch/event-actions';
-	const TEMPLATE_NAME = 'eventwatch//single-eventwatch_event';
+
+	/**
+	 * WordPress 6.7 の register_block_template は名前に _ を許さないので、投稿タイプのキーをそのまま使えない。
+	 * 本体の階層には single_template_hierarchy で足す。
+	 */
+	const TEMPLATE_SLUG = 'single-eventwatch-event';
+	const TEMPLATE_NAME = 'eventwatch//' . self::TEMPLATE_SLUG;
 
 	/**
 	 * EventWatch に掲載中の間だけ値がある、EventWatch 側のスラッグ。同期の取り込みが書く。
@@ -63,6 +69,7 @@ class Event_Detail {
 	 */
 	public static function boot() {
 		add_filter( 'single_template', array( self::class, 'single_template' ) );
+		add_filter( 'single_template_hierarchy', array( self::class, 'add_to_template_hierarchy' ) );
 		add_action( 'wp_enqueue_scripts', array( self::class, 'enqueue_styles' ) );
 		add_action( 'wp_head', array( self::class, 'print_head' ), 5 );
 		add_action( 'template_redirect', array( Event_Ical::class, 'maybe_send' ), 1 );
@@ -144,6 +151,26 @@ class Event_Detail {
 			. '<!-- wp:eventwatch/event-field {"field":"official",' . substr( $gap, 1 ) . '} /-->'
 			. '</' . $tag . '>' . "\n"
 			. '<!-- /wp:group -->';
+	}
+
+	/**
+	 * 本体の階層に、プラグインのテンプレートの名前を足す。
+	 *
+	 * テーマの single-eventwatch_event が先に当たるよう、その直後に置く。
+	 *
+	 * @param string[] $templates テンプレートの名前の並び。
+	 * @return string[]
+	 */
+	public static function add_to_template_hierarchy( $templates ) {
+		$key      = 'single-' . Post_Type::POST_TYPE;
+		$position = array_search( $key . '.php', $templates, true );
+		if ( false === $position ) {
+			return $templates;
+		}
+
+		array_splice( $templates, (int) $position + 1, 0, array( self::TEMPLATE_SLUG . '.php' ) );
+
+		return $templates;
 	}
 
 	/**
