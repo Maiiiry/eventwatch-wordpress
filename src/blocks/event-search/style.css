@@ -154,7 +154,7 @@
 	opacity: 0.6;
 }
 
-.eventwatch-events__empty {
+.wp-block-eventwatch-event-search .eventwatch-events__empty {
 	display: flex;
 	flex-direction: column;
 	align-items: center;

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-02T08:16:37+00:00\n"
+"POT-Creation-Date: 2026-11-02T08:38:17+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -39,7 +39,7 @@ msgid "Event date"
 msgstr ""
 
 #: includes/class-admin-columns.php:52
-#: templates/event-search-form.php:74
+#: templates/event-search-form.php:77
 #: build/blocks/event-list/index.js:1
 #: build/index.js:7
 msgid "Prefecture"
@@ -54,7 +54,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-list.php:395
+#: includes/class-event-list.php:411
 msgid "Online"
 msgstr ""
 
@@ -89,33 +89,33 @@ msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr ""
 
-#: includes/class-event-list.php:67
-#: includes/class-event-search.php:227
+#: includes/class-event-list.php:68
+#: includes/class-event-search.php:228
 #: build/blocks/event-list/index.js:1
 msgid "No upcoming events yet."
 msgstr ""
 
 #. translators: %d: the number of other dates of the event.
-#: includes/class-event-list.php:302
+#: includes/class-event-list.php:303
 #, php-format
 msgid "+%d more date"
 msgid_plural "+%d more dates"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-event-list.php:355
+#: includes/class-event-list.php:371
 msgid "Previous"
 msgstr ""
 
-#: includes/class-event-list.php:356
+#: includes/class-event-list.php:372
 msgid "Next"
 msgstr ""
 
-#: includes/class-event-list.php:360
+#: includes/class-event-list.php:376
 msgid "Pagination"
 msgstr ""
 
-#: includes/class-event-list.php:400
+#: includes/class-event-list.php:416
 msgid "Venue to be announced"
 msgstr ""
 
@@ -371,16 +371,16 @@ msgid_plural "%s events"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-event-search.php:230
+#: includes/class-event-search.php:231
 msgid "No events match your search."
 msgstr ""
 
-#: includes/class-event-search.php:231
+#: includes/class-event-search.php:232
 msgid "Try a shorter keyword, or remove the date or category filter."
 msgstr ""
 
-#: includes/class-event-search.php:232
-#: templates/event-search-form.php:84
+#: includes/class-event-search.php:233
+#: templates/event-search-form.php:87
 msgid "Clear filters"
 msgstr ""
 
@@ -465,45 +465,50 @@ msgctxt "separator between the venue and the category"
 msgid " · "
 msgstr ""
 
-#: templates/event-search-form.php:24
+#: templates/event-search-form.php:27
 msgid "Search events"
 msgstr ""
 
-#: templates/event-search-form.php:33
+#: templates/event-search-form.php:36
 msgid "Keyword"
 msgstr ""
 
-#: templates/event-search-form.php:40
+#: templates/event-search-form.php:43
 msgid "Event or venue name"
 msgstr ""
 
-#: templates/event-search-form.php:45
+#: templates/event-search-form.php:48
 msgctxt "search period"
 msgid "Dates"
 msgstr ""
 
-#: templates/event-search-form.php:52
+#: templates/event-search-form.php:55
 #: build/blocks/event-list/index.js:1
 msgid "From"
 msgstr ""
 
-#: templates/event-search-form.php:60
+#: templates/event-search-form.php:57
+msgctxt "between the search dates"
+msgid "–"
+msgstr ""
+
+#: templates/event-search-form.php:63
 #: build/blocks/event-list/index.js:1
 msgid "To"
 msgstr ""
 
-#: templates/event-search-form.php:65
+#: templates/event-search-form.php:68
 #: build/blocks/event-list/index.js:1
 msgid "Category"
 msgstr ""
 
-#: templates/event-search-form.php:67
-#: templates/event-search-form.php:76
+#: templates/event-search-form.php:70
+#: templates/event-search-form.php:79
 #: build/blocks/event-list/index.js:1
 msgid "All"
 msgstr ""
 
-#: templates/event-search-form.php:83
+#: templates/event-search-form.php:86
 msgid "Search"
 msgstr ""
 

@@ -39,7 +39,7 @@ msgid "Event date"
 msgstr "開催日"
 
 #: includes/class-admin-columns.php:52
-#: templates/event-search-form.php:74
+#: templates/event-search-form.php:77
 #: build/blocks/event-list/index.js:1
 #: build/index.js:7
 msgid "Prefecture"
@@ -53,7 +53,7 @@ msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] "%1$s（ほか %2$d 日程）"
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-list.php:395
+#: includes/class-event-list.php:411
 msgid "Online"
 msgstr "オンライン"
 
@@ -88,32 +88,32 @@ msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr "Y年n月j日(D)"
 
-#: includes/class-event-list.php:67
-#: includes/class-event-search.php:227
+#: includes/class-event-list.php:68
+#: includes/class-event-search.php:228
 #: build/blocks/event-list/index.js:1
 msgid "No upcoming events yet."
 msgstr "予定しているイベントはまだありません。"
 
 #. translators: %d: the number of other dates of the event.
-#: includes/class-event-list.php:302
+#: includes/class-event-list.php:303
 #, php-format
 msgid "+%d more date"
 msgid_plural "+%d more dates"
 msgstr[0] "ほか %d 日程"
 
-#: includes/class-event-list.php:355
+#: includes/class-event-list.php:371
 msgid "Previous"
 msgstr "前へ"
 
-#: includes/class-event-list.php:356
+#: includes/class-event-list.php:372
 msgid "Next"
 msgstr "次へ"
 
-#: includes/class-event-list.php:360
+#: includes/class-event-list.php:376
 msgid "Pagination"
 msgstr "ページ送り"
 
-#: includes/class-event-list.php:400
+#: includes/class-event-list.php:416
 msgid "Venue to be announced"
 msgstr "場所未定"
 
@@ -437,8 +437,8 @@ msgstr "イベントタグ"
 msgid "Event Tag"
 msgstr "イベントタグ"
 
-#: templates/event-search-form.php:67
-#: templates/event-search-form.php:76
+#: templates/event-search-form.php:70
+#: templates/event-search-form.php:79
 #: build/blocks/event-list/index.js:1
 msgid "All"
 msgstr "すべて"
@@ -488,7 +488,7 @@ msgstr "0 件のときの文"
 msgid "Filters"
 msgstr "絞り込み"
 
-#: templates/event-search-form.php:65
+#: templates/event-search-form.php:68
 #: build/blocks/event-list/index.js:1
 msgid "Category"
 msgstr "カテゴリ"
@@ -497,12 +497,12 @@ msgstr "カテゴリ"
 msgid "Tag"
 msgstr "タグ"
 
-#: templates/event-search-form.php:52
+#: templates/event-search-form.php:55
 #: build/blocks/event-list/index.js:1
 msgid "From"
 msgstr "期間の始まり"
 
-#: templates/event-search-form.php:60
+#: templates/event-search-form.php:63
 #: build/blocks/event-list/index.js:1
 msgid "To"
 msgstr "期間の終わり"
@@ -686,32 +686,32 @@ msgid "%s event"
 msgid_plural "%s events"
 msgstr[0] "%s 件のイベント"
 
-#: includes/class-event-search.php:230
+#: includes/class-event-search.php:231
 msgid "No events match your search."
 msgstr "条件に合うイベントは見つかりませんでした。"
 
-#: includes/class-event-search.php:231
+#: includes/class-event-search.php:232
 msgid "Try a shorter keyword, or remove the date or category filter."
 msgstr "キーワードを短くするか、期間やカテゴリの指定を外してみてください。"
 
-#: includes/class-event-search.php:232
-#: templates/event-search-form.php:84
+#: includes/class-event-search.php:233
+#: templates/event-search-form.php:87
 msgid "Clear filters"
 msgstr "条件をクリア"
 
-#: templates/event-search-form.php:24
+#: templates/event-search-form.php:27
 msgid "Search events"
 msgstr "イベントの検索"
 
-#: templates/event-search-form.php:33
+#: templates/event-search-form.php:36
 msgid "Keyword"
 msgstr "キーワード"
 
-#: templates/event-search-form.php:40
+#: templates/event-search-form.php:43
 msgid "Event or venue name"
 msgstr "イベント名や会場名"
 
-#: templates/event-search-form.php:83
+#: templates/event-search-form.php:86
 msgid "Search"
 msgstr "検索する"
 
@@ -735,7 +735,12 @@ msgctxt "block keyword"
 msgid "filter"
 msgstr "絞り込み"
 
-#: templates/event-search-form.php:45
+#: templates/event-search-form.php:48
 msgctxt "search period"
 msgid "Dates"
 msgstr "期間"
+
+#: templates/event-search-form.php:57
+msgctxt "between the search dates"
+msgid "–"
+msgstr "〜"

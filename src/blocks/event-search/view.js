@@ -19,10 +19,11 @@ function isPlainClick( event ) {
 }
 
 function* visit( href ) {
-	// 2 つ目のブロックは region の外なので、差し替えると URL の条件と食い違う。全体を読み直す。
+	// 検索のブロックも一覧のクラスを持つ。2 つ目の検索と一覧のブロックは region の外なので、差し替えると
+	// URL の条件と食い違う。全体を読み直す。
 	if (
-		document.querySelectorAll( '.wp-block-eventwatch-event-search' )
-			.length > 1
+		document.querySelectorAll( '.wp-block-eventwatch-event-list' ).length >
+		1
 	) {
 		window.location.assign( href );
 		return;
@@ -37,6 +38,9 @@ function* visit( href ) {
 			loadingAnimation: false,
 			screenReaderAnnouncement: false,
 		} );
+	} catch {
+		// Router を読めなければ、JS が無いときと同じ形で開く。
+		window.location.assign( href );
 	} finally {
 		context.busy = false;
 	}

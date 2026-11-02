@@ -54,7 +54,7 @@ $eventwatch_suffix     = $args['suffix'];
 				value="<?php echo esc_attr( $eventwatch_conditions['from'] ); ?>"
 				aria-label="<?php esc_attr_e( 'From', 'eventwatch' ); ?>"
 			/>
-			<span aria-hidden="true">〜</span>
+			<span aria-hidden="true"><?php echo esc_html_x( '–', 'between the search dates', 'eventwatch' ); ?></span>
 			<input
 				class="eventwatch-search__input"
 				type="date"
