@@ -664,7 +664,7 @@ class Event_Meta {
 	 * @param string $zone     タイムゾーン。
 	 * @return int|null
 	 */
-	private static function to_utc( $datetime, $zone ) {
+	public static function to_utc( $datetime, $zone ) {
 		try {
 			$parsed = DateTimeImmutable::createFromFormat( '!' . self::DATETIME_FORMAT, $datetime, new DateTimeZone( $zone ) );
 		} catch ( Exception $e ) {

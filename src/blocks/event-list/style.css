@@ -1,0 +1,287 @@
+/*
+ * 値はテーマの preset だけを参照する。色・書体・余白をここで決めない。
+ * テーマに無い preset は currentColor や本文の大きさに落とす。
+ */
+.wp-block-eventwatch-event-list {
+	--eventwatch-accent: var(--wp--preset--color--accent, var(--wp--preset--color--contrast, currentcolor));
+	--eventwatch-contrast: var(--wp--preset--color--contrast, currentcolor);
+	--eventwatch-muted: var(--wp--preset--color--contrast-2, currentcolor);
+	--eventwatch-border: var(--wp--preset--color--contrast-3, currentcolor);
+	--eventwatch-line: var(--wp--preset--color--line, color-mix(in srgb, currentcolor 20%, transparent));
+	--eventwatch-surface: var(--wp--preset--color--base-2, color-mix(in srgb, currentcolor 6%, transparent));
+	--eventwatch-base: var(--wp--preset--color--base, transparent);
+	--eventwatch-radius: var(--wp--custom--radius, 0);
+	--eventwatch-small: var(--wp--preset--font-size--small, 0.875em);
+
+	/* 列の切り替えはブロックの幅で決める。2 カラムの中に置いても崩れないように。 */
+	container-type: inline-size;
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--preset--spacing--50, 1.5rem);
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/* オーナーが色を付けたら、テーマの弱い色と accent を重ねない（濃い地の上でコントラストが落ちるため）。 */
+.wp-block-eventwatch-event-list.has-text-color,
+.wp-block-eventwatch-event-list.has-background {
+	--eventwatch-accent: currentcolor;
+	--eventwatch-contrast: currentcolor;
+	--eventwatch-muted: currentcolor;
+	--eventwatch-border: currentcolor;
+	--eventwatch-line: color-mix(in srgb, currentcolor 30%, transparent);
+	--eventwatch-surface: color-mix(in srgb, currentcolor 10%, transparent);
+	--eventwatch-base: transparent;
+}
+
+.eventwatch-events__items {
+	display: grid;
+	gap: var(--wp--preset--spacing--50, 1.5rem);
+	grid-template-columns: minmax(0, 1fr);
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.eventwatch-events__item {
+	display: flex;
+	min-width: 0;
+	margin: 0;
+}
+
+.wp-block-eventwatch-event-list a.eventwatch-event {
+	color: inherit;
+	text-decoration: none;
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.wp-block-eventwatch-event-list a.eventwatch-event:focus-visible,
+.eventwatch-events__pagination .page-numbers:focus-visible {
+	outline: 2px solid var(--eventwatch-contrast);
+	outline-offset: 2px;
+}
+
+.eventwatch-event__title {
+	margin: 0;
+	font-family: var(--wp--preset--font-family--heading, inherit);
+	font-size: min(var(--wp--preset--font-size--large, 1.25em), 1.5em);
+	font-weight: 700;
+	line-height: 1.45;
+	color: var(--eventwatch-accent);
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.25em;
+	overflow-wrap: anywhere;
+}
+
+.eventwatch-event__date,
+.eventwatch-event__venue {
+	margin: 0;
+	font-size: var(--eventwatch-small);
+	line-height: 1.6;
+}
+
+.eventwatch-event__date {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0 0.6em;
+}
+
+.eventwatch-event__more,
+.eventwatch-event__venue,
+.eventwatch-event__category {
+	color: var(--eventwatch-muted);
+}
+
+.eventwatch-event__category {
+	font-size: var(--eventwatch-small);
+	line-height: 1.5;
+}
+
+.eventwatch-event__media {
+	overflow: hidden;
+	background: var(--eventwatch-surface);
+}
+
+/*
+ * テーマの img の指定に負けないよう、ブロックの名前から指定する。
+ * Twenty Twenty-One は画像の幅を max-width としてインラインで付けるので、小さい画像が枠に広がらない。
+ */
+.wp-block-eventwatch-event-list .eventwatch-event__media img {
+	display: block;
+	max-width: none !important;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+/* カード（板 1a）: 見た目は画像・カテゴリ・題・日時・会場の順。 */
+.eventwatch-event--card {
+	display: flex;
+	flex-direction: column;
+	gap: var(--wp--preset--spacing--20, 0.5rem);
+	overflow: hidden;
+	padding-bottom: var(--wp--preset--spacing--40, 1rem);
+	border: 1px solid var(--eventwatch-line);
+	border-radius: var(--eventwatch-radius);
+	background: var(--eventwatch-base);
+}
+
+.eventwatch-event--card > :not(.eventwatch-event__media) {
+	margin-inline: var(--wp--preset--spacing--40, 1rem);
+}
+
+.eventwatch-event--card .eventwatch-event__media {
+	order: -2;
+	aspect-ratio: 16 / 10;
+	margin-bottom: var(--wp--preset--spacing--20, 0.5rem);
+}
+
+.eventwatch-event--card .eventwatch-event__category {
+	order: -1;
+}
+
+.eventwatch-event--card:not(:has(.eventwatch-event__media)) {
+	padding-top: var(--wp--preset--spacing--40, 1rem);
+}
+
+/* リスト（板 1b）: 日時を先頭に置いて、日付で目を走らせやすくする。 */
+.is-layout-list .eventwatch-events__items {
+	gap: 0;
+	border-top: 1px solid var(--eventwatch-line);
+}
+
+.is-layout-list .eventwatch-events__item {
+	border-bottom: 1px solid var(--eventwatch-line);
+}
+
+.eventwatch-event--row {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: var(--wp--preset--spacing--40, 1rem);
+	align-items: start;
+	padding-block: var(--wp--preset--spacing--40, 1rem);
+}
+
+.eventwatch-event--row.has-image {
+	grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.eventwatch-event--row .eventwatch-event__media {
+	grid-row: 1;
+	grid-column: 1;
+	aspect-ratio: 1 / 1;
+}
+
+.eventwatch-event--row .eventwatch-event__body {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.eventwatch-event--row.has-image .eventwatch-event__body {
+	grid-column: 2;
+}
+
+.eventwatch-event--row .eventwatch-event__date {
+	order: -1;
+}
+
+.eventwatch-event--row time {
+	font-weight: 700;
+}
+
+.eventwatch-event--row .eventwatch-event__title {
+	font-size: var(--wp--preset--font-size--medium, 1.125em);
+}
+
+/* 0 件（板 1d） */
+.eventwatch-events__empty {
+	padding: var(--wp--preset--spacing--60, 2rem) var(--wp--preset--spacing--50, 1.5rem);
+	border: 1px dashed var(--eventwatch-border);
+	border-radius: var(--eventwatch-radius);
+	text-align: center;
+}
+
+.eventwatch-events__empty p {
+	margin: 0;
+	font-weight: 700;
+}
+
+/* ページ送り（板 1b） */
+.eventwatch-events__pagination {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: var(--wp--preset--spacing--20, 0.5rem);
+}
+
+.eventwatch-events__pagination .page-numbers {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	box-sizing: border-box;
+	min-width: 44px;
+	min-height: 44px;
+	padding: 0 var(--wp--preset--spacing--30, 0.75rem);
+	border: 1px solid var(--eventwatch-line);
+	border-radius: var(--eventwatch-radius);
+	color: inherit;
+	font-weight: 700;
+	text-decoration: none;
+}
+
+.eventwatch-events__pagination .page-numbers.dots {
+	border-color: transparent;
+}
+
+/* 今のページは塗りで示す。塗れないときは太い枠と下線にして、色だけに頼らない。 */
+.eventwatch-events__pagination .page-numbers.current {
+	border: 2px solid var(--eventwatch-contrast);
+	text-decoration: underline;
+}
+
+.wp-block-eventwatch-event-list:not(.has-text-color, .has-background) .page-numbers.current {
+	background: var(--wp--preset--color--contrast, transparent);
+	color: var(--wp--preset--color--base, inherit);
+}
+
+@container (min-width: 36rem) {
+
+	.eventwatch-events__items {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.is-layout-list .eventwatch-events__items {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.eventwatch-event--row.has-image {
+		grid-template-columns: 144px minmax(0, 1fr);
+	}
+
+	.eventwatch-event--row .eventwatch-event__media {
+		aspect-ratio: 16 / 10;
+	}
+
+	.eventwatch-event--row .eventwatch-event__title {
+		font-size: min(var(--wp--preset--font-size--large, 1.25em), 1.5em);
+	}
+}
+
+@container (min-width: 56rem) {
+
+	.eventwatch-events__items {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+
+	.is-layout-list .eventwatch-events__items {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.eventwatch-event--row.has-image {
+		grid-template-columns: 200px minmax(0, 1fr);
+	}
+}

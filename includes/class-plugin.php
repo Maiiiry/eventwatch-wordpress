@@ -33,13 +33,26 @@ class Plugin {
 	 * @return void
 	 */
 	public static function boot() {
+		add_action( 'init', array( static::class, 'load_translations' ), 0 );
 		add_action( 'init', array( Post_Type::class, 'register' ) );
+		add_action( 'init', array( Event_List_Block::class, 'register' ) );
 		add_action( 'after_setup_theme', array( Post_Type::class, 'add_thumbnail_support' ), 100 );
 		// 本体の wp_initialize_site（優先度 10）が表を作った後に動かす。
 		add_action( 'wp_initialize_site', array( static::class, 'initialize_site' ), 100 );
 		Event_Meta::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
+	}
+
+	/**
+	 * 同梱の翻訳の場所を本体に伝える。
+	 *
+	 * 公式ディレクトリの翻訳が届いていれば、本体はそちらを先に読む。
+	 *
+	 * @return void
+	 */
+	public static function load_translations() {
+		load_plugin_textdomain( 'eventwatch', false, dirname( plugin_basename( PLUGIN_FILE ) ) . '/languages' );
 	}
 
 	/**

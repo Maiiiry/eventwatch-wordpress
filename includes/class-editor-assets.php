@@ -52,7 +52,7 @@ class Editor_Assets {
 			$asset['version'],
 			true
 		);
-		wp_set_script_translations( self::HANDLE, 'eventwatch' );
+		wp_set_script_translations( self::HANDLE, 'eventwatch', plugin_dir_path( PLUGIN_FILE ) . 'languages' );
 		wp_add_inline_script(
 			self::HANDLE,
 			'window.eventwatchEditor = ' . wp_json_encode(
@@ -77,7 +77,7 @@ class Editor_Assets {
 	 * @param array<int, string> $labels 値と語。
 	 * @return array<int, array{value: string, label: string}>
 	 */
-	private static function to_options( array $labels ) {
+	public static function to_options( array $labels ) {
 		$options = array();
 		foreach ( $labels as $value => $label ) {
 			$options[] = array(

@@ -11,6 +11,8 @@
 		"eventwatch.php",
 		"uninstall.php",
 		"includes",
+		"templates",
+		"languages",
 		"build",
 		"readme.txt",
 		"LICENSE"
@@ -25,6 +27,8 @@
 		"composer": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch composer",
 		"lint:php": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpcs",
 		"test:php": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch vendor/bin/phpunit",
+		"i18n": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch sh -c 'wp i18n make-pot . languages/eventwatch.pot --exclude=src,tests,vendor,node_modules && wp i18n update-po languages/eventwatch.pot && wp i18n make-mo languages && wp i18n make-json languages --no-purge'",
+		"i18n:check": "wp-env run cli --env-cwd=wp-content/plugins/eventwatch wp eval-file tests/check-translations.php",
 		"test:php:multisite": "wp-env run tests-cli --env-cwd=wp-content/plugins/eventwatch env WP_MULTISITE=1 vendor/bin/phpunit"
 	},
 	"devDependencies": {
