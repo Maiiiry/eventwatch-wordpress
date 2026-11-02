@@ -42,14 +42,16 @@
 	border: 0;
 }
 
-.eventwatch-search__label {
+/* クラシックテーマは label に余白を付けるので、ブロックの名前から消す。 */
+.wp-block-eventwatch-event-search .eventwatch-search__label {
+	margin: 0;
 	padding: 0;
 	font-size: var(--eventwatch-small);
 	font-weight: 700;
 }
 
 /* legend は flex の項目にならないので、隣の欄と揃うよう gap と同じ分を空ける。 */
-.eventwatch-search__field > legend {
+.wp-block-eventwatch-event-search .eventwatch-search__field > legend {
 	margin-bottom: 4px;
 }
 

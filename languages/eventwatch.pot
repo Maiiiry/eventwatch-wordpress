@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-02T07:29:08+00:00\n"
+"POT-Creation-Date: 2026-11-02T08:16:37+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -39,6 +39,7 @@ msgid "Event date"
 msgstr ""
 
 #: includes/class-admin-columns.php:52
+#: templates/event-search-form.php:74
 #: build/blocks/event-list/index.js:1
 #: build/index.js:7
 msgid "Prefecture"
@@ -53,7 +54,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: includes/class-admin-columns.php:161
-#: includes/class-event-list.php:328
+#: includes/class-event-list.php:395
 msgid "Online"
 msgstr ""
 
@@ -88,32 +89,33 @@ msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr ""
 
-#: includes/class-event-list.php:76
+#: includes/class-event-list.php:67
+#: includes/class-event-search.php:227
 #: build/blocks/event-list/index.js:1
 msgid "No upcoming events yet."
 msgstr ""
 
 #. translators: %d: the number of other dates of the event.
-#: includes/class-event-list.php:235
+#: includes/class-event-list.php:302
 #, php-format
 msgid "+%d more date"
 msgid_plural "+%d more dates"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-event-list.php:288
+#: includes/class-event-list.php:355
 msgid "Previous"
 msgstr ""
 
-#: includes/class-event-list.php:289
+#: includes/class-event-list.php:356
 msgid "Next"
 msgstr ""
 
-#: includes/class-event-list.php:293
+#: includes/class-event-list.php:360
 msgid "Pagination"
 msgstr ""
 
-#: includes/class-event-list.php:333
+#: includes/class-event-list.php:400
 msgid "Venue to be announced"
 msgstr ""
 
@@ -361,6 +363,27 @@ msgstr ""
 msgid "Okinawa"
 msgstr ""
 
+#. translators: %s: the number of events found.
+#: includes/class-event-search.php:213
+#, php-format
+msgid "%s event"
+msgid_plural "%s events"
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/class-event-search.php:230
+msgid "No events match your search."
+msgstr ""
+
+#: includes/class-event-search.php:231
+msgid "Try a shorter keyword, or remove the date or category filter."
+msgstr ""
+
+#: includes/class-event-search.php:232
+#: templates/event-search-form.php:84
+msgid "Clear filters"
+msgstr ""
+
 #: includes/class-post-type.php:40
 msgid "Events"
 msgstr ""
@@ -442,27 +465,70 @@ msgctxt "separator between the venue and the category"
 msgid " · "
 msgstr ""
 
+#: templates/event-search-form.php:24
+msgid "Search events"
+msgstr ""
+
+#: templates/event-search-form.php:33
+msgid "Keyword"
+msgstr ""
+
+#: templates/event-search-form.php:40
+msgid "Event or venue name"
+msgstr ""
+
+#: templates/event-search-form.php:45
+msgctxt "search period"
+msgid "Dates"
+msgstr ""
+
+#: templates/event-search-form.php:52
+#: build/blocks/event-list/index.js:1
+msgid "From"
+msgstr ""
+
+#: templates/event-search-form.php:60
+#: build/blocks/event-list/index.js:1
+msgid "To"
+msgstr ""
+
+#: templates/event-search-form.php:65
+#: build/blocks/event-list/index.js:1
+msgid "Category"
+msgstr ""
+
+#: templates/event-search-form.php:67
+#: templates/event-search-form.php:76
 #: build/blocks/event-list/index.js:1
 msgid "All"
 msgstr ""
 
+#: templates/event-search-form.php:83
+msgid "Search"
+msgstr ""
+
 #: build/blocks/event-list/index.js:1
+#: build/blocks/event-search/index.js:1
 msgid "Display"
 msgstr ""
 
 #: build/blocks/event-list/index.js:1
+#: build/blocks/event-search/index.js:1
 msgid "Layout"
 msgstr ""
 
 #: build/blocks/event-list/index.js:1
+#: build/blocks/event-search/index.js:1
 msgid "Cards"
 msgstr ""
 
 #: build/blocks/event-list/index.js:1
+#: build/blocks/event-search/index.js:1
 msgid "List"
 msgstr ""
 
 #: build/blocks/event-list/index.js:1
+#: build/blocks/event-search/index.js:1
 msgid "Events per page"
 msgstr ""
 
@@ -487,19 +553,7 @@ msgid "Filters"
 msgstr ""
 
 #: build/blocks/event-list/index.js:1
-msgid "Category"
-msgstr ""
-
-#: build/blocks/event-list/index.js:1
 msgid "Tag"
-msgstr ""
-
-#: build/blocks/event-list/index.js:1
-msgid "From"
-msgstr ""
-
-#: build/blocks/event-list/index.js:1
-msgid "To"
 msgstr ""
 
 #. translators: %d: the position of the date in the list.
@@ -659,6 +713,7 @@ msgid "Show the upcoming events of your site. The list follows your theme's colo
 msgstr ""
 
 #: build/blocks/event-list/block.json
+#: build/blocks/event-search/block.json
 msgctxt "block keyword"
 msgid "event"
 msgstr ""
@@ -666,4 +721,24 @@ msgstr ""
 #: build/blocks/event-list/block.json
 msgctxt "block keyword"
 msgid "calendar"
+msgstr ""
+
+#: build/blocks/event-search/block.json
+msgctxt "block title"
+msgid "Event Search"
+msgstr ""
+
+#: build/blocks/event-search/block.json
+msgctxt "block description"
+msgid "Let visitors search your upcoming events by keyword, dates, category, and prefecture."
+msgstr ""
+
+#: build/blocks/event-search/block.json
+msgctxt "block keyword"
+msgid "search"
+msgstr ""
+
+#: build/blocks/event-search/block.json
+msgctxt "block keyword"
+msgid "filter"
 msgstr ""
