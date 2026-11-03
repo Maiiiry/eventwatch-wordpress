@@ -72,11 +72,28 @@ On a multisite network the constant applies to every site. To use a different ke
 
 If your site's URL changes, for example when you copy it to a staging site, nothing is sent to EventWatch until an administrator confirms in Settings > EventWatch whether the site is a copy or has moved. A copy becomes a separate site, and its saved key is removed. A key set in `wp-config.php` can't be removed this way, so remove it from the copy's `wp-config.php` first if the copy shouldn't send events.
 
+= What is sent to EventWatch =
+
+Once a key is set, events are sent when you publish them, including scheduled events at their publish time. EventWatch reviews them before listing them, and the review only affects the listing on EventWatch: your site shows the event as soon as you publish it. In the editor, the EventWatch panel shows the status of each event.
+
+* Updating a published event sends the update. An event listed on EventWatch stays listed.
+* Moving an event to draft, pending review, private, password-protected, or the trash withdraws it from EventWatch. Restoring it from the trash sends nothing until you publish it again.
+* Deleting an event permanently deletes it on EventWatch.
+* Turn off "Send this post to EventWatch" to keep an event on your site only. If the event was already sent, it is withdrawn from EventWatch.
+
+Events you published before entering a key are not sent automatically. They are sent the next time you update them.
+
+The content is sent as Markdown with headings, paragraphs, lists, quotes, links, and emphasis. Images and embeds in the content are not sent. An event isn't sent if it has no title, no dates, no EventWatch category, or no prefecture (unless it's held online), or if its title is over 256 characters or its content is over 10,000 characters after conversion. The panel lists the reasons, and publishing on your site isn't affected.
+
+If EventWatch can't be reached, sending is retried automatically after 1 minute, 5 minutes, 30 minutes, and 2 hours, and then every 6 hours. Only the latest version of an event is sent. Retries use WP-Cron, which only runs when someone visits your site. To retry on time, run WP-Cron from your server's cron: https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/ . If your key is rejected or your organization is suspended, sending stops until you enter a new key, "Check connection" succeeds, or you update an event.
+
+By saving a key, you agree to the EventWatch Terms of Service ( https://eventwatch.app/terms ) and Posting Guidelines ( https://eventwatch.app/post/guidelines ). This also applies to a key set in `wp-config.php`.
+
 Your site does not depend on EventWatch. Your pages and publishing keep working if EventWatch is unavailable, and visitors' browsers never connect to EventWatch for the event pages or blocks. The only link to EventWatch that visitors get is the "Open in the app" link for events listed there.
 
 = External services =
 
-**EventWatch** (https://eventwatch.app): this plugin connects your server to the EventWatch API (`api.eventwatch.app`) only after you enter an API key. In this version, it connects when an administrator uses "Check connection". The request sends the API key and returns your organization's name. Terms of use: https://eventwatch.app/terms . Privacy policy: https://eventwatch.app/privacy .
+**EventWatch** (https://eventwatch.app): this plugin connects your server to the EventWatch API (`api.eventwatch.app`) only after you enter an API key. It connects when an administrator uses "Check connection", which sends the API key and returns your organization's name, and when events are sent as described in "What is sent to EventWatch". Sending an event sends its title, content, dates, time zone, notes on dates, category, prefecture, online setting, venue name and address, official page URL, last-updated time, and the site ID and post ID. Deleting the plugin tells EventWatch to detach this site's events. Terms of use: https://eventwatch.app/terms . Privacy policy: https://eventwatch.app/privacy .
 
 **Google Maps**: see "Maps" above.
 
@@ -86,7 +103,7 @@ WordPress publishes scheduled events with WP-Cron, which only runs when someone 
 
 = Removing the plugin =
 
-Deleting the plugin removes its settings, including the API key and the site ID, and the capabilities it added to user roles. Your events stay in the database unless you turn on "Delete all events when the plugin is deleted" in Settings > EventWatch. If you reinstall the plugin, the site gets a new site ID, so EventWatch treats it as a new site: when you publish the remaining events, they can be sent as separate posts.
+Deleting the plugin removes its settings, including the API key and the site ID, the send status of each event, and the capabilities it added to user roles. It also tells EventWatch to detach this site's events: they stay listed on EventWatch and you can edit them there. If EventWatch can't be reached, the plugin is still deleted; in that case, revoke the API key on EventWatch. Your events stay in the database unless you turn on "Delete all events when the plugin is deleted" in Settings > EventWatch. If you reinstall the plugin, the site gets a new site ID, so EventWatch treats it as a new site: when you publish the remaining events, they can be sent as separate posts.
 
 = Translations =
 

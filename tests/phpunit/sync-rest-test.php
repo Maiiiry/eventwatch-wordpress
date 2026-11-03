@@ -238,7 +238,11 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 		$this->next = $this->answer( $code, $body );
 		Sync_Queue::send_marked();
 
-		$this->assertStringContainsString( $phrase, Sync_Rest::status( $id )['reason']['text'] );
+		$status = Sync_Rest::status( $id );
+
+		$this->assertStringContainsString( $phrase, $status['reason']['text'] );
+		// 印が残る（キーを直せば送れる）失敗だけ、今すぐ送り直せる。
+		$this->assertSame( in_array( $code, array( 401, 403 ), true ), $status['canResend'] );
 	}
 
 	/**

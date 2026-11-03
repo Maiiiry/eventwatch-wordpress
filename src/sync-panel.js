@@ -1,17 +1,26 @@
 import apiFetch from '@wordpress/api-fetch';
 import { Button, ToggleControl } from '@wordpress/components';
 import { useEntityProp } from '@wordpress/core-data';
-import { useRegistry, useSelect } from '@wordpress/data';
+import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import {
 	PluginDocumentSettingPanel,
 	store as editorStore,
 } from '@wordpress/editor';
 import { useCallback, useEffect, useRef, useState } from '@wordpress/element';
 import { __ } from '@wordpress/i18n';
+import { store as noticesStore } from '@wordpress/notices';
 
 import { EVENT_PANEL_ID, SYNC_BLOCKS_EVENT } from './panel-names';
+import useOpenPanelOnce from './use-open-panel-once';
 
 const POST_TYPE = 'eventwatch_event';
+const PANEL_NAME = 'eventwatch-sync';
+const SYNC_PLUGIN_NAME = 'eventwatch-sync';
+const NOTICE_ID = 'eventwatch-sync-attention';
+const DOCUMENT_SIDEBAR = 'edit-post/document';
+// @wordpress/interface は本体が単独のスクリプトとして配らないので、ストアを名前で引く。
+const INTERFACE_STORE = 'core/interface';
+const PANEL_ID = `${ SYNC_PLUGIN_NAME }/${ PANEL_NAME }`;
 const SEND_FIELD = 'eventwatch_send';
 
 // 保存の応答は送信の前に作られるので、送信待ちの間だけ読み直す。
@@ -23,6 +32,8 @@ const ICONS = {
 	clock: 'M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
 	minus: 'M15 12H9m12 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
 	pause: 'M14.25 9v6m-4.5 0V9M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
+	refresh:
+		'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
 	warning:
 		'M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z',
 };
@@ -180,24 +191,74 @@ const SyncPanelContent = ( { unsavedText } ) => {
 		SEND_FIELD
 	);
 	const { status, resend, resending } = useSyncStatus( postId );
+	const registry = useRegistry();
 
-	const categoryBlocked = Boolean(
-		send !== false &&
-		status?.blocks.some( ( block ) => block.code === 'category' )
-	);
+	useOpenPanelOnce( PANEL_ID, 'syncOpenedOnce' );
+
+	// 閉じたままだと、送れないことに気づかないまま公開が終わる。理由が変わったら開く。
+	const blockCodes = status?.blocks.map( ( block ) => block.code ).join();
+	useEffect( () => {
+		if (
+			blockCodes &&
+			! registry.select( editorStore ).isEditorPanelOpened( PANEL_ID )
+		) {
+			registry
+				.dispatch( editorStore )
+				.toggleEditorPanelOpened( PANEL_ID );
+		}
+	}, [ blockCodes, registry ] );
+
+	const sendOn = send !== false;
+	const hasBlock = ( code ) =>
+		sendOn &&
+		Boolean( status?.blocks.some( ( item ) => item.code === code ) );
+	const categoryBlocked = hasBlock( 'category' );
+	const prefectureBlocked = hasBlock( 'prefecture' );
 	useEffect( () => {
 		document.dispatchEvent(
 			new window.CustomEvent( SYNC_BLOCKS_EVENT, {
-				detail: { category: categoryBlocked },
+				detail: {
+					category: categoryBlocked,
+					prefecture: prefectureBlocked,
+				},
 			} )
 		);
-	}, [ categoryBlocked ] );
+	}, [ categoryBlocked, prefectureBlocked ] );
+
+	const panelVisible = useSelect( ( select ) => {
+		const editor = select( editorStore );
+		return (
+			editor.isEditorPanelEnabled( PANEL_ID ) &&
+			editor.isEditorPanelOpened( PANEL_ID ) &&
+			select( INTERFACE_STORE ).getActiveComplementaryArea( 'core' ) ===
+				DOCUMENT_SIDEBAR
+		);
+	}, [] );
+	const { createWarningNotice, removeNotice } = useDispatch( noticesStore );
+	const needsAttention =
+		sendOn && ( status?.state === 'failed' || status?.blocks.length > 0 );
+
+	// 理由はパネルの中にある。パネルが見えない間は、送れていないことを通知で出す。
+	useEffect( () => {
+		if ( needsAttention && ! panelVisible ) {
+			createWarningNotice(
+				__(
+					'This post wasn’t sent to EventWatch. Open the EventWatch panel to see why.',
+					'eventwatch'
+				),
+				{ id: NOTICE_ID }
+			);
+		} else {
+			removeNotice( NOTICE_ID );
+		}
+		return () => removeNotice( NOTICE_ID );
+	}, [ needsAttention, panelVisible, createWarningNotice, removeNotice ] );
 
 	if ( ! status ) {
 		return null;
 	}
 
-	const sending = send !== false;
+	const sending = sendOn;
 	let shown = status;
 	if ( ! sending ) {
 		shown = { ...status, ...unsavedText.off, state: 'off' };
@@ -208,7 +269,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	const blocks = sending ? status.blocks : [];
 
 	return (
-		<PluginDocumentSettingPanel name="eventwatch-sync" title="EventWatch">
+		<PluginDocumentSettingPanel name={ PANEL_NAME } title="EventWatch">
 			<div className="eventwatch-sync">
 				{ blocks.length > 0 && (
 					<SendBlocks
@@ -260,6 +321,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						accessibleWhenDisabled
 						onClick={ resend }
 					>
+						<Icon name="refresh" size={ 16 } />
 						{ __( 'Retry now', 'eventwatch' ) }
 					</Button>
 				) }
@@ -294,4 +356,5 @@ const SyncPanel = () => {
 	return <SyncPanelContent unsavedText={ sync.unsavedText } />;
 };
 
+export { SYNC_PLUGIN_NAME };
 export default SyncPanel;

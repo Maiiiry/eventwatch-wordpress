@@ -179,7 +179,8 @@ class Sync_Rest {
 			'description' => $text[ $state ][1],
 			'reason'      => $reason,
 			'meta'        => $meta,
-			'canResend'   => 'failed' === $state,
+			// 印が残っているものだけ。送り直しても変わらない失敗は、内容を直して更新する。
+			'canResend'   => 'failed' === $state && '' !== (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ),
 			'blocks'      => 'off' !== $state && is_array( $blocks ) ? array_map( array( self::class, 'block_item' ), $blocks ) : array(),
 		);
 	}

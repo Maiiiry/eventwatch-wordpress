@@ -87,6 +87,12 @@
 	box-shadow: inset 0 0 0 1px #cc1818;
 }
 
+/* select の枠は、部品が別の要素で描いている。部品の指定より強くするため、クラスを重ねる。 */
+.components-base-control.eventwatch-control--error .components-input-control__container .components-input-control__backdrop {
+	border-color: #cc1818;
+	box-shadow: inset 0 0 0 1px #cc1818;
+}
+
 .eventwatch-field-error {
 	display: flex;
 	align-items: flex-start;
@@ -207,7 +213,6 @@
 	color: #50575e;
 	font-size: 11px;
 	font-weight: 500;
-	text-transform: uppercase;
 }
 
 .eventwatch-sync__reason p {
@@ -233,6 +238,11 @@
 
 .eventwatch-sync__resend {
 	align-self: flex-start;
+	gap: 4px;
+}
+
+.eventwatch-sync__resend svg {
+	flex: none;
 }
 
 .eventwatch-sync__toggle {
