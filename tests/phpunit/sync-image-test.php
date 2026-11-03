@@ -1133,6 +1133,22 @@ class Sync_Image_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * キーが無い間は積み直さない。送信待ちが残り、送れない cron を張ることになる。
+	 */
+	public function test_requeue_waits_without_a_key() {
+		$post = $this->event();
+		Sync_Queue::send_marked();
+		update_post_meta( $post, Sync_Image::ISSUE, Sync_Image::ISSUE_TEMPORARY );
+		delete_option( Connection::KEY_OPTION );
+		wp_clear_scheduled_hook( Sync_Queue::RUN_HOOK );
+
+		Sync_Image::requeue();
+
+		$this->assertSame( '', get_post_meta( $post, Sync_Queue::PENDING, true ) );
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
+	}
+
+	/**
 	 * 止めた送信を積み直しで起こさない。
 	 */
 	public function test_requeue_with_nothing_to_do_does_not_wake_the_queue() {
