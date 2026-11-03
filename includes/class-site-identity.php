@@ -83,6 +83,9 @@ class Site_Identity {
 	 */
 	public static function use_as_moved() {
 		update_option( self::URL_OPTION, self::current_url(), false );
+		// パーマリンクが変わるので、公式ページの URL を送り直す。止めていた送信もここで再開する。
+		Sync_Queue::request_rescan();
+		Sync_Queue::resume();
 	}
 
 	/**
@@ -97,6 +100,7 @@ class Site_Identity {
 		add_option( Connection::KEY_OPTION, '', '', false );
 		Connection::forget();
 		delete_option( Sync_Status::LAST_SYNC_OPTION );
+		Sync_Queue::forget_all();
 	}
 
 	/**

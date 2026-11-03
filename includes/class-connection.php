@@ -201,7 +201,7 @@ class Connection {
 	 *
 	 * @return string
 	 */
-	private static function fingerprint() {
+	public static function fingerprint() {
 		return wp_hash( self::api_key() );
 	}
 }
