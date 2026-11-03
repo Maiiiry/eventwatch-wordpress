@@ -1238,6 +1238,85 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * PUT の送り直しの待ちがあっても、公開のままパスワードや「送らない」を付けた保存では、すぐ取り下げる。
+	 *
+	 * @dataProvider withdrawals_keeping_publish_status
+	 *
+	 * @param callable $change 変更。
+	 */
+	public function test_withdrawal_with_same_status_does_not_wait( $change ) {
+		$id                = $this->sent_event();
+		$this->responses[] = $this->response( 503 );
+		wp_update_post(
+			array(
+				'ID'         => $id,
+				'post_title' => '更新',
+			)
+		);
+		Sync_Queue::send_marked();
+		$this->assertGreaterThan( time(), (int) get_post_meta( $id, Sync_Queue::NEXT_AT, true ) );
+		$this->requests = array();
+
+		$this->responses[] = $this->ok( 'private' );
+		$change( $id );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array( "POST /events/$id/unpublish" ), $this->sent() );
+	}
+
+	/**
+	 * 公開のままの取り下げ。
+	 *
+	 * @return array
+	 */
+	public function withdrawals_keeping_publish_status() {
+		return array(
+			'パスワード' => array(
+				static function ( $id ) {
+					wp_update_post(
+						array(
+							'ID'            => $id,
+							'post_password' => 'secret',
+						)
+					);
+				},
+			),
+			'送らない'  => array(
+				static function ( $id ) {
+					update_post_meta( $id, Sync_Queue::NO_SEND, 1 );
+					wp_update_post( array( 'ID' => $id ) );
+				},
+			),
+		);
+	}
+
+	/**
+	 * 止まっている失敗には待ちが無いので、下書きの保存で取り下げを試す。
+	 */
+	public function test_halted_withdrawal_is_retried_on_save() {
+		$id                = $this->sent_event();
+		$this->responses[] = $this->response( 401 );
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+		$this->requests = array();
+
+		wp_update_post(
+			array(
+				'ID'         => $id,
+				'post_title' => '更新',
+			)
+		);
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array( "POST /events/$id/unpublish" ), $this->sent() );
+	}
+
+	/**
 	 * 公開中の投稿のリビジョンの保存は送らない。
 	 */
 	public function test_revision_sends_nothing() {

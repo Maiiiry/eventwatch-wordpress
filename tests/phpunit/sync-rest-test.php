@@ -214,6 +214,52 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 403 で止まっても、ほかの送信待ちに理由を出す。
+	 */
+	public function test_forbidden_stops_others_too() {
+		$first      = $this->event();
+		$second     = $this->event();
+		$this->next = $this->answer( 403 );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( 'failed', Sync_Rest::status( $second )['state'] );
+		$this->assertTrue( Sync_Rest::status( $first )['canResend'] );
+		$this->assertStringContainsString( 'allow this API key', Sync_Rest::status( $second )['reason']['text'] );
+	}
+
+	/**
+	 * 一時的な失敗の投稿も、ほかで止まったら理由を替え、来ない再試行の時刻を出さない。
+	 */
+	public function test_temporary_failure_shows_stop_reason_without_next_retry() {
+		$id         = $this->event();
+		$this->next = $this->answer( 503 );
+		Sync_Queue::send_marked();
+		$this->assertSame( 'Next retry', Sync_Rest::status( $id )['meta']['label'] );
+
+		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		$status = Sync_Rest::status( $id );
+
+		$this->assertStringContainsString( 'URL has changed', $status['reason']['text'] );
+		$this->assertSame( '', $status['meta']['label'] );
+		// 複製の間は送れないので、今すぐ送り直すを出さない。
+		$this->assertFalse( $status['canResend'] );
+	}
+
+	/**
+	 * キーなしの間は今すぐ送り直すを出さない。押すと印が消えて、キーを入れても送られなくなる。
+	 */
+	public function test_no_resend_button_without_key() {
+		$id = $this->event();
+		delete_option( Connection::KEY_OPTION );
+		add_option( Connection::KEY_OPTION, '', '', false );
+
+		$status = Sync_Rest::status( $id );
+
+		$this->assertSame( 'failed', $status['state'] );
+		$this->assertFalse( $status['canResend'] );
+	}
+
+	/**
 	 * 公開中でまだ送っていない投稿には、更新で送ると伝える。公開を勧めない。
 	 */
 	public function test_unsent_text_for_published_post() {

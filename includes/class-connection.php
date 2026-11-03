@@ -134,7 +134,7 @@ class Connection {
 	 */
 	public static function observe( $result ) {
 		if ( is_wp_error( $result ) ) {
-			if ( in_array( $result->get_error_code(), array( Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED ), true ) ) {
+			if ( in_array( $result->get_error_code(), array( Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED, Api_Client::FORBIDDEN ), true ) ) {
 				self::save( self::status_of( $result ) );
 			}
 			return;

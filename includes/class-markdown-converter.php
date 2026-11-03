@@ -46,6 +46,13 @@ class Markdown_Converter {
 	private static $plain_inline = false;
 
 	/**
+	 * いま開いている強調の記号。
+	 *
+	 * @var array<string, bool>
+	 */
+	private static $open_marks = array();
+
+	/**
 	 * 投稿の本文を変換する。
 	 *
 	 * @param string $content 投稿の本文。
@@ -352,15 +359,34 @@ class Markdown_Converter {
 				return "\n";
 			case 'strong':
 			case 'b':
-				return self::$plain_inline ? self::inline_children( $node ) : self::wrap( self::inline_children( $node ), '**' );
+				return self::emphasis( $node, '**' );
 			case 'em':
 			case 'i':
-				return self::$plain_inline ? self::inline_children( $node ) : self::wrap( self::inline_children( $node ), '*' );
+				return self::emphasis( $node, '*' );
 			case 'a':
 				return self::link( $node );
 		}
 
 		return self::inline_children( $node );
+	}
+
+	/**
+	 * 強調を描く。同じ種類の入れ子は記号が続いて閉じないので、外側の 1 組だけにする。
+	 *
+	 * @param DOMNode $node 要素。
+	 * @param string  $mark 記号。
+	 * @return string
+	 */
+	private static function emphasis( DOMNode $node, $mark ) {
+		if ( self::$plain_inline || isset( self::$open_marks[ $mark ] ) ) {
+			return self::inline_children( $node );
+		}
+
+		self::$open_marks[ $mark ] = true;
+		$text                      = self::inline_children( $node );
+		unset( self::$open_marks[ $mark ] );
+
+		return self::wrap( $text, $mark );
 	}
 
 	/**

@@ -135,10 +135,11 @@ class Sync_Queue {
 			update_post_meta( $post_id, Sync_Payload::PUBLISHED_AT_META, time() );
 		}
 
-		// 下書きの自動保存も投稿を更新する。状態が変わらない保存で、届いていない取り下げの送り直しの待ちを縮めない。
-		$same_status = $post_before instanceof WP_Post && $post_before->post_status === $post->post_status;
+		// 下書きの自動保存も投稿を更新する。公開でないままの保存で、取り下げの送り直しの待ちを縮めない。
+		// 公開のままパスワードや「送らない」を付けた保存は待たない。内容が EventWatch に残るため。
+		$keep_retry = $post_before instanceof WP_Post && 'publish' !== $post_before->post_status && $post_before->post_status === $post->post_status;
 
-		self::mark( (int) $post_id, true, $same_status );
+		self::mark( (int) $post_id, true, $keep_retry );
 	}
 
 	/**
@@ -182,7 +183,7 @@ class Sync_Queue {
 		// キーなしのサイトにデータを増やさない。既に送ってある投稿は、キーを入れ直したときに追いつくよう残す。
 		$unsendable = '' === Connection::api_key() && ! get_post_meta( $post_id, self::EXISTS, true );
 
-		if ( self::ACTION_UNPUBLISH === $action && $keep_retry && get_post_meta( $post_id, self::PENDING, true ) && get_post_meta( $post_id, self::ERROR, true ) ) {
+		if ( self::ACTION_UNPUBLISH === $action && $keep_retry && get_post_meta( $post_id, self::PENDING, true ) && (int) get_post_meta( $post_id, self::NEXT_AT, true ) > time() ) {
 			return;
 		}
 

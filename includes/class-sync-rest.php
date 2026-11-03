@@ -148,17 +148,16 @@ class Sync_Rest {
 			'value' => '',
 		);
 
-		// 止まっている間は、最初の 1 件にしか理由が残らない。ほかの送信待ちにも同じ理由を出す。
-		if ( 'queued' === $state ) {
-			$stopped = self::stopped_reason();
-			if ( '' !== $stopped ) {
-				$state = 'failed';
-				$error = array(
-					'code'    => $stopped,
-					'apiCode' => '',
-					'status'  => 0,
-				);
-			}
+		// 止まっている間は、最初の 1 件にしか理由が残らず、一時的な失敗の次の時刻にも cron が張られていない。
+		// 印の残っている投稿には、同じ理由を出す。
+		$stopped = (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ) ? self::stopped_reason() : '';
+		if ( '' !== $stopped && ( 'queued' === $state || ( 'failed' === $state && is_array( $error ) && in_array( $error['code'], array( Api_Client::TEMPORARY, Api_Client::RATE_LIMITED ), true ) ) ) ) {
+			$state = 'failed';
+			$error = array(
+				'code'    => $stopped,
+				'apiCode' => '',
+				'status'  => 0,
+			);
 		}
 
 		if ( 'failed' === $state && is_array( $error ) ) {
@@ -166,7 +165,7 @@ class Sync_Rest {
 				'label' => __( 'Reason', 'eventwatch' ),
 				'text'  => self::error_text( $error ),
 			);
-			if ( $next_at > time() ) {
+			if ( '' === $stopped && $next_at > time() ) {
 				$meta = array(
 					'label' => __( 'Next retry', 'eventwatch' ),
 					'value' => self::format_time( $next_at ),
@@ -192,8 +191,8 @@ class Sync_Rest {
 			'description' => 'unsent' === $state && 'publish' === get_post_status( $post_id ) ? __( 'This post hasn’t been sent to EventWatch yet. It will be sent the next time you update it.', 'eventwatch' ) : $text[ $state ][1],
 			'reason'      => $reason,
 			'meta'        => $meta,
-			// 印が残っているものだけ。送り直しても変わらない失敗は、内容を直して更新する。
-			'canResend'   => 'failed' === $state && '' !== (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ),
+			// 印が残っているものだけ。送り直しても変わらない失敗は、内容を直して更新する。キーなしと複製の間は送れない。
+			'canResend'   => 'failed' === $state && (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ) && is_array( $error ) && ! in_array( $error['code'], array( Api_Client::NO_KEY, Api_Client::SITE_CHANGED ), true ),
 			'blocks'      => 'off' !== $state && is_array( $blocks ) ? array_map( array( self::class, 'block_item' ), $blocks ) : array(),
 		);
 	}
@@ -216,6 +215,8 @@ class Sync_Rest {
 				return Api_Client::UNAUTHORIZED;
 			case Connection::SUSPENDED:
 				return Api_Client::SUSPENDED;
+			case Connection::FORBIDDEN:
+				return Api_Client::FORBIDDEN;
 		}
 
 		return '';
