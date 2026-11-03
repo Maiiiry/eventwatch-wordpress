@@ -25,7 +25,7 @@ class Plugin {
 	 *
 	 * @var string[]
 	 */
-	const CRON_HOOKS = array( Sync_Queue::RUN_HOOK, Sync_Queue::RESCAN_HOOK );
+	const CRON_HOOKS = array( Sync_Queue::RUN_HOOK, Sync_Queue::RESCAN_HOOK, Sync_Pull::RUN_HOOK );
 
 	/**
 	 * フックを登録する。
@@ -50,6 +50,7 @@ class Plugin {
 		Settings::boot();
 		Connection_Admin::boot();
 		Sync_Queue::boot();
+		Sync_Pull::boot();
 		Sync_Rest::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
@@ -79,6 +80,7 @@ class Plugin {
 				Capabilities::grant();
 				Site_Identity::ensure();
 				Sync_Queue::schedule_next();
+				static::schedule_pull();
 				// switch_to_blog では rewrite の定義が切り替わらないので、flush せずに消して次の読み込みで作らせる。
 				delete_option( 'rewrite_rules' );
 				restore_current_blog();
@@ -89,6 +91,7 @@ class Plugin {
 		Capabilities::grant();
 		Site_Identity::ensure();
 		Sync_Queue::schedule_next();
+		static::schedule_pull();
 		Post_Type::register();
 		flush_rewrite_rules();
 	}
@@ -153,6 +156,17 @@ class Plugin {
 				'network_id' => get_current_network_id(),
 			)
 		);
+	}
+
+	/**
+	 * 無効化で外した定期の取り込みを張り直す。キーなしのサイトには予定を増やさない。
+	 *
+	 * @return void
+	 */
+	private static function schedule_pull() {
+		if ( '' !== Connection::api_key() ) {
+			Sync_Pull::schedule();
+		}
 	}
 
 	/**

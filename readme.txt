@@ -91,6 +91,12 @@ By saving a key, you agree to the EventWatch Terms of Service ( https://eventwat
 
 Your site does not depend on EventWatch. Your pages and publishing keep working if EventWatch is unavailable, and visitors' browsers never connect to EventWatch for the event pages or blocks. The only link to EventWatch that visitors get is the "Open in the app" link for events listed there.
 
+= Review status =
+
+The EventWatch panel in the editor and the EventWatch column in the event list show where each event stands: not sent, waiting to send, under review, listed, changes requested, paused, withdrawn, couldn't send, or not sending. If EventWatch asks for changes, the reason appears in the panel. Fix the event and update it to send it again, even if the content is unchanged. The column appears only when a key is set.
+
+The plugin reads the status of events it has sent from EventWatch when you open an event in the editor, and about once an hour for up to 30 published events, oldest check first. If you have many events, a full round takes longer. Only the site ID and the event's post ID are used for this. Nothing is read while the site's URL change is unconfirmed. The Interested button on the event page uses the status stored on your site, so a page cache can delay changes to it.
+
 = External services =
 
 **EventWatch** (https://eventwatch.app): this plugin connects your server to the EventWatch API (`api.eventwatch.app`) only after you enter an API key. It connects when an administrator uses "Check connection", which sends the API key and returns your organization's name, and when events are sent as described in "What is sent to EventWatch". Sending an event sends its title, content, dates, time zone, notes on dates, category, prefecture, online setting, venue name and address, official page URL, last-updated time, and the site ID and post ID. Deleting the plugin tells EventWatch to detach this site's events. Terms of use: https://eventwatch.app/terms . Privacy policy: https://eventwatch.app/privacy .

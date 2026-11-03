@@ -109,6 +109,8 @@ class Sync_Rest {
 	 * @return WP_REST_Response
 	 */
 	public static function read_status( WP_REST_Request $request ) {
+		Sync_Pull::maybe_pull( (int) $request['id'] );
+
 		return new WP_REST_Response( self::status( (int) $request['id'] ) );
 	}
 
@@ -191,10 +193,73 @@ class Sync_Rest {
 			'description' => 'unsent' === $state && 'publish' === get_post_status( $post_id ) ? __( 'This post hasn’t been sent to EventWatch yet. It will be sent the next time you update it.', 'eventwatch' ) : $text[ $state ][1],
 			'reason'      => $reason,
 			'meta'        => $meta,
+			'link'        => self::link( $state, $post_id ),
 			// 印が残っているものだけ。送り直しても変わらない失敗は、内容を直して更新する。キーなしと複製の間は送れない。
 			'canResend'   => 'failed' === $state && (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ) && is_array( $error ) && ! in_array( $error['code'], array( Api_Client::NO_KEY, Api_Client::SITE_CHANGED ), true ),
 			'blocks'      => 'off' !== $state && is_array( $blocks ) ? array_map( array( self::class, 'block_item' ), $blocks ) : array(),
+			'fieldErrors' => 'failed' === $state && is_array( $error ) && ! empty( $error['fields'] ) ? self::field_errors( $error['fields'] ) : array(),
 		);
+	}
+
+	/**
+	 * 状態に添えるリンク。
+	 *
+	 * @param string $state   状態。
+	 * @param int    $post_id 投稿の ID。
+	 * @return array{label: string, url: string}
+	 */
+	private static function link( $state, $post_id ) {
+		if ( 'live' === $state ) {
+			return array(
+				'label' => __( 'View on EventWatch', 'eventwatch' ),
+				'url'   => Event_Detail::listing_url( $post_id ),
+			);
+		}
+		if ( 'stopped' === $state ) {
+			return array(
+				'label' => __( 'Contact EventWatch', 'eventwatch' ),
+				'url'   => Connection_Admin::web_url( '/contact' ),
+			);
+		}
+
+		return array(
+			'label' => '',
+			'url'   => '',
+		);
+	}
+
+	/**
+	 * 断られた欄の行。知らない欄は出さず、理由の汎用の文に任せる。
+	 *
+	 * @param string[] $fields 応答の欄の名前。
+	 * @return array<int, array{code: string, message: string, action: string, field: string}>
+	 */
+	private static function field_errors( array $fields ) {
+		$known = array(
+			'title'                 => array( __( 'EventWatch didn’t accept the title. Check it and update the post.', 'eventwatch' ), '', '' ),
+			'description'           => array( __( 'EventWatch didn’t accept the content. Check it and update the post.', 'eventwatch' ), '', '' ),
+			'occurrenceRanges'      => array( __( 'EventWatch didn’t accept the dates. Check them and update the post.', 'eventwatch' ), '', '' ),
+			'holdingPeriodNote'     => array( __( 'EventWatch didn’t accept the notes on dates. Check them and update the post.', 'eventwatch' ), __( 'Edit the notes', 'eventwatch' ), 'eventwatch-field-schedule-note' ),
+			'venueName'             => array( __( 'EventWatch didn’t accept the venue name. Check it and update the post.', 'eventwatch' ), __( 'Edit the venue', 'eventwatch' ), 'eventwatch-field-venue-name' ),
+			'venueAddress'          => array( __( 'EventWatch didn’t accept the venue address. Check it and update the post.', 'eventwatch' ), __( 'Edit the venue', 'eventwatch' ), 'eventwatch-field-venue-address' ),
+			'publisherEventPageUrl' => array( __( 'EventWatch didn’t accept the official page URL. Check it and update the post.', 'eventwatch' ), __( 'Edit the official page', 'eventwatch' ), 'eventwatch-field-url' ),
+			'category'              => array( __( 'EventWatch didn’t accept the category. Check it and update the post.', 'eventwatch' ), __( 'Choose a category', 'eventwatch' ), 'eventwatch-field-category' ),
+			'prefectureCode'        => array( __( 'EventWatch didn’t accept the prefecture. Check it and update the post.', 'eventwatch' ), __( 'Choose a prefecture', 'eventwatch' ), 'eventwatch-field-prefecture' ),
+		);
+
+		$items = array();
+		foreach ( $fields as $name ) {
+			if ( isset( $known[ $name ] ) ) {
+				$items[] = array(
+					'code'    => $name,
+					'message' => $known[ $name ][0],
+					'action'  => $known[ $name ][1],
+					'field'   => $known[ $name ][2],
+				);
+			}
+		}
+
+		return $items;
 	}
 
 	/**
@@ -280,7 +345,7 @@ class Sync_Rest {
 			case 'rejected':
 				return 'fix';
 			case 'published':
-				return 'live';
+				return $remote['visible'] ? 'live' : 'stopped';
 			case 'draft':
 			case 'private':
 				return 'withdrawn';

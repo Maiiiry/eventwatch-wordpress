@@ -207,6 +207,47 @@ class Api_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 400 の本文の欄の名前の表。
+	 *
+	 * @return array[]
+	 */
+	public function error_fields() {
+		return array(
+			'1 つ'        => array( 400, '{"message":"Field[title]:Error[NotBlank:must not be blank]"}', array( 'title' ) ),
+			'複数'         => array( 400, '{"message":"Field[title]:Error[a],\\n Field[venueName]:Error[b]"}', array( 'title', 'venueName' ) ),
+			'添字つき'       => array( 400, '{"message":"Field[occurrenceRanges[0].startAt]:Error[a]"}', array( 'occurrenceRanges' ) ),
+			'重複'         => array( 400, '{"message":"Field[title]:Error[a],\\n Field[title]:Error[b]"}', array( 'title' ) ),
+			'欄の形でない'     => array( 400, '{"message":"zoneId is not a known time zone."}', null ),
+			'message なし' => array( 400, '{}', null ),
+			'文字列でない'     => array( 400, '{"message":["Field[title]"]}', null ),
+			'読めない本文'     => array( 400, '<html>Field[title]</html>', null ),
+			'400 でない'    => array( 422, '{"message":"Field[title]:Error[a]"}', null ),
+		);
+	}
+
+	/**
+	 * 欄の名前だけを渡し、応答の文は渡さない。
+	 *
+	 * @dataProvider error_fields
+	 *
+	 * @param int        $code     ステータス。
+	 * @param string     $body     本文。
+	 * @param array|null $expected 欄の名前。
+	 */
+	public function test_error_fields( $code, $body, $expected ) {
+		$this->respond_with( $this->http( $code, $body ) );
+
+		$data = ( new Api_Client() )->request( 'PUT', self::PATH )->get_error_data();
+
+		if ( null === $expected ) {
+			$this->assertArrayNotHasKey( 'fields', $data );
+		} else {
+			$this->assertSame( $expected, $data['fields'] );
+		}
+		$this->assertStringNotContainsString( 'Error[', (string) wp_json_encode( $data ) );
+	}
+
+	/**
 	 * タイムアウトは一時的な失敗で、本体のメッセージを持ち出さない。
 	 */
 	public function test_timeout() {

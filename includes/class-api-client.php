@@ -239,6 +239,10 @@ class Api_Client {
 		}
 
 		if ( $status >= 400 && $status < 500 ) {
+			$fields = 400 === $status ? $this->error_fields( $body ) : array();
+			if ( $fields ) {
+				$data['fields'] = $fields;
+			}
 			return new WP_Error( self::INVALID_REQUEST, 'EventWatch rejected the request.', $data );
 		}
 
@@ -279,6 +283,25 @@ class Api_Client {
 			'status' => $status,
 			'body'   => $decoded,
 		);
+	}
+
+	/**
+	 * 400 の本文で断られた欄の名前。文は英語で利用者向けでないので、名前だけを読む。
+	 *
+	 * 欄の配列は無く、message に `Field[title]:Error[…]` の形でつないである。添字つきの欄は先頭の名前にする。
+	 *
+	 * @param string $body 本文。
+	 * @return string[]
+	 */
+	private function error_fields( $body ) {
+		$decoded = json_decode( $body, true );
+		if ( ! is_array( $decoded ) || ! isset( $decoded['message'] ) || ! is_string( $decoded['message'] ) ) {
+			return array();
+		}
+
+		preg_match_all( '/Field\[([A-Za-z]{1,64})/', $decoded['message'], $matches );
+
+		return array_values( array_unique( $matches[1] ) );
 	}
 
 	/**

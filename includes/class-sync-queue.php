@@ -38,6 +38,8 @@ class Sync_Queue {
 	const SENT_AT  = '_eventwatch_sync_sent_at';
 	const NO_SEND  = '_eventwatch_no_send';
 
+	const PULLED_AT = '_eventwatch_sync_pulled_at';
+
 	const DELETE_PREFIX = 'eventwatch_sync_delete_';
 	const HOLD_OPTION   = 'eventwatch_sync_hold_until';
 	const LOCK_OPTION   = 'eventwatch_sync_lock';
@@ -94,7 +96,7 @@ class Sync_Queue {
 	 * @return string[]
 	 */
 	public static function meta_keys() {
-		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, Sync_Payload::PUBLISHED_AT_META );
+		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, Sync_Payload::PUBLISHED_AT_META );
 	}
 
 	/**
@@ -344,6 +346,7 @@ class Sync_Queue {
 		delete_option( self::HOLD_OPTION );
 		wp_clear_scheduled_hook( self::RUN_HOOK );
 		wp_clear_scheduled_hook( self::RESCAN_HOOK );
+		wp_clear_scheduled_hook( Sync_Pull::RUN_HOOK );
 		self::$marked  = array();
 		self::$deleted = array();
 	}
@@ -537,8 +540,10 @@ class Sync_Queue {
 
 		update_post_meta( $post_id, self::HASH, $hash );
 		update_post_meta( $post_id, self::SENT_AT, time() );
+		// 送った直後ほど審査の結果が動くので、定期の取り込みの順番を先頭へ戻す。
+		delete_post_meta( $post_id, self::PULLED_AT );
 		if ( is_array( $result['body'] ) && isset( $result['body']['event'] ) && is_array( $result['body']['event'] ) ) {
-			update_post_meta( $post_id, self::REMOTE, self::remote_from_event( $result['body']['event'] ) );
+			self::store_remote( $post_id, $result['body']['event'] );
 		}
 		self::clear_pending( $post_id, $token );
 		update_option( Sync_Status::LAST_SYNC_OPTION, time() );
@@ -571,9 +576,7 @@ class Sync_Queue {
 
 		// 取り下げる先が無い。送信済みとして扱い、次に公開したら作り直す。
 		if ( self::ACTION_UNPUBLISH === $action && Api_Client::NOT_FOUND === $error->get_error_code() ) {
-			delete_post_meta( $post_id, self::EXISTS );
-			delete_post_meta( $post_id, self::HASH );
-			delete_post_meta( $post_id, self::REMOTE );
+			self::forget_remote( $post_id );
 			self::clear_pending( $post_id, $token );
 			return self::OUTCOME_SENT;
 		}
@@ -637,7 +640,7 @@ class Sync_Queue {
 	 * @param WP_Error $error 失敗。
 	 * @return bool
 	 */
-	private static function is_halting( WP_Error $error ) {
+	public static function is_halting( WP_Error $error ) {
 		return in_array(
 			$error->get_error_code(),
 			array( Api_Client::NO_KEY, Api_Client::SITE_CHANGED, Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED, Api_Client::FORBIDDEN ),
@@ -659,17 +662,27 @@ class Sync_Queue {
 		$wait        = (int) ( self::BACKOFF[ $index ] * ( 1 + wp_rand( 0, 20 ) / 100 ) );
 
 		if ( $retry_after > 0 ) {
-			update_option( self::HOLD_OPTION, time() + $retry_after, false );
+			self::hold_for( $retry_after );
 		}
 
 		return time() + max( $wait, $retry_after );
 	}
 
 	/**
+	 * サイト全体で、その間は EventWatch を呼ばない。
+	 *
+	 * @param int $seconds 秒数。
+	 * @return void
+	 */
+	public static function hold_for( $seconds ) {
+		update_option( self::HOLD_OPTION, time() + $seconds, false );
+	}
+
+	/**
 	 * 残す失敗の記録。文は持たず、コードから編集画面で作る。
 	 *
 	 * @param WP_Error $error 失敗。
-	 * @return array{code: string, apiCode: string, status: int}
+	 * @return array{code: string, apiCode: string, status: int, fields: string[]}
 	 */
 	private static function error_record( WP_Error $error ) {
 		$data = $error->get_error_data();
@@ -678,6 +691,7 @@ class Sync_Queue {
 			'code'    => $error->get_error_code(),
 			'apiCode' => is_array( $data ) && isset( $data['code'] ) ? (string) $data['code'] : '',
 			'status'  => is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0,
+			'fields'  => is_array( $data ) && isset( $data['fields'] ) ? $data['fields'] : array(),
 		);
 	}
 
@@ -722,6 +736,43 @@ class Sync_Queue {
 	}
 
 	/**
+	 * 応答の投稿を手元に書く。送信と取り込みの両方がここを通る。
+	 *
+	 * 「気になる」は表示のたびに EventWatch を読まないので、掲載中の間だけスラッグを持つ。運営が止めた投稿は
+	 * status が published のままなので、visible で見る。
+	 *
+	 * @param int   $post_id 投稿の ID。
+	 * @param array $event   応答の投稿。
+	 * @return void
+	 */
+	public static function store_remote( $post_id, array $event ) {
+		$remote = self::remote_from_event( $event );
+
+		update_post_meta( $post_id, self::REMOTE, $remote );
+		if ( $remote['visible'] && '' !== $remote['slug'] ) {
+			update_post_meta( $post_id, Event_Detail::LISTING_SLUG, $remote['slug'] );
+		} else {
+			delete_post_meta( $post_id, Event_Detail::LISTING_SLUG );
+		}
+
+		Sync_Pull::schedule();
+	}
+
+	/**
+	 * EventWatch に無いと分かった投稿の記録を消す。次に公開したら作り直しに行く。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return void
+	 */
+	public static function forget_remote( $post_id ) {
+		delete_post_meta( $post_id, self::EXISTS );
+		delete_post_meta( $post_id, self::HASH );
+		delete_post_meta( $post_id, self::REMOTE );
+		delete_post_meta( $post_id, self::PULLED_AT );
+		delete_post_meta( $post_id, Event_Detail::LISTING_SLUG );
+	}
+
+	/**
 	 * 応答の投稿から、持っておく値だけを取り出す。
 	 *
 	 * @param array $event 応答の投稿。
@@ -743,7 +794,7 @@ class Sync_Queue {
 	 * @param int $post_id 投稿の ID。
 	 * @return string
 	 */
-	private static function post_path( $post_id ) {
+	public static function post_path( $post_id ) {
 		return self::PATH . rawurlencode( Site_Identity::id() ) . '/events/' . (int) $post_id;
 	}
 
