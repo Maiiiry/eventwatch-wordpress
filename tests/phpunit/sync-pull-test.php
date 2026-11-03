@@ -462,7 +462,9 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 	 * 止まっていなければ、取り込みで送信の予定を動かさない。
 	 */
 	public function test_successful_pull_does_not_touch_sending_otherwise() {
-		$id = $this->sent_event();
+		$id     = $this->sent_event();
+		$queued = $this->sent_event();
+		update_post_meta( $queued, Sync_Queue::PENDING, 'token' );
 		wp_clear_scheduled_hook( Sync_Queue::RUN_HOOK );
 
 		Sync_Pull::pull( $id, 5 );
