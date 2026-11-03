@@ -79,10 +79,6 @@ class Sync_Pull {
 	 * @return void
 	 */
 	public static function run() {
-		if ( ! self::can_read() ) {
-			return;
-		}
-
 		$start = time();
 		foreach ( self::due_post_ids() as $post_id ) {
 			if ( time() - $start >= self::RUN_BUDGET || self::OUTCOME_STOP === self::pull( $post_id, self::RUN_TIMEOUT ) ) {
@@ -157,11 +153,12 @@ class Sync_Pull {
 
 	/**
 	 * いま読みに行ってよいか。URL が変わった複製に本番の状態を書くと、複製に本番の掲載が出る。
+	 * キーなしはクライアントが HTTP を出さずに断り、その回が止まる。
 	 *
 	 * @return bool
 	 */
 	private static function can_read() {
-		return '' !== Connection::api_key() && ! Site_Identity::has_changed() && (int) get_option( Sync_Queue::HOLD_OPTION, 0 ) <= time();
+		return ! Site_Identity::has_changed() && (int) get_option( Sync_Queue::HOLD_OPTION, 0 ) <= time();
 	}
 
 	/**

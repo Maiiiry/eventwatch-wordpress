@@ -270,7 +270,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 
 		Sync_Pull::pull( $id, 5 );
 
-		$this->assertSame( '', get_post_meta( $id, Event_Detail::LISTING_SLUG, true ) );
+		$this->assertFalse( metadata_exists( 'post', $id, Event_Detail::LISTING_SLUG ) );
 	}
 
 	/**
@@ -641,6 +641,10 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 			)
 		);
 		delete_post_meta( $draft, Sync_Queue::PENDING );
+		// 送信待ちが件数の枠を食わない。
+		$queued = $this->sent_event();
+		update_post_meta( $queued, Sync_Queue::PULLED_AT, 1 );
+		update_post_meta( $queued, Sync_Queue::PENDING, 'token' );
 		$this->requests = array();
 
 		Sync_Pull::run();
@@ -650,6 +654,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$this->assertSame( $never, $pulled[0] );
 		$this->assertSame( array_slice( $ids, 0, Sync_Pull::RUN_MAX - 1 ), array_slice( $pulled, 1 ) );
 		$this->assertNotContains( $draft, $pulled );
+		$this->assertNotContains( $queued, $pulled );
 		$this->assertSame( (float) Sync_Pull::RUN_TIMEOUT, $this->requests[0][2] );
 	}
 
@@ -675,8 +680,15 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$this->sent_event();
 		$this->assertSame( 'hourly', wp_get_schedule( Sync_Pull::RUN_HOOK ) );
 
+		$scheduled = 0;
+		$count     = static function ( $event ) use ( &$scheduled ) {
+			++$scheduled;
+			return $event;
+		};
+		add_filter( 'schedule_event', $count );
 		Sync_Pull::schedule();
-		$this->assertCount( 1, array_filter( array_keys( (array) _get_cron_array() ), array( $this, 'has_pull_hook' ) ) );
+		remove_filter( 'schedule_event', $count );
+		$this->assertSame( 0, $scheduled, '張ってあれば張らない' );
 
 		Plugin::deactivate();
 		$this->assertFalse( wp_next_scheduled( Sync_Pull::RUN_HOOK ) );
@@ -693,15 +705,21 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * その時刻に取り込みの cron があるか。
+	 * ネットワーク全体の有効化でも張り直す。
 	 *
-	 * @param int $timestamp 時刻。
-	 * @return bool
+	 * @group ms-required
 	 */
-	public function has_pull_hook( $timestamp ) {
-		$cron = _get_cron_array();
+	public function test_network_activate_schedules_pull() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'マルチサイトだけの経路。' );
+		}
 
-		return isset( $cron[ $timestamp ][ Sync_Pull::RUN_HOOK ] );
+		$this->sent_event();
+		Plugin::deactivate( true );
+		$this->assertFalse( wp_next_scheduled( Sync_Pull::RUN_HOOK ) );
+
+		Plugin::activate( true );
+		$this->assertNotFalse( wp_next_scheduled( Sync_Pull::RUN_HOOK ) );
 	}
 
 	/**
@@ -842,6 +860,22 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$this->assertSame( array(), $status['fieldErrors'] );
 		$this->assertNotSame( '', $status['reason']['text'] );
 
+		// 送らない投稿には、前の失敗の欄を出さない。
+		update_post_meta(
+			$id,
+			Sync_Queue::ERROR,
+			array(
+				'code'    => 'eventwatch_invalid_request',
+				'apiCode' => '',
+				'status'  => 400,
+				'fields'  => array( 'title' ),
+			)
+		);
+		update_post_meta( $id, Sync_Queue::NO_SEND, 1 );
+		$this->assertSame( 'off', Sync_Rest::status( $id )['state'] );
+		$this->assertSame( array(), Sync_Rest::status( $id )['fieldErrors'] );
+		delete_post_meta( $id, Sync_Queue::NO_SEND );
+
 		update_post_meta(
 			$id,
 			Sync_Queue::ERROR,
@@ -883,7 +917,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 	 */
 	public function test_list_column_shows_reason_to_editors_only() {
 		$id   = $this->sent_event();
-		$long = '<b>時刻</b>' . str_repeat( 'あ', 60 );
+		$long = '<b>時刻</b> & ' . str_repeat( 'あ', 60 );
 		update_post_meta(
 			$id,
 			Sync_Queue::REMOTE,
@@ -900,7 +934,8 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$cell = $this->cell( $id );
 		$this->assertStringContainsString( 'eventwatch-sync-cell--warning', $cell );
 		$this->assertStringContainsString( 'Changes requested', $cell );
-		$this->assertStringContainsString( '&lt;b&gt;時刻', $cell );
+		$this->assertStringContainsString( 'title="&lt;b&gt;時刻', $cell );
+		$this->assertStringContainsString( '">時刻 &amp; あ', $cell );
 		$this->assertStringNotContainsString( '<b>', $cell );
 		$this->assertStringNotContainsString( str_repeat( 'あ', 60 ) . '</span>', $cell );
 		$this->assertStringContainsString( '…', $cell );
@@ -909,6 +944,21 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$cell = $this->cell( $id );
 		$this->assertStringContainsString( 'Changes requested', $cell );
 		$this->assertStringNotContainsString( '時刻', $cell );
+	}
+
+	/**
+	 * 列の語も escape する。翻訳はサイトの外から来る。
+	 */
+	public function test_list_column_escapes_the_label() {
+		$id        = $this->sent_event();
+		$translate = static function ( $translation, $text ) {
+			return 'Under review' === $text ? 'A & <i>B</i>' : $translation;
+		};
+		add_filter( 'gettext', $translate, 10, 2 );
+		$cell = $this->cell( $id );
+		remove_filter( 'gettext', $translate, 10 );
+
+		$this->assertStringContainsString( 'A &amp; &lt;i&gt;B&lt;/i&gt;', $cell );
 	}
 
 	/**
