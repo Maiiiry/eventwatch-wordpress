@@ -123,7 +123,16 @@ const useSyncStatus = ( postId ) => {
 			path: `/eventwatch/v1/events/${ postId }/resend`,
 			method: 'POST',
 		} )
-			.then( setStatus )
+			.then( ( next ) => {
+				setStatus( next );
+				// 上げ直しが要る投稿は cron に回るので、保存の後と同じく結果を待つ。
+				if ( next.state === 'queued' ) {
+					timer.current = window.setTimeout(
+						() => refresh( REFRESH_MAX ),
+						REFRESH_INTERVAL
+					);
+				}
+			} )
 			.catch( () => {} )
 			.finally( () => setResending( false ) );
 	};
