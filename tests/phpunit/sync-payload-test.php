@@ -384,4 +384,30 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 		$this->assertSame( 3, Sync_Payload::server_length( "a\xFFb" ) );
 		$this->assertSame( 3, Sync_Payload::server_length( "あ\u{1F600}" ) );
 	}
+
+	/**
+	 * 公式ページの上限は EventWatch の数え方で比べる。バイト数では比べない。
+	 */
+	public function test_url_limit_counts_characters() {
+		$multibyte = 'https://example.com/' . str_repeat( 'あ', 500 );
+		$ok        = Sync_Payload::build( $this->event( array( Event_Meta::URL => $multibyte ) ) );
+		$this->assertSame( $multibyte, $ok['body']['publisherEventPageUrl'] );
+		$this->assertSame( array(), $ok['blocks'] );
+
+		$long = static function () {
+			return 'https://example.com/' . str_repeat( 'a', 1005 );
+		};
+		add_filter( 'post_type_link', $long );
+		$over = Sync_Payload::build( $this->event() );
+		remove_filter( 'post_type_link', $long );
+
+		$this->assertSame( array( Sync_Payload::BLOCK_URL_TOO_LONG ), $this->codes( $over ) );
+	}
+
+	/**
+	 * DOM の無い環境の平文でも、記法を打ち消す。
+	 */
+	public function test_plain_text_is_escaped() {
+		$this->assertSame( '\\!\\[a\\](https://example.com/a.png) A & B', Markdown_Converter::plain_text( '<p>![a](https://example.com/a.png) A &amp; B</p>' ) );
+	}
 }

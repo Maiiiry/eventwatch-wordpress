@@ -69,7 +69,7 @@ class Markdown_Converter {
 		}
 
 		if ( ! class_exists( DOMDocument::class ) ) {
-			return trim( self::escape_text( html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' ) ) );
+			return self::plain_text( $html );
 		}
 
 		$document = new DOMDocument();
@@ -81,6 +81,16 @@ class Markdown_Converter {
 		$body = $document->getElementsByTagName( 'body' )->item( 0 );
 
 		return $body ? trim( implode( "\n\n", self::blocks( $body ) ) ) : '';
+	}
+
+	/**
+	 * DOM の無い環境の変換。タグを落とし、文字の記法を打ち消す。
+	 *
+	 * @param string $html HTML。
+	 * @return string
+	 */
+	public static function plain_text( $html ) {
+		return trim( self::escape_text( html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' ) ) );
 	}
 
 	/**

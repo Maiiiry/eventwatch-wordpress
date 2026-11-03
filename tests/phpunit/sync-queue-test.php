@@ -1285,9 +1285,16 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		if ( is_multisite() ) {
 			grant_super_admin( get_current_user_id() );
 		}
+		// 投稿者でないと、本体はリビジョンを作るだけで投稿を更新しない。フックを通らないように直接書く。
+		global $wpdb;
+		$wpdb->update( $wpdb->posts, array( 'post_author' => get_current_user_id() ), array( 'ID' => $id ) );
+		clean_post_cache( $id );
+		$modified = get_post( $id )->post_content;
+
 		$request = new \WP_REST_Request( 'POST', '/wp/v2/' . Post_Type::POST_TYPE . '/' . $id . '/autosaves' );
 		$request->set_param( 'content', '<p>自動保存の本文 ' . wp_generate_password( 6, false ) . '</p>' );
 		$this->assertSame( 200, rest_do_request( $request )->get_status() );
+		$this->assertNotSame( $modified, get_post( $id )->post_content );
 		wp_set_current_user( 0 );
 	}
 
