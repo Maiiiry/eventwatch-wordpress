@@ -91,12 +91,19 @@ class Sync_Queue {
 	private static $deleted = array();
 
 	/**
+	 * 投稿の送信のほかに出した HTTP の数。流量の上限に数える。
+	 *
+	 * @var int
+	 */
+	private static $extra_requests = 0;
+
+	/**
 	 * 同期のメタのキー。「送らない」は利用者の選択なので含めない。
 	 *
 	 * @return string[]
 	 */
 	public static function meta_keys() {
-		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, Sync_Payload::PUBLISHED_AT_META );
+		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, Sync_Payload::PUBLISHED_AT_META, Sync_Image::RECORD, Sync_Image::ISSUE );
 	}
 
 	/**
@@ -193,6 +200,7 @@ class Sync_Queue {
 		delete_post_meta( $post_id, self::NEXT_AT );
 		delete_post_meta( $post_id, self::ERROR );
 		delete_post_meta( $post_id, self::BLOCKS );
+		delete_post_meta( $post_id, Sync_Image::ISSUE );
 
 		if ( self::ACTION_NONE === $action || $unsendable ) {
 			delete_post_meta( $post_id, self::PENDING );
@@ -256,7 +264,7 @@ class Sync_Queue {
 		self::$marked  = array();
 		self::$deleted = array();
 
-		self::process( $targets, self::IMMEDIATE_TIMEOUT, self::IMMEDIATE_MAX, self::IMMEDIATE_TIMEOUT );
+		self::process( $targets, self::IMMEDIATE_TIMEOUT, self::IMMEDIATE_MAX, self::IMMEDIATE_TIMEOUT, false );
 	}
 
 	/**
@@ -265,7 +273,7 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public static function run() {
-		self::process( self::due_targets(), self::RUN_TIMEOUT, self::RUN_MAX, self::RUN_BUDGET );
+		self::process( self::due_targets(), self::RUN_TIMEOUT, self::RUN_MAX, self::RUN_BUDGET, true );
 	}
 
 	/**
@@ -311,8 +319,18 @@ class Sync_Queue {
 			)
 		);
 
+		self::mark_many( array_map( 'intval', $post_ids ) );
+	}
+
+	/**
+	 * まとめて印を付け、次の cron に任せる。
+	 *
+	 * @param int[] $post_ids 投稿の ID。
+	 * @return void
+	 */
+	public static function mark_many( array $post_ids ) {
 		foreach ( $post_ids as $post_id ) {
-			self::mark( (int) $post_id, false );
+			self::mark( $post_id, false );
 		}
 		self::$marked = array();
 
@@ -344,6 +362,7 @@ class Sync_Queue {
 			delete_option( self::DELETE_PREFIX . $post_id );
 		}
 		delete_option( self::HOLD_OPTION );
+		delete_option( Sync_Image::HOLD_OPTION );
 		wp_clear_scheduled_hook( self::RUN_HOOK );
 		wp_clear_scheduled_hook( self::RESCAN_HOOK );
 		wp_clear_scheduled_hook( Sync_Pull::RUN_HOOK );
@@ -389,9 +408,10 @@ class Sync_Queue {
 	 * @param int   $timeout 1 通のタイムアウトの秒数。
 	 * @param int   $max     HTTP を出す上限。
 	 * @param int   $budget  全体の秒数の上限。
+	 * @param bool  $can_upload 画像を上げてよいか。
 	 * @return void
 	 */
-	private static function process( array $targets, $timeout, $max, $budget ) {
+	private static function process( array $targets, $timeout, $max, $budget, $can_upload ) {
 		if ( ! $targets ) {
 			return;
 		}
@@ -419,7 +439,7 @@ class Sync_Queue {
 				}
 
 				try {
-					$outcome = 'delete' === $target[0] ? self::send_deletion( $target[1], $timeout ) : self::send_post( $target[1], $timeout );
+					$outcome = 'delete' === $target[0] ? self::send_deletion( $target[1], $timeout ) : self::send_post( $target[1], $timeout, $can_upload );
 				} catch ( Throwable $e ) {
 					// ほかのプラグインのフィルターの例外など。この 1 件を後へ回し、残りを止めない。
 					self::postpone_after_exception( $target );
@@ -429,6 +449,8 @@ class Sync_Queue {
 				if ( self::OUTCOME_SKIPPED !== $outcome ) {
 					++$sent;
 				}
+				$sent                += self::$extra_requests;
+				self::$extra_requests = 0;
 				if ( self::OUTCOME_HALTED === $outcome ) {
 					$halted = true;
 					break;
@@ -479,11 +501,12 @@ class Sync_Queue {
 	/**
 	 * 投稿を 1 つ送る。
 	 *
-	 * @param int $post_id 投稿の ID。
-	 * @param int $timeout タイムアウトの秒数。
+	 * @param int  $post_id    投稿の ID。
+	 * @param int  $timeout    タイムアウトの秒数。
+	 * @param bool $can_upload 画像を上げてよいか。
 	 * @return string
 	 */
-	private static function send_post( $post_id, $timeout ) {
+	private static function send_post( $post_id, $timeout, $can_upload ) {
 		$token = (string) get_post_meta( $post_id, self::PENDING, true );
 		$post  = get_post( $post_id );
 
@@ -497,7 +520,8 @@ class Sync_Queue {
 			return self::OUTCOME_SKIPPED;
 		}
 
-		$path = self::post_path( $post_id );
+		$path     = self::post_path( $post_id );
+		$stale_id = false;
 
 		if ( self::ACTION_PUT === $action ) {
 			$built = Sync_Payload::build( $post );
@@ -506,8 +530,20 @@ class Sync_Queue {
 				self::clear_pending( $post_id, $token );
 				return self::OUTCOME_SKIPPED;
 			}
-			$method = 'PUT';
-			$body   = $built['body'];
+
+			// 送れない投稿のために投入量を使わないよう、止める理由を見た後で上げる。
+			$image = Sync_Image::resolve( $post_id, $can_upload );
+			if ( is_wp_error( $image ) ) {
+				return self::handle_post_error( $post_id, $token, $action, $image );
+			}
+			if ( $image['later'] ) {
+				return self::OUTCOME_SKIPPED;
+			}
+			self::$extra_requests += $image['requests'];
+
+			$method   = 'PUT';
+			$body     = Sync_Payload::with_image( $built['body'], $image['id'] );
+			$stale_id = '' !== $image['id'] && ! $image['fresh'];
 		} else {
 			$method = 'POST';
 			$path  .= '/unpublish';
@@ -535,6 +571,12 @@ class Sync_Queue {
 		);
 
 		if ( is_wp_error( $result ) ) {
+			if ( $stale_id && self::rejected_without_fields( $result ) ) {
+				// 回収・運営の削除・別の団体のキーで ID が使えなくなると、欄の名前の無い 400 になる。応答の文では見分けず、
+				// 上げ直して送り直す。上げた直後の ID で同じ 400 なら画像のせいではないので、次は失敗として出る。
+				Sync_Image::forget( $post_id );
+				return self::OUTCOME_SENT;
+			}
 			return self::handle_post_error( $post_id, $token, $action, $result );
 		}
 
@@ -544,11 +586,24 @@ class Sync_Queue {
 		delete_post_meta( $post_id, self::PULLED_AT );
 		if ( is_array( $result['body'] ) && isset( $result['body']['event'] ) && is_array( $result['body']['event'] ) ) {
 			self::store_remote( $post_id, $result['body']['event'] );
+			Sync_Image::after_put( $post_id, $result['body']['event'] );
 		}
 		self::clear_pending( $post_id, $token );
 		update_option( Sync_Status::LAST_SYNC_OPTION, time() );
 
 		return self::OUTCOME_SENT;
+	}
+
+	/**
+	 * 断られた欄の名前の無い 400 か。
+	 *
+	 * @param WP_Error $error 失敗。
+	 * @return bool
+	 */
+	private static function rejected_without_fields( WP_Error $error ) {
+		$data = $error->get_error_data();
+
+		return Api_Client::INVALID_REQUEST === $error->get_error_code() && is_array( $data ) && isset( $data['status'] ) && 400 === (int) $data['status'] && empty( $data['fields'] );
 	}
 
 	/**
@@ -780,6 +835,8 @@ class Sync_Queue {
 		delete_post_meta( $post_id, self::HASH );
 		delete_post_meta( $post_id, self::REMOTE );
 		delete_post_meta( $post_id, Event_Detail::LISTING_SLUG );
+		// EventWatch に無いなら、投入画像も回収される。
+		Sync_Image::forget( $post_id );
 	}
 
 	/**

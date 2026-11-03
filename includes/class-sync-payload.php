@@ -84,6 +84,21 @@ class Sync_Payload {
 	}
 
 	/**
+	 * 本文に画像の ID を足す。無ければ足さない（EventWatch では画像が外れる）。
+	 *
+	 * @param array  $body 送る本文。
+	 * @param string $id   投入画像の ID。
+	 * @return array
+	 */
+	public static function with_image( array $body, $id ) {
+		if ( '' !== $id ) {
+			$body['imageUploadId'] = $id;
+		}
+
+		return $body;
+	}
+
+	/**
 	 * 送信元の更新日時。
 	 *
 	 * @param WP_Post $post 投稿。

@@ -198,6 +198,7 @@ class Sync_Rest {
 			'canResend'   => 'failed' === $state && (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ) && is_array( $error ) && ! in_array( $error['code'], array( Api_Client::NO_KEY, Api_Client::SITE_CHANGED ), true ),
 			'blocks'      => 'off' !== $state && is_array( $blocks ) ? array_map( array( self::class, 'block_item' ), $blocks ) : array(),
 			'fieldErrors' => 'failed' === $state && is_array( $error ) && ! empty( $error['fields'] ) ? self::field_errors( $error['fields'] ) : array(),
+			'imageIssue'  => 'off' !== $state ? self::image_issue( (string) get_post_meta( $post_id, Sync_Image::ISSUE, true ) ) : array(),
 		);
 	}
 
@@ -225,6 +226,36 @@ class Sync_Rest {
 		return array(
 			'label' => '',
 			'url'   => '',
+		);
+	}
+
+	/**
+	 * アイキャッチ画像を送れなかった理由。`blocks` と同じ形。
+	 *
+	 * @param string $code 理由。無ければ空。
+	 * @return array
+	 */
+	private static function image_issue( $code ) {
+		$messages = array(
+			Sync_Image::ISSUE_FORMAT     => __( 'EventWatch accepts JPEG, PNG, and WebP images. Choose an image in one of these formats.', 'eventwatch' ),
+			Sync_Image::ISSUE_TOO_LARGE  => __( 'The image is over EventWatch’s limit of 10 MB. Choose a smaller image.', 'eventwatch' ),
+			Sync_Image::ISSUE_UNREADABLE => __( 'The image file couldn’t be read on this site. Choose the image again, or choose another one.', 'eventwatch' ),
+			Sync_Image::ISSUE_REJECTED   => __( 'EventWatch didn’t accept the image. Choose another one.', 'eventwatch' ),
+			Sync_Image::ISSUE_TEMPORARY  => __( 'Couldn’t upload the image to EventWatch. This is retried automatically about once an hour.', 'eventwatch' ),
+			Sync_Image::ISSUE_QUOTA      => __( 'Your organization has reached EventWatch’s limit of images for today. This is retried automatically about once an hour.', 'eventwatch' ),
+		);
+
+		if ( ! isset( $messages[ $code ] ) ) {
+			return array();
+		}
+
+		return array(
+			array(
+				'code'    => 'image-' . $code,
+				'message' => $messages[ $code ],
+				'action'  => '',
+				'field'   => '',
+			),
 		);
 	}
 
