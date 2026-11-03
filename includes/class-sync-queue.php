@@ -135,9 +135,9 @@ class Sync_Queue {
 			update_post_meta( $post_id, Sync_Payload::PUBLISHED_AT_META, time() );
 		}
 
-		// 下書きの自動保存も投稿を更新する。公開でないままの保存で、取り下げの送り直しの待ちを縮めない。
+		// 下書きの自動保存も投稿を更新する。公開でなかった投稿の保存で、取り下げの送り直しの待ちを縮めない。
 		// 公開のままパスワードや「送らない」を付けた保存は待たない。内容が EventWatch に残るため。
-		$keep_retry = $post_before instanceof WP_Post && 'publish' !== $post_before->post_status && $post_before->post_status === $post->post_status;
+		$keep_retry = $post_before instanceof WP_Post && 'publish' !== $post_before->post_status;
 
 		self::mark( (int) $post_id, true, $keep_retry );
 	}
