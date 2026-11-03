@@ -23,9 +23,9 @@ const INTERFACE_STORE = 'core/interface';
 const PANEL_ID = `${ SYNC_PLUGIN_NAME }/${ PANEL_NAME }`;
 const SEND_FIELD = 'eventwatch_send';
 
-// 保存の応答は送信の前に作られるので、送信待ちの間だけ読み直す。
+// 保存の応答は送信の前に作られるので、送信待ちの間だけ読み直す。新しい画像は約 1 分後の cron で送るので、その後まで見る。
 const REFRESH_INTERVAL = 5000;
-const REFRESH_MAX = 3;
+const REFRESH_MAX = 24;
 
 const ICONS = {
 	check: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',

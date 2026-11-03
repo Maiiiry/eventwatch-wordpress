@@ -822,6 +822,8 @@ class Sync_Queue {
 	public static function forget_remote( $post_id ) {
 		delete_post_meta( $post_id, self::EXISTS );
 		delete_post_meta( $post_id, self::PULLED_AT );
+		// 取り下げる先が無いので、投入画像も回収される。取り込みの 404 は別の団体のキーでも起きるので、ここだけで消す。
+		Sync_Image::forget( $post_id );
 		self::clear_remote( $post_id );
 	}
 
@@ -835,8 +837,6 @@ class Sync_Queue {
 		delete_post_meta( $post_id, self::HASH );
 		delete_post_meta( $post_id, self::REMOTE );
 		delete_post_meta( $post_id, Event_Detail::LISTING_SLUG );
-		// EventWatch に無いなら、投入画像も回収される。
-		Sync_Image::forget( $post_id );
 	}
 
 	/**

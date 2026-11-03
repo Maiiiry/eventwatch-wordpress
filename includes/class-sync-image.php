@@ -93,8 +93,9 @@ class Sync_Image {
 			return self::result();
 		}
 
+		$saved    = get_post_meta( $post_id, self::RECORD, true );
+		$previous = is_array( $saved ) && isset( $saved['attachedId'] ) ? $saved['attachedId'] : '';
 		$record   = self::usable_record( $post_id );
-		$previous = $record ? $record['id'] : '';
 		$file     = self::choose_file( $thumbnail_id );
 
 		if ( is_string( $file ) ) {
@@ -128,7 +129,8 @@ class Sync_Image {
 		$record = get_post_meta( $post_id, self::RECORD, true );
 
 		if ( is_array( $record ) && isset( $event['imageUploadId'] ) && $event['imageUploadId'] === $record['id'] ) {
-			$record['attached'] = true;
+			$record['attached']   = true;
+			$record['attachedId'] = $record['id'];
 			update_post_meta( $post_id, self::RECORD, $record );
 		}
 	}
@@ -153,22 +155,37 @@ class Sync_Image {
 	public static function requeue() {
 		global $wpdb;
 
-		if ( (int) get_option( self::HOLD_OPTION, 0 ) > time() ) {
+		if ( (int) get_option( self::HOLD_OPTION, 0 ) > time() || self::is_stopped() ) {
 			return;
 		}
 
+		// 送信待ちの投稿は、その送り直しの中で上げ直す。積み直すと送り直しの間隔が戻り、断られた本文の失敗の記録も消える。
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 古い順に数を絞る。結果を覚えると待ち行列を読み違える。
 		$post_ids = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = %s AND meta_value IN (%s, %s) ORDER BY meta_id LIMIT %d",
+				"SELECT i.post_id FROM {$wpdb->postmeta} i WHERE i.meta_key = %s AND i.meta_value IN (%s, %s) AND NOT EXISTS ( SELECT 1 FROM {$wpdb->postmeta} o WHERE o.post_id = i.post_id AND o.meta_key IN (%s, %s) ) ORDER BY i.meta_id LIMIT %d",
 				self::ISSUE,
 				self::ISSUE_TEMPORARY,
 				self::ISSUE_QUOTA,
+				Sync_Queue::PENDING,
+				Sync_Queue::ERROR,
 				self::REQUEUE_MAX
 			)
 		);
 
-		Sync_Queue::mark_many( array_map( 'intval', $post_ids ) );
+		if ( $post_ids ) {
+			Sync_Queue::mark_many( array_map( 'intval', $post_ids ) );
+		}
+	}
+
+	/**
+	 * 時間では直らず、送信を止めている状態か。積み直すと止めた cron を張り直してしまう。
+	 *
+	 * @return bool
+	 */
+	private static function is_stopped() {
+		return '' === Connection::api_key()
+			|| in_array( Connection::state()['status'], array( Connection::UNAUTHORIZED, Connection::SUSPENDED, Connection::FORBIDDEN ), true );
 	}
 
 	/**
@@ -208,7 +225,7 @@ class Sync_Image {
 		);
 
 		if ( is_wp_error( $result ) ) {
-			if ( Api_Client::RATE_LIMITED === $result->get_error_code() || Sync_Queue::is_halting( $result ) ) {
+			if ( self::is_for_the_queue( $result ) ) {
 				return $result;
 			}
 			return array_merge( self::keep_previous( $post_id, $previous, self::issue_for( $result ) ), array( 'requests' => 1 ) );
@@ -223,10 +240,12 @@ class Sync_Image {
 			$post_id,
 			self::RECORD,
 			array(
-				'hash'     => $hash,
-				'id'       => $id,
-				'at'       => time(),
-				'attached' => false,
+				'hash'       => $hash,
+				'id'         => $id,
+				'at'         => time(),
+				'attached'   => false,
+				// 本文が届くまでは、EventWatch の画像は前のまま。上げられないときに送る ID として残す。
+				'attachedId' => $previous,
 			)
 		);
 
@@ -237,6 +256,22 @@ class Sync_Image {
 				'requests' => 1,
 			)
 		);
+	}
+
+	/**
+	 * 本文の送信と同じ扱いにする失敗か。EventWatch が待ちを指示したら、本文も送らない。
+	 *
+	 * @param WP_Error $error 失敗。
+	 * @return bool
+	 */
+	private static function is_for_the_queue( WP_Error $error ) {
+		if ( Api_Client::RATE_LIMITED === $error->get_error_code() || Sync_Queue::is_halting( $error ) ) {
+			return true;
+		}
+
+		$data = $error->get_error_data();
+
+		return Api_Client::TEMPORARY === $error->get_error_code() && is_array( $data ) && ! empty( $data['retry_after'] );
 	}
 
 	/**
@@ -306,6 +341,11 @@ class Sync_Image {
 		$original = get_attached_file( $attachment_id );
 		if ( ! is_string( $original ) || '' === $original ) {
 			return self::ISSUE_UNREADABLE;
+		}
+
+		// 本体は PDF などもアイキャッチ画像に設定でき、縮小版を持つ。掲載の画像として送らない。
+		if ( ! wp_attachment_is_image( $attachment_id ) ) {
+			return self::ISSUE_FORMAT;
 		}
 
 		$paths = array( $original );

@@ -992,12 +992,12 @@ class Sync_Image_Test extends WP_UnitTestCase {
 	 * 期限の切れた未紐付けの ID は、合わない差し替えのときも前の ID として送らない。
 	 */
 	public function test_expired_id_is_not_kept_as_the_previous_image() {
-		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+		$post                  = $this->event( $this->attachment( self::JPEG . 'a' ) );
+		$this->put_responses[] = $this->response( 500 );
 		$this->run_queue();
 
-		$record             = get_post_meta( $post, Sync_Image::RECORD, true );
-		$record['attached'] = false;
-		$record['at']       = time() - Sync_Image::UNATTACHED_TTL;
+		$record       = get_post_meta( $post, Sync_Image::RECORD, true );
+		$record['at'] = time() - Sync_Image::UNATTACHED_TTL;
 		update_post_meta( $post, Sync_Image::RECORD, $record );
 
 		set_post_thumbnail( $post, $this->attachment( self::GIF ) );
@@ -1005,6 +1005,163 @@ class Sync_Image_Test extends WP_UnitTestCase {
 		Sync_Queue::send_marked();
 
 		$this->assertArrayNotHasKey( 'imageUploadId', $this->last_put() );
+	}
+
+	/**
+	 * 上げただけの ID で記録を上書きしても、結び付いている ID を前の画像として送る。
+	 */
+	public function test_attached_id_survives_an_upload_that_never_reached_the_event() {
+		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+		$this->run_queue();
+
+		set_post_thumbnail( $post, $this->attachment( self::JPEG . 'b' ) );
+		Sync_Queue::mark( $post );
+		$this->upload_responses[] = $this->response( 201, array( 'id' => self::ID_B ) );
+		$this->put_responses[]    = $this->response( 409 );
+		$this->run_queue();
+		$this->assertSame( self::ID_B, get_post_meta( $post, Sync_Image::RECORD, true )['id'] );
+
+		set_post_thumbnail( $post, $this->attachment( self::GIF ) );
+		Sync_Queue::mark( $post );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( self::ID_A, $this->last_put()['imageUploadId'], '選んでいない B を掲載しない' );
+		$this->assertSame( Sync_Image::ISSUE_FORMAT, get_post_meta( $post, Sync_Image::ISSUE, true ) );
+	}
+
+	/**
+	 * 期限の切れた ID の上げ直しに失敗しても、結び付いている ID は外さない。
+	 */
+	public function test_attached_id_is_kept_when_the_upload_fails_after_expiry() {
+		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+		$this->run_queue();
+
+		set_post_thumbnail( $post, $this->attachment( self::JPEG . 'b' ) );
+		Sync_Queue::mark( $post );
+		$this->upload_responses[] = $this->response( 201, array( 'id' => self::ID_B ) );
+		$this->put_responses[]    = $this->response( 409 );
+		$this->run_queue();
+
+		$record       = get_post_meta( $post, Sync_Image::RECORD, true );
+		$record['at'] = time() - Sync_Image::UNATTACHED_TTL;
+		update_post_meta( $post, Sync_Image::RECORD, $record );
+
+		Sync_Queue::mark( $post );
+		$this->upload_responses[] = $this->response( 500 );
+		$this->run_queue();
+
+		$this->assertSame( self::ID_A, $this->last_put()['imageUploadId'] );
+	}
+
+	/**
+	 * 投入の 503 に待ちの指示があれば、本文も送らずサイト全体で待つ。
+	 */
+	public function test_upload_retry_after_holds_the_body_too() {
+		$first = $this->event( $this->attachment( self::JPEG . 'a' ) );
+		$this->event( $this->attachment( self::JPEG . 'b' ) );
+
+		$this->upload_responses[] = $this->response( 503, null, array( 'retry-after' => '10' ) );
+		$this->run_queue();
+
+		$this->assertCount( 1, $this->requests );
+		$this->assertNotSame( '', get_post_meta( $first, Sync_Queue::PENDING, true ) );
+		$this->assertSame( '', get_post_meta( $first, Sync_Image::ISSUE, true ) );
+		$this->assertGreaterThan( time(), (int) get_option( Sync_Queue::HOLD_OPTION, 0 ) );
+	}
+
+	/**
+	 * 画像でない添付の縮小版は送らない。
+	 */
+	public function test_non_image_attachment_is_not_sent() {
+		$path       = $this->file( 'ew-test-' . wp_generate_password( 8, false ) . '.pdf', '%PDF-1.7' );
+		$preview    = $this->file( 'ew-test-preview-' . wp_generate_password( 8, false ) . '.jpg', self::JPEG . 'preview' );
+		$attachment = self::factory()->attachment->create_object(
+			array(
+				'file'           => $path,
+				'post_mime_type' => 'application/pdf',
+			)
+		);
+		wp_update_attachment_metadata(
+			$attachment,
+			array(
+				'sizes' => array(
+					'full'  => array(
+						'file'      => basename( $preview ),
+						'width'     => 100,
+						'height'    => 100,
+						'mime-type' => 'image/jpeg',
+					),
+					'large' => array(
+						'file'      => basename( $preview ),
+						'width'     => 100,
+						'height'    => 100,
+						'mime-type' => 'image/jpeg',
+					),
+				),
+			)
+		);
+		$post = $this->event( $attachment );
+		$this->assertSame( $attachment, (int) get_post_thumbnail_id( $post ) );
+
+		$this->run_queue();
+
+		$this->assertSame( array(), $this->uploads() );
+		$this->assertSame( Sync_Image::ISSUE_FORMAT, get_post_meta( $post, Sync_Image::ISSUE, true ) );
+	}
+
+	/**
+	 * 送信待ちと、失敗が確定した投稿は積み直さない。
+	 */
+	public function test_requeue_leaves_pending_and_failed_posts_alone() {
+		$pending = $this->event();
+		$failed  = $this->event();
+		Sync_Queue::send_marked();
+
+		update_post_meta( $pending, Sync_Image::ISSUE, Sync_Image::ISSUE_TEMPORARY );
+		update_post_meta( $pending, Sync_Queue::PENDING, 'token' );
+		update_post_meta( $pending, Sync_Queue::ATTEMPTS, 5 );
+		update_post_meta( $pending, Sync_Queue::NEXT_AT, time() + 1000 );
+		update_post_meta( $failed, Sync_Image::ISSUE, Sync_Image::ISSUE_TEMPORARY );
+		update_post_meta( $failed, Sync_Queue::ERROR, array( 'code' => 'x' ) );
+
+		Sync_Image::requeue();
+
+		$this->assertSame( '5', get_post_meta( $pending, Sync_Queue::ATTEMPTS, true ) );
+		$this->assertSame( 'token', get_post_meta( $pending, Sync_Queue::PENDING, true ) );
+		$this->assertSame( array( 'code' => 'x' ), get_post_meta( $failed, Sync_Queue::ERROR, true ) );
+		$this->assertSame( '', get_post_meta( $failed, Sync_Queue::PENDING, true ) );
+	}
+
+	/**
+	 * 止めた送信を積み直しで起こさない。
+	 */
+	public function test_requeue_with_nothing_to_do_does_not_wake_the_queue() {
+		$post = $this->event();
+		Sync_Queue::send_marked();
+		update_post_meta( $post, Sync_Queue::PENDING, 'token' );
+		wp_clear_scheduled_hook( Sync_Queue::RUN_HOOK );
+
+		Sync_Image::requeue();
+
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
+	}
+
+	/**
+	 * キーを断られている間は積み直さない。
+	 */
+	public function test_requeue_waits_while_the_key_is_rejected() {
+		$post = $this->event();
+		Sync_Queue::send_marked();
+		update_post_meta( $post, Sync_Image::ISSUE, Sync_Image::ISSUE_TEMPORARY );
+
+		$this->put_responses[] = $this->response( 401 );
+		( new \EventWatch\Api_Client() )->request( 'PUT', '/api/v1.0/org-api/sites/x/events/1', array( 'body' => array() ) );
+		wp_clear_scheduled_hook( Sync_Queue::RUN_HOOK );
+
+		Sync_Image::requeue();
+
+		$this->assertSame( '', get_post_meta( $post, Sync_Queue::PENDING, true ) );
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
 	}
 
 	/**
@@ -1183,13 +1340,32 @@ class Sync_Image_Test extends WP_UnitTestCase {
 	/**
 	 * EventWatch に無いと分かったら記録を消す。
 	 */
-	public function test_clear_remote_forgets_the_record() {
+	public function test_forget_remote_forgets_the_record() {
 		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
 		$this->run_queue();
 
-		Sync_Queue::clear_remote( $post );
+		Sync_Queue::forget_remote( $post );
 
 		$this->assertSame( '', get_post_meta( $post, Sync_Image::RECORD, true ) );
+	}
+
+	/**
+	 * 取り込みの 404 は別の団体のキーでも起きるので、記録を残す。キーを戻しても上げ直さない。
+	 */
+	public function test_pull_not_found_keeps_the_record() {
+		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+		$this->run_queue();
+		$this->requests = array();
+
+		$this->put_responses[] = $this->response( 404 );
+		Sync_Pull::pull( $post, 3 );
+		$this->assertSame( self::ID_A, get_post_meta( $post, Sync_Image::RECORD, true )['id'] );
+
+		Sync_Queue::mark( $post );
+		$this->run_queue();
+
+		$this->assertSame( array(), $this->uploads() );
+		$this->assertSame( self::ID_A, $this->last_put()['imageUploadId'] );
 	}
 
 	/**
