@@ -199,6 +199,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	const blockCodes = [
 		...( status?.blocks ?? [] ),
 		...( status?.fieldErrors ?? [] ),
+		...( status?.imageIssue ?? [] ),
 		// 差し戻しの理由もパネルの中にある。
 		...( status?.state === 'fix' ? [ { code: 'fix' } ] : [] ),
 	]
@@ -283,6 +284,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	const look = STATE_LOOKS[ shown.state ] ?? STATE_LOOKS.unsent;
 	const blocks = sending ? status.blocks : [];
 	const fieldErrors = sending ? status.fieldErrors : [];
+	const imageIssue = sending ? status.imageIssue : [];
 
 	return (
 		<PluginDocumentSettingPanel name={ PANEL_NAME } title="EventWatch">
@@ -309,6 +311,19 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						) }
 						description={ __(
 							'Fix the points below, and the post is sent when you update it. Publishing on your site isn’t affected.',
+							'eventwatch'
+						) }
+					/>
+				) }
+				{ imageIssue.length > 0 && (
+					<SendBlocks
+						blocks={ imageIssue }
+						heading={ __(
+							'The featured image wasn’t sent',
+							'eventwatch'
+						) }
+						description={ __(
+							'The other details aren’t affected. If EventWatch already has an image for this event, it stays.',
 							'eventwatch'
 						) }
 					/>
