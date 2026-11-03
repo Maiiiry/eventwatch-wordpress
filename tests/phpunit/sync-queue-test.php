@@ -1183,6 +1183,37 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 洗い直しは公開中の投稿だけを積む。取り下げた投稿に余計な印を付けない。
+	 */
+	public function test_rescan_marks_published_posts_only() {
+		$published = $this->sent_event();
+		$withdrawn = $this->sent_event();
+		wp_update_post(
+			array(
+				'ID'          => $withdrawn,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+
+		Sync_Queue::rescan();
+
+		$this->assertNotSame( '', (string) get_post_meta( $published, Sync_Queue::PENDING, true ) );
+		$this->assertSame( '', (string) get_post_meta( $withdrawn, Sync_Queue::PENDING, true ) );
+	}
+
+	/**
+	 * 移転はパーマリンクが変わるので、洗い直しを張る。
+	 */
+	public function test_moving_requests_rescan() {
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		Site_Identity::use_as_moved();
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
 	 * 送信待ちの件数を設定画面の値に返す。
 	 */
 	public function test_pending_count_filter() {
@@ -1218,6 +1249,8 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	 */
 	public function test_ignores_other_post_types() {
 		$other = self::factory()->post->create( array( 'post_type' => 'post' ) );
+		$this->assertSame( '', (string) get_post_meta( $other, Sync_Queue::PENDING, true ) );
+
 		Sync_Queue::send_marked();
 
 		$this->assertSame( array(), $this->requests );
