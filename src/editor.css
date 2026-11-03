@@ -80,9 +80,10 @@
 	display: none;
 }
 
+/* 本体の入力の枠の指定より強くするため、クラスを重ねる。 */
 .eventwatch-occurrence--error .eventwatch-occurrence__grid input,
-.eventwatch-control--error input,
-.eventwatch-control--error textarea {
+.components-base-control.eventwatch-control--error input,
+.components-base-control.eventwatch-control--error textarea {
 	border-color: #cc1818;
 	box-shadow: inset 0 0 0 1px #cc1818;
 }

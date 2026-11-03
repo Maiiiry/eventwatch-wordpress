@@ -561,7 +561,8 @@ class Event_Detail {
 	 */
 	public static function listing_url( $post_id ) {
 		$slug = (string) get_post_meta( $post_id, self::LISTING_SLUG, true );
-		if ( '' === $slug ) {
+		// DB を写した複製にはスラッグも写っている。本番の掲載を複製のページから指さない。
+		if ( '' === $slug || Site_Identity::has_changed() ) {
 			return '';
 		}
 

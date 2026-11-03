@@ -1,5 +1,5 @@
 import apiFetch from '@wordpress/api-fetch';
-import { Button, ToggleControl } from '@wordpress/components';
+import { Button, ExternalLink, ToggleControl } from '@wordpress/components';
 import { useEntityProp } from '@wordpress/core-data';
 import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
 import {
@@ -196,7 +196,14 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	useOpenPanelOnce( PANEL_ID, 'syncOpenedOnce' );
 
 	// 閉じたままだと、送れないことに気づかないまま公開が終わる。理由が変わったら開く。
-	const blockCodes = status?.blocks.map( ( block ) => block.code ).join();
+	const blockCodes = [
+		...( status?.blocks ?? [] ),
+		...( status?.fieldErrors ?? [] ),
+		// 差し戻しの理由もパネルの中にある。
+		...( status?.state === 'fix' ? [ { code: 'fix' } ] : [] ),
+	]
+		.map( ( block ) => block.code )
+		.join();
 	useEffect( () => {
 		if (
 			blockCodes &&
@@ -214,16 +221,23 @@ const SyncPanelContent = ( { unsavedText } ) => {
 		Boolean( status?.blocks.some( ( item ) => item.code === code ) );
 	const categoryBlocked = hasBlock( 'category' );
 	const prefectureBlocked = hasBlock( 'prefecture' );
+	const rejectedFields = sendOn
+		? ( status?.fieldErrors ?? [] )
+				.map( ( item ) => item.field )
+				.filter( Boolean )
+				.join()
+		: '';
 	useEffect( () => {
 		document.dispatchEvent(
 			new window.CustomEvent( SYNC_BLOCKS_EVENT, {
 				detail: {
 					category: categoryBlocked,
 					prefecture: prefectureBlocked,
+					rejected: rejectedFields ? rejectedFields.split( ',' ) : [],
 				},
 			} )
 		);
-	}, [ categoryBlocked, prefectureBlocked ] );
+	}, [ categoryBlocked, prefectureBlocked, rejectedFields ] );
 
 	const panelVisible = useSelect( ( select ) => {
 		const editor = select( editorStore );
@@ -268,6 +282,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	}
 	const look = STATE_LOOKS[ shown.state ] ?? STATE_LOOKS.unsent;
 	const blocks = sending ? status.blocks : [];
+	const fieldErrors = sending ? status.fieldErrors : [];
 
 	return (
 		<PluginDocumentSettingPanel name={ PANEL_NAME } title="EventWatch">
@@ -277,6 +292,19 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						blocks={ blocks }
 						heading={ __(
 							'Can’t send to EventWatch',
+							'eventwatch'
+						) }
+						description={ __(
+							'Fix the points below, and the post is sent when you update it. Publishing on your site isn’t affected.',
+							'eventwatch'
+						) }
+					/>
+				) }
+				{ fieldErrors.length > 0 && (
+					<SendBlocks
+						blocks={ fieldErrors }
+						heading={ __(
+							'EventWatch didn’t accept these details',
 							'eventwatch'
 						) }
 						description={ __(
@@ -311,6 +339,11 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						<dt>{ shown.meta.label }</dt>
 						<dd>{ shown.meta.value }</dd>
 					</dl>
+				) }
+				{ shown.state !== 'off' && shown.link.url && (
+					<ExternalLink href={ shown.link.url }>
+						{ shown.link.label }
+					</ExternalLink>
 				) }
 				{ shown.state !== 'off' && shown.canResend && (
 					<Button

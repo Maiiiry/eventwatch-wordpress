@@ -213,6 +213,7 @@ const useSyncBlocks = () => {
 	const [ blocked, setBlocked ] = useState( {
 		category: false,
 		prefecture: false,
+		rejected: [],
 	} );
 	useEffect( () => {
 		const listen = ( event ) => setBlocked( event.detail );
@@ -398,6 +399,19 @@ const EventFields = ( {
 	}, [ focusTarget ] );
 
 	const nameMissing = venueIncomplete && ! venueName.trim();
+	const isRejected = ( id ) => blocked.rejected.includes( id );
+	const rejectedError = (
+		<FieldError>
+			{ __(
+				'EventWatch didn’t accept this. Check it and update the post.',
+				'eventwatch'
+			) }
+		</FieldError>
+	);
+	const nameRejected = isRejected( 'eventwatch-field-venue-name' );
+	const addressRejected = isRejected( 'eventwatch-field-venue-address' );
+	const noteRejected = isRejected( 'eventwatch-field-schedule-note' );
+	const urlRejected = isRejected( 'eventwatch-field-url' );
 	const categoryMissing = blocked.category && ! meta?.eventwatch_category;
 	const prefectureMissing =
 		blocked.prefecture &&
@@ -437,9 +451,11 @@ const EventFields = ( {
 				__nextHasNoMarginBottom
 				id="eventwatch-field-venue-name"
 				className={
-					nameMissing ? 'eventwatch-control--error' : undefined
+					nameMissing || nameRejected
+						? 'eventwatch-control--error'
+						: undefined
 				}
-				aria-invalid={ nameMissing ? true : undefined }
+				aria-invalid={ nameMissing || nameRejected ? true : undefined }
 				label={ __( 'Venue name', 'eventwatch' ) }
 				maxLength={ MAX_VENUE_NAME }
 				value={ venueName }
@@ -454,16 +470,22 @@ const EventFields = ( {
 								'eventwatch'
 							) }
 						</FieldError>
-					) : undefined
+					) : (
+						( nameRejected && rejectedError ) || undefined
+					)
 				}
 			/>
 			<TextareaControl
 				__nextHasNoMarginBottom
 				id="eventwatch-field-venue-address"
 				className={
-					addressMissing ? 'eventwatch-control--error' : undefined
+					addressMissing || addressRejected
+						? 'eventwatch-control--error'
+						: undefined
 				}
-				aria-invalid={ addressMissing ? true : undefined }
+				aria-invalid={
+					addressMissing || addressRejected ? true : undefined
+				}
 				label={ __( 'Venue address', 'eventwatch' ) }
 				rows={ 2 }
 				maxLength={ MAX_ADDRESS }
@@ -479,7 +501,9 @@ const EventFields = ( {
 								'eventwatch'
 							) }
 						</FieldError>
-					) : undefined
+					) : (
+						( addressRejected && rejectedError ) || undefined
+					)
 				}
 			/>
 			<ToggleControl
@@ -561,6 +585,10 @@ const EventFields = ( {
 			<TextareaControl
 				__nextHasNoMarginBottom
 				id="eventwatch-field-schedule-note"
+				className={
+					noteRejected ? 'eventwatch-control--error' : undefined
+				}
+				aria-invalid={ noteRejected ? true : undefined }
 				label={ __( 'Notes on dates', 'eventwatch' ) }
 				rows={ 2 }
 				maxLength={ MAX_NOTE }
@@ -568,22 +596,29 @@ const EventFields = ( {
 				onChange={ ( value ) =>
 					setField( 'eventwatch_schedule_note', value )
 				}
-				help={ sprintf(
-					/* translators: 1: the number of characters entered, 2: the limit. */
-					__( '%1$d / %2$d characters', 'eventwatch' ),
-					countCharacters( note ),
-					MAX_NOTE
-				) }
+				help={
+					<>
+						{ noteRejected && rejectedError }
+						{ sprintf(
+							/* translators: 1: the number of characters entered, 2: the limit. */
+							__( '%1$d / %2$d characters', 'eventwatch' ),
+							countCharacters( note ),
+							MAX_NOTE
+						) }
+					</>
+				}
 			/>
 			<TextControl
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 				id="eventwatch-field-url"
 				className={
-					urlInvalid ? 'eventwatch-control--error' : undefined
+					urlInvalid || urlRejected
+						? 'eventwatch-control--error'
+						: undefined
 				}
 				type="url"
-				aria-invalid={ urlInvalid ? true : undefined }
+				aria-invalid={ urlInvalid || urlRejected ? true : undefined }
 				label={ __(
 					'Separate official page (optional)',
 					'eventwatch'
@@ -602,6 +637,7 @@ const EventFields = ( {
 								) }
 							</FieldError>
 						) }
+						{ ! urlInvalid && urlRejected && rejectedError }
 						{ __(
 							'When empty, this event’s page is sent to EventWatch as the official page.',
 							'eventwatch'
