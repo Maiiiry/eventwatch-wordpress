@@ -766,9 +766,19 @@ class Sync_Queue {
 	 */
 	public static function forget_remote( $post_id ) {
 		delete_post_meta( $post_id, self::EXISTS );
+		delete_post_meta( $post_id, self::PULLED_AT );
+		self::clear_remote( $post_id );
+	}
+
+	/**
+	 * 分かっていた状態を消す。同じ内容でも次の更新で送る。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return void
+	 */
+	public static function clear_remote( $post_id ) {
 		delete_post_meta( $post_id, self::HASH );
 		delete_post_meta( $post_id, self::REMOTE );
-		delete_post_meta( $post_id, self::PULLED_AT );
 		delete_post_meta( $post_id, Event_Detail::LISTING_SLUG );
 	}
 

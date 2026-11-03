@@ -199,6 +199,8 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	const blockCodes = [
 		...( status?.blocks ?? [] ),
 		...( status?.fieldErrors ?? [] ),
+		// 差し戻しの理由もパネルの中にある。
+		...( status?.state === 'fix' ? [ { code: 'fix' } ] : [] ),
 	]
 		.map( ( block ) => block.code )
 		.join();

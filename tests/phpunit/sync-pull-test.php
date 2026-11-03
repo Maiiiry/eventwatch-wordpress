@@ -351,18 +351,20 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 404 は無いか削除済み。次の公開で作り直しに行く。
+	 * 404 は無いか他団体か削除済み。状態は消すが、存在の記録は残す。次の更新で送り直す。
 	 */
-	public function test_not_found_forgets_the_remote() {
+	public function test_not_found_clears_state_and_keeps_exists() {
 		$this->default = $this->http( 200, array( 'event' => $this->listed() ) );
 		$id            = $this->sent_event();
 
 		$this->default = $this->http( 404, array() );
-		Sync_Pull::pull( $id, 5 );
+		$this->assertSame( Sync_Pull::OUTCOME_DONE, Sync_Pull::pull( $id, 5 ) );
 
-		foreach ( array( Sync_Queue::EXISTS, Sync_Queue::HASH, Sync_Queue::REMOTE, Event_Detail::LISTING_SLUG ) as $key ) {
+		foreach ( array( Sync_Queue::HASH, Sync_Queue::REMOTE, Event_Detail::LISTING_SLUG ) as $key ) {
 			$this->assertSame( '', get_post_meta( $id, $key, true ), $key );
 		}
+		$this->assertSame( '1', get_post_meta( $id, Sync_Queue::EXISTS, true ) );
+		$this->assertGreaterThan( 0, (int) get_post_meta( $id, Sync_Queue::PULLED_AT, true ) );
 		$this->assertSame( 'unsent', Sync_Rest::status( $id )['state'] );
 
 		$this->requests = array();
@@ -370,6 +372,134 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		wp_update_post( array( 'ID' => $id ) );
 		Sync_Queue::send_marked();
 		$this->assertSame( 'PUT', $this->requests[0][0] );
+	}
+
+	/**
+	 * 別の団体のキーを誤って入れても、正しいキーに戻した後の取り下げが届く。掲載をサイトから消せなくしない。
+	 */
+	public function test_withdrawal_reaches_after_wrong_key_period() {
+		$this->default = $this->http( 200, array( 'event' => $this->listed() ) );
+		$id            = $this->sent_event();
+
+		$this->default = $this->http( 404, array() );
+		Sync_Pull::pull( $id, 5 );
+
+		// 正しいキーに戻すと、次の取り込みで状態も戻る。
+		delete_post_meta( $id, Sync_Queue::PULLED_AT );
+		$this->default = $this->http( 200, $this->listed() );
+		Sync_Pull::maybe_pull( $id );
+		$this->assertSame( 'live', Sync_Rest::status( $id )['state'] );
+
+		$this->requests = array();
+		$this->default  = $this->http( 200, array( 'event' => array( 'status' => 'private' ) ) );
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+		$this->assertSame( 'POST', $this->requests[0][0] );
+	}
+
+	/**
+	 * 本当に無ければ、取り下げの 404 で存在の記録が消える。
+	 */
+	public function test_not_found_on_withdrawal_forgets_exists() {
+		$id            = $this->sent_event();
+		$this->default = $this->http( 404, array() );
+		Sync_Pull::pull( $id, 5 );
+
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+
+		$this->assertSame( '', get_post_meta( $id, Sync_Queue::EXISTS, true ) );
+	}
+
+	/**
+	 * 取り込みの成功で止まった状態が消えるので、止めていた送信も再開する。
+	 *
+	 * @return array[]
+	 */
+	public function halted_statuses() {
+		return array(
+			'失効' => array( 401, array() ),
+			'停止' => array( 403, array( 'code' => 'organizationSuspended' ) ),
+			'禁止' => array( 403, array() ),
+		);
+	}
+
+	/**
+	 * 止まっている間に印が残った投稿が、取り込みの成功の後に送られる。
+	 *
+	 * @dataProvider halted_statuses
+	 *
+	 * @param int   $status ステータス。
+	 * @param array $body   本文。
+	 */
+	public function test_successful_pull_resumes_halted_sending( $status, $body ) {
+		$other   = $this->sent_event();
+		$blocked = $this->sent_event();
+
+		$this->default = $this->http( $status, $body );
+		update_post_meta( $blocked, Event_Meta::CATEGORY, 4 );
+		Sync_Queue::mark( $blocked, false );
+		Sync_Queue::send_marked();
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ), '止まっている間は張らない' );
+
+		$this->default = $this->http( 200, $this->listed() );
+		Sync_Pull::pull( $other, 5 );
+
+		$this->assertNotFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
+	}
+
+	/**
+	 * 止まっていなければ、取り込みで送信の予定を動かさない。
+	 */
+	public function test_successful_pull_does_not_touch_sending_otherwise() {
+		$id = $this->sent_event();
+		wp_clear_scheduled_hook( Sync_Queue::RUN_HOOK );
+
+		Sync_Pull::pull( $id, 5 );
+
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
+	}
+
+	/**
+	 * 1 件だけが失敗し続けても、次の回はほかの投稿へ進む。
+	 */
+	public function test_failing_post_does_not_block_others() {
+		$first = $this->sent_event();
+		$next  = $this->sent_event();
+
+		$this->answers[ $first ] = $this->http( 500, array() );
+		$this->default           = $this->http( 200, $this->listed() );
+
+		Sync_Pull::run();
+		$this->assertSame( array( $first ), array_column( $this->requests, 1 ) );
+
+		$this->requests = array();
+		Sync_Pull::run();
+		$this->assertSame( $next, $this->requests[0][1] );
+		$this->assertSame( 'live', Sync_Rest::status( $next )['state'] );
+	}
+
+	/**
+	 * 複製では、写ってきたスラッグがあっても本番の掲載を指さない。
+	 */
+	public function test_copy_does_not_link_to_the_listing() {
+		$id = $this->sent_event();
+		update_post_meta( $id, Event_Detail::LISTING_SLUG, 'abc123' );
+		$this->assertNotSame( '', Event_Detail::listing_url( $id ) );
+
+		update_option( Site_Identity::URL_OPTION, 'https://other.example' );
+
+		$this->assertSame( '', Event_Detail::listing_url( $id ) );
 	}
 
 	/**
@@ -409,7 +539,6 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->requests );
 		$this->assertSame( $before, get_post_meta( $first, Sync_Queue::REMOTE, true ) );
 		$this->assertSame( 'abc123', get_post_meta( $first, Event_Detail::LISTING_SLUG, true ) );
-		$this->assertSame( '', get_post_meta( $first, Sync_Queue::PULLED_AT, true ) );
 
 		$until = (int) get_option( Sync_Queue::HOLD_OPTION, 0 );
 		if ( $hold > 0 ) {
@@ -809,8 +938,6 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 			'公式ページ'  => array( 'publisherEventPageUrl', 'eventwatch-field-url' ),
 			'日程の補足'  => array( 'holdingPeriodNote', 'eventwatch-field-schedule-note' ),
 			'住所'     => array( 'venueAddress', 'eventwatch-field-venue-address' ),
-			'カテゴリ'   => array( 'category', 'eventwatch-field-category' ),
-			'都道府県'   => array( 'prefectureCode', 'eventwatch-field-prefecture' ),
 			'題は文だけ'  => array( 'title', '' ),
 			'本文は文だけ' => array( 'description', '' ),
 			'日程は文だけ' => array( 'occurrenceRanges', '' ),

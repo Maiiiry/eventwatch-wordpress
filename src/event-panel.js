@@ -412,8 +412,6 @@ const EventFields = ( {
 	const addressRejected = isRejected( 'eventwatch-field-venue-address' );
 	const noteRejected = isRejected( 'eventwatch-field-schedule-note' );
 	const urlRejected = isRejected( 'eventwatch-field-url' );
-	const categoryRejected = isRejected( 'eventwatch-field-category' );
-	const prefectureRejected = isRejected( 'eventwatch-field-prefecture' );
 	const categoryMissing = blocked.category && ! meta?.eventwatch_category;
 	const prefectureMissing =
 		blocked.prefecture &&
@@ -524,22 +522,16 @@ const EventFields = ( {
 				__nextHasNoMarginBottom
 				id="eventwatch-field-prefecture"
 				className={
-					prefectureMissing || prefectureRejected
-						? 'eventwatch-control--error'
-						: undefined
+					prefectureMissing ? 'eventwatch-control--error' : undefined
 				}
-				aria-invalid={
-					prefectureMissing || prefectureRejected ? true : undefined
-				}
+				aria-invalid={ prefectureMissing ? true : undefined }
 				label={ __( 'Prefecture', 'eventwatch' ) }
 				help={
 					prefectureMissing ? (
 						<FieldError>
 							{ __( 'Choose a prefecture.', 'eventwatch' ) }
 						</FieldError>
-					) : (
-						( prefectureRejected && rejectedError ) || undefined
-					)
+					) : undefined
 				}
 				value={ String( meta?.eventwatch_prefecture ?? 0 ) }
 				options={ [
@@ -558,13 +550,9 @@ const EventFields = ( {
 				__nextHasNoMarginBottom
 				id="eventwatch-field-category"
 				className={
-					categoryMissing || categoryRejected
-						? 'eventwatch-control--error'
-						: undefined
+					categoryMissing ? 'eventwatch-control--error' : undefined
 				}
-				aria-invalid={
-					categoryMissing || categoryRejected ? true : undefined
-				}
+				aria-invalid={ categoryMissing ? true : undefined }
 				label={ __( 'EventWatch category', 'eventwatch' ) }
 				help={
 					<>
@@ -576,9 +564,6 @@ const EventFields = ( {
 								) }
 							</FieldError>
 						) }
-						{ ! categoryMissing &&
-							categoryRejected &&
-							rejectedError }
 						{ __(
 							'Required to send to EventWatch. This is separate from your site’s categories.',
 							'eventwatch'

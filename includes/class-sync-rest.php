@@ -243,8 +243,6 @@ class Sync_Rest {
 			'venueName'             => array( __( 'EventWatch didn’t accept the venue name. Check it and update the post.', 'eventwatch' ), __( 'Edit the venue', 'eventwatch' ), 'eventwatch-field-venue-name' ),
 			'venueAddress'          => array( __( 'EventWatch didn’t accept the venue address. Check it and update the post.', 'eventwatch' ), __( 'Edit the venue', 'eventwatch' ), 'eventwatch-field-venue-address' ),
 			'publisherEventPageUrl' => array( __( 'EventWatch didn’t accept the official page URL. Check it and update the post.', 'eventwatch' ), __( 'Edit the official page', 'eventwatch' ), 'eventwatch-field-url' ),
-			'category'              => array( __( 'EventWatch didn’t accept the category. Check it and update the post.', 'eventwatch' ), __( 'Choose a category', 'eventwatch' ), 'eventwatch-field-category' ),
-			'prefectureCode'        => array( __( 'EventWatch didn’t accept the prefecture. Check it and update the post.', 'eventwatch' ), __( 'Choose a prefecture', 'eventwatch' ), 'eventwatch-field-prefecture' ),
 		);
 
 		$items = array();

@@ -951,71 +951,71 @@ msgstr "Google カレンダー"
 msgid "Add to calendar"
 msgstr "カレンダーに追加"
 
-#: includes/class-event-detail.php:603
+#: includes/class-event-detail.php:604
 #: build/blocks/event-field/index.js:1
 msgctxt "mark an event you are interested in"
 msgid "Save"
 msgstr "気になる"
 
-#: includes/class-event-detail.php:607
+#: includes/class-event-detail.php:608
 msgid "Get a reminder in the app"
 msgstr "開催前にアプリでお知らせします"
 
-#: includes/class-event-detail.php:608
+#: includes/class-event-detail.php:609
 msgid "Close"
 msgstr "閉じる"
 
-#: includes/class-event-detail.php:610
+#: includes/class-event-detail.php:611
 msgid "Save this event in the EventWatch app, and we’ll send you a notification before it starts so you don’t forget."
 msgstr "EventWatch のアプリで気になるに入れると、行きたいイベントを忘れないよう、開催前に通知でお知らせします。"
 
-#: includes/class-event-detail.php:611
+#: includes/class-event-detail.php:612
 msgid "Open in app"
 msgstr "アプリで開く"
 
-#: includes/class-event-detail.php:613
+#: includes/class-event-detail.php:614
 msgid "Don’t have the app? Get it here."
 msgstr "アプリを入れていないときは、ここから入手できます。"
 
-#: includes/class-event-detail.php:614
+#: includes/class-event-detail.php:615
 msgid "Get it on the App Store"
 msgstr "App Store で入手"
 
-#: includes/class-event-detail.php:614
+#: includes/class-event-detail.php:615
 msgid "Get it on Google Play"
 msgstr "Google Play で入手"
 
-#: includes/class-event-detail.php:633
+#: includes/class-event-detail.php:634
 msgid "Share on X"
 msgstr "X で共有"
 
-#: includes/class-event-detail.php:643
+#: includes/class-event-detail.php:644
 msgid "Send on LINE"
 msgstr "LINE で送る"
 
-#: includes/class-event-detail.php:647
+#: includes/class-event-detail.php:648
 msgid "Share on Facebook"
 msgstr "Facebook で共有"
 
-#: includes/class-event-detail.php:655
+#: includes/class-event-detail.php:656
 msgid "Copy link"
 msgstr "リンクをコピー"
 
-#: includes/class-event-detail.php:671
+#: includes/class-event-detail.php:672
 msgid "Link copied"
 msgstr "リンクをコピーしました"
 
-#: includes/class-event-detail.php:672
+#: includes/class-event-detail.php:673
 msgid "The link could not be copied."
 msgstr "リンクをコピーできませんでした。"
 
-#: includes/class-event-detail.php:676
 #: includes/class-event-detail.php:677
+#: includes/class-event-detail.php:678
 #: build/blocks/event-field/index.js:1
 msgid "Share"
 msgstr "共有"
 
-#: includes/class-event-detail.php:698
+#: includes/class-event-detail.php:699
 #: build/blocks/event-field/index.js:1
 msgid "Visit official page"
 msgstr "公式ページを見る"
@@ -1388,136 +1388,134 @@ msgstr "EventWatch からの理由"
 msgid "Last sent"
 msgstr "最後に送った日時"
 
-#: includes/class-sync-rest.php:364
+#: includes/class-sync-rest.php:362
 msgid "Not sent"
 msgstr "未送信"
 
-#: includes/class-sync-rest.php:364
+#: includes/class-sync-rest.php:362
 msgid "This post hasn’t been sent to EventWatch yet. It will be sent automatically when you publish."
 msgstr "まだ EventWatch に送っていません。投稿を公開すると、自動で送ります。"
 
-#: includes/class-sync-rest.php:365
+#: includes/class-sync-rest.php:363
 msgid "Waiting to send"
 msgstr "送信待ち"
 
-#: includes/class-sync-rest.php:365
+#: includes/class-sync-rest.php:363
 msgid "This post will be sent to EventWatch shortly, usually within a few minutes."
 msgstr "まもなく EventWatch に送ります。ふつうは数分で終わります。"
 
-#: includes/class-sync-rest.php:366
+#: includes/class-sync-rest.php:364
 msgid "Under review"
 msgstr "掲載の確認中"
 
-#: includes/class-sync-rest.php:366
+#: includes/class-sync-rest.php:364
 msgid "EventWatch is checking the details. Once it’s listed, you’ll see it here."
 msgstr "EventWatch で内容を確かめています。掲載されると、ここに表示します。"
 
-#: includes/class-sync-rest.php:367
+#: includes/class-sync-rest.php:365
 msgid "Listed"
 msgstr "掲載中"
 
-#: includes/class-sync-rest.php:367
+#: includes/class-sync-rest.php:365
 msgid "This post is listed on EventWatch. Updates to the post are reflected there too."
 msgstr "EventWatch に掲載されています。投稿を更新すると、EventWatch にも反映します。"
 
-#: includes/class-sync-rest.php:368
+#: includes/class-sync-rest.php:366
 msgid "Changes requested"
 msgstr "修正のお願いがあります"
 
-#: includes/class-sync-rest.php:368
+#: includes/class-sync-rest.php:366
 msgid "EventWatch has asked for changes. Fix the post and update it to send it again."
 msgstr "EventWatch から修正のお願いが届いています。直して投稿を更新すると、もう一度送ります。"
 
-#: includes/class-sync-rest.php:369
+#: includes/class-sync-rest.php:367
 msgid "Listing paused"
 msgstr "掲載を止めています"
 
-#: includes/class-sync-rest.php:369
+#: includes/class-sync-rest.php:367
 msgid "EventWatch has paused this listing. It stays published on your site."
 msgstr "EventWatch での掲載を止めています。サイトでの公開はそのまま続きます。"
 
-#: includes/class-sync-rest.php:370
+#: includes/class-sync-rest.php:368
 msgid "Withdrawn from EventWatch"
 msgstr "公開を取り下げています"
 
-#: includes/class-sync-rest.php:370
+#: includes/class-sync-rest.php:368
 msgid "This post isn’t public on EventWatch because it isn’t published on your site. Publish it to list it again."
 msgstr "サイトで公開していないので、EventWatch でも公開していません。公開すると、もう一度掲載します。"
 
-#: includes/class-sync-rest.php:371
+#: includes/class-sync-rest.php:369
 msgid "Couldn’t send"
 msgstr "送信に失敗"
 
-#: includes/class-sync-rest.php:371
+#: includes/class-sync-rest.php:369
 msgid "This post couldn’t be sent to EventWatch."
 msgstr "EventWatch に送れませんでした。"
 
-#: includes/class-sync-rest.php:372
+#: includes/class-sync-rest.php:370
 msgid "Not sending to EventWatch"
 msgstr "EventWatch に送らない"
 
-#: includes/class-sync-rest.php:372
+#: includes/class-sync-rest.php:370
 msgid "This post won’t be sent to EventWatch. Turn sending on, and it will be sent the next time you update the post."
 msgstr "この投稿は EventWatch に送りません。送るように切り替えると、次に投稿を更新したときに送ります。"
 
-#: includes/class-sync-rest.php:391
+#: includes/class-sync-rest.php:389
 msgid "No EventWatch API key is set. Enter a key in Settings › EventWatch, and sending resumes."
 msgstr "EventWatch の API キーがありません。設定 › EventWatch でキーを入れると、送信を再開します。"
 
-#: includes/class-sync-rest.php:393
+#: includes/class-sync-rest.php:391
 msgid "This site’s URL has changed, so sending is stopped. Choose whether this site is a copy or has moved in Settings › EventWatch."
 msgstr "サイトの URL が変わったので、送信を止めています。設定 › EventWatch で、複製か移転かを選んでください。"
 
-#: includes/class-sync-rest.php:396
+#: includes/class-sync-rest.php:394
 msgid "Couldn’t reach EventWatch. Your site isn’t affected. Sending is retried automatically."
 msgstr "EventWatch とつながりませんでした。サイトに影響はありません。自動で送り直します。"
 
-#: includes/class-sync-rest.php:400
+#: includes/class-sync-rest.php:398
 msgid "This event was deleted on EventWatch, so it can’t be sent again. Contact EventWatch if you think this is a mistake."
 msgstr "このイベントは EventWatch で削除されているので、もう一度送ることはできません。誤りだと思うときは EventWatch に問い合わせてください。"
 
-#: includes/class-sync-rest.php:404
+#: includes/class-sync-rest.php:402
 msgid "EventWatch already has another listing with this official page. If it’s the same event, contact EventWatch. Otherwise, enter a separate official page and update the post."
 msgstr "同じ公式ページの掲載が EventWatch に既にあります。同じイベントなら EventWatch に問い合わせてください。別のイベントなら、別の公式ページを入れて投稿を更新してください。"
 
-#: includes/class-sync-rest.php:407
+#: includes/class-sync-rest.php:405
 msgid "EventWatch didn’t accept the details of this event. Check the event details and update the post."
 msgstr "EventWatch がこのイベントの内容を受け付けませんでした。イベントの情報を確かめて、投稿を更新してください。"
 
-#: includes/class-sync-rest.php:422
+#: includes/class-sync-rest.php:420
 msgid "No EventWatch category is selected."
 msgstr "EventWatch のカテゴリが選ばれていません。"
 
-#: includes/class-sync-rest.php:246
-#: includes/class-sync-rest.php:423
+#: includes/class-sync-rest.php:421
 msgid "Choose a category"
 msgstr "カテゴリを選ぶ"
 
-#: includes/class-sync-rest.php:427
+#: includes/class-sync-rest.php:425
 msgid "No prefecture is selected. EventWatch needs one unless the event is held online."
 msgstr "都道府県が選ばれていません。オンライン開催でなければ、EventWatch に送るときに必要です。"
 
-#: includes/class-sync-rest.php:247
-#: includes/class-sync-rest.php:428
+#: includes/class-sync-rest.php:426
 msgid "Choose a prefecture"
 msgstr "都道府県を選ぶ"
 
-#: includes/class-sync-rest.php:432
+#: includes/class-sync-rest.php:430
 msgid "This event has no dates. Add at least one date."
 msgstr "日程がありません。日程を 1 つ以上足してください。"
 
-#: includes/class-sync-rest.php:463
+#: includes/class-sync-rest.php:461
 msgid "This event has no title. Add a title."
 msgstr "タイトルがありません。タイトルを入れてください。"
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:468
+#: includes/class-sync-rest.php:466
 #, php-format
 msgid "The title is too long. EventWatch accepts up to %s characters. Shorten the title."
 msgstr "タイトルが長すぎます。EventWatch に送れるのは %s 字までです。タイトルを短くしてください。"
 
 #. translators: 1: the length of the content, 2: the character limit.
-#: includes/class-sync-rest.php:475
+#: includes/class-sync-rest.php:473
 #, php-format
 msgid "The content has %1$s characters. EventWatch accepts up to %2$s characters. Shorten the content."
 msgstr "本文が %1$s 字あります。EventWatch に送れるのは %2$s 字までです。本文を短くしてください。"
@@ -1551,39 +1549,39 @@ msgid "This post wasn’t sent to EventWatch. Open the EventWatch panel to see w
 msgstr "この投稿は EventWatch に送られていません。理由は EventWatch のパネルで確かめてください。"
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:437
+#: includes/class-sync-rest.php:435
 #, php-format
 msgid "The notes on dates are too long. EventWatch accepts up to %s characters, and counts emoji as two. Shorten the notes."
 msgstr "日程の補足が長すぎます。EventWatch に送れるのは %s 字までで、絵文字は 2 字と数えます。補足を短くしてください。"
 
 #: includes/class-sync-rest.php:242
-#: includes/class-sync-rest.php:440
+#: includes/class-sync-rest.php:438
 msgid "Edit the notes"
 msgstr "補足を直す"
 
-#: includes/class-sync-rest.php:444
+#: includes/class-sync-rest.php:442
 msgid "Only one of the venue name and address is entered. Enter both, or leave both empty."
 msgstr "会場名と住所の片方だけが入っています。両方を入れるか、両方を空にしてください。"
 
 #: includes/class-sync-rest.php:243
 #: includes/class-sync-rest.php:244
-#: includes/class-sync-rest.php:445
-#: includes/class-sync-rest.php:450
+#: includes/class-sync-rest.php:443
+#: includes/class-sync-rest.php:448
 msgid "Edit the venue"
 msgstr "会場を直す"
 
-#: includes/class-sync-rest.php:449
+#: includes/class-sync-rest.php:447
 msgid "The venue name or address is too long for EventWatch, which counts emoji as two characters. Shorten it."
 msgstr "会場名か住所が、EventWatch に送れる長さを超えています。絵文字は 2 字と数えます。短くしてください。"
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:456
+#: includes/class-sync-rest.php:454
 #, php-format
 msgid "The official page URL is too long. EventWatch accepts up to %s characters. Enter a shorter separate official page."
 msgstr "公式ページの URL が長すぎます。EventWatch に送れるのは %s 字までです。短い URL を別の公式ページに入れてください。"
 
 #: includes/class-sync-rest.php:245
-#: includes/class-sync-rest.php:459
+#: includes/class-sync-rest.php:457
 msgid "Edit the official page"
 msgstr "公式ページを直す"
 
@@ -1622,14 +1620,6 @@ msgstr "EventWatch が会場の住所を受け付けませんでした。確か�
 #: includes/class-sync-rest.php:245
 msgid "EventWatch didn’t accept the official page URL. Check it and update the post."
 msgstr "EventWatch が公式ページの URL を受け付けませんでした。確かめて、投稿を更新してください。"
-
-#: includes/class-sync-rest.php:246
-msgid "EventWatch didn’t accept the category. Check it and update the post."
-msgstr "EventWatch がカテゴリを受け付けませんでした。確かめて、投稿を更新してください。"
-
-#: includes/class-sync-rest.php:247
-msgid "EventWatch didn’t accept the prefecture. Check it and update the post."
-msgstr "EventWatch が都道府県を受け付けませんでした。確かめて、投稿を更新してください。"
 
 #: build/index.js:7
 msgid "EventWatch didn’t accept this. Check it and update the post."

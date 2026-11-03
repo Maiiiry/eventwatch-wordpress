@@ -100,6 +100,7 @@ class Sync_Pull {
 		}
 
 		$sent_at = (string) get_post_meta( $post_id, Sync_Queue::SENT_AT, true );
+		$before  = Connection::state()['status'];
 		$result  = ( new Api_Client() )->request( 'GET', Sync_Queue::post_path( $post_id ), array( 'timeout' => $timeout ) );
 
 		// 引いている間に別の要求が送っていたら、応答はそれより古い。覚えたメタでは見えないので読み直す。
@@ -117,19 +118,27 @@ class Sync_Pull {
 		}
 		update_post_meta( $post_id, Sync_Queue::PULLED_AT, time() );
 
+		// 成功で止まった状態の案内は消える。止めていた送信も、ここで再開しないと次の保存まで動かない。
+		if ( in_array( $before, array( Connection::UNAUTHORIZED, Connection::SUSPENDED, Connection::FORBIDDEN ), true ) ) {
+			Sync_Queue::resume();
+		}
+
 		return self::OUTCOME_DONE;
 	}
 
 	/**
-	 * 失敗を扱う。手元の状態は変えない。
+	 * 失敗を扱う。
 	 *
 	 * @param int      $post_id 投稿の ID。
 	 * @param WP_Error $error   失敗。
 	 * @return string
 	 */
 	private static function handle_error( $post_id, WP_Error $error ) {
+		// 無い・他団体・削除済みを区別できず、別の団体のキーを誤って入れても 404 になる。存在の記録を消すと、
+		// 正しいキーに戻した後の取り下げと削除が送られず、掲載が残る。本当に無ければ次の取り下げの 404 で消える。
 		if ( Api_Client::NOT_FOUND === $error->get_error_code() ) {
-			Sync_Queue::forget_remote( $post_id );
+			Sync_Queue::clear_remote( $post_id );
+			update_post_meta( $post_id, Sync_Queue::PULLED_AT, time() );
 			return self::OUTCOME_DONE;
 		}
 
@@ -138,6 +147,8 @@ class Sync_Pull {
 			if ( is_array( $data ) && ! empty( $data['retry_after'] ) ) {
 				Sync_Queue::hold_for( (int) $data['retry_after'] );
 			}
+			// この 1 件だけが失敗し続けても、ほかの投稿の順番を塞がない。
+			update_post_meta( $post_id, Sync_Queue::PULLED_AT, time() );
 			return self::OUTCOME_STOP;
 		}
 

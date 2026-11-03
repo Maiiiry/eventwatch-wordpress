@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T02:09:23+00:00\n"
+"POT-Creation-Date: 2026-11-03T03:13:32+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -255,71 +255,71 @@ msgstr ""
 msgid "Add to calendar"
 msgstr ""
 
-#: includes/class-event-detail.php:603
+#: includes/class-event-detail.php:604
 #: build/blocks/event-field/index.js:1
 msgctxt "mark an event you are interested in"
 msgid "Save"
 msgstr ""
 
-#: includes/class-event-detail.php:607
+#: includes/class-event-detail.php:608
 msgid "Get a reminder in the app"
 msgstr ""
 
-#: includes/class-event-detail.php:608
+#: includes/class-event-detail.php:609
 msgid "Close"
 msgstr ""
 
-#: includes/class-event-detail.php:610
+#: includes/class-event-detail.php:611
 msgid "Save this event in the EventWatch app, and we’ll send you a notification before it starts so you don’t forget."
 msgstr ""
 
-#: includes/class-event-detail.php:611
+#: includes/class-event-detail.php:612
 msgid "Open in app"
 msgstr ""
 
-#: includes/class-event-detail.php:613
+#: includes/class-event-detail.php:614
 msgid "Don’t have the app? Get it here."
 msgstr ""
 
-#: includes/class-event-detail.php:614
+#: includes/class-event-detail.php:615
 msgid "Get it on the App Store"
 msgstr ""
 
-#: includes/class-event-detail.php:614
+#: includes/class-event-detail.php:615
 msgid "Get it on Google Play"
 msgstr ""
 
-#: includes/class-event-detail.php:633
+#: includes/class-event-detail.php:634
 msgid "Share on X"
 msgstr ""
 
-#: includes/class-event-detail.php:643
+#: includes/class-event-detail.php:644
 msgid "Send on LINE"
 msgstr ""
 
-#: includes/class-event-detail.php:647
+#: includes/class-event-detail.php:648
 msgid "Share on Facebook"
 msgstr ""
 
-#: includes/class-event-detail.php:655
+#: includes/class-event-detail.php:656
 msgid "Copy link"
 msgstr ""
 
-#: includes/class-event-detail.php:671
+#: includes/class-event-detail.php:672
 msgid "Link copied"
 msgstr ""
 
-#: includes/class-event-detail.php:672
+#: includes/class-event-detail.php:673
 msgid "The link could not be copied."
 msgstr ""
 
-#: includes/class-event-detail.php:676
 #: includes/class-event-detail.php:677
+#: includes/class-event-detail.php:678
 #: build/blocks/event-field/index.js:1
 msgid "Share"
 msgstr ""
 
-#: includes/class-event-detail.php:698
+#: includes/class-event-detail.php:699
 #: build/blocks/event-field/index.js:1
 msgid "Visit official page"
 msgstr ""
@@ -989,7 +989,7 @@ msgid "EventWatch didn’t accept the notes on dates. Check them and update the 
 msgstr ""
 
 #: includes/class-sync-rest.php:242
-#: includes/class-sync-rest.php:440
+#: includes/class-sync-rest.php:438
 msgid "Edit the notes"
 msgstr ""
 
@@ -999,8 +999,8 @@ msgstr ""
 
 #: includes/class-sync-rest.php:243
 #: includes/class-sync-rest.php:244
-#: includes/class-sync-rest.php:445
-#: includes/class-sync-rest.php:450
+#: includes/class-sync-rest.php:443
+#: includes/class-sync-rest.php:448
 msgid "Edit the venue"
 msgstr ""
 
@@ -1013,168 +1013,158 @@ msgid "EventWatch didn’t accept the official page URL. Check it and update the
 msgstr ""
 
 #: includes/class-sync-rest.php:245
-#: includes/class-sync-rest.php:459
+#: includes/class-sync-rest.php:457
 msgid "Edit the official page"
 msgstr ""
 
-#: includes/class-sync-rest.php:246
-msgid "EventWatch didn’t accept the category. Check it and update the post."
-msgstr ""
-
-#: includes/class-sync-rest.php:246
-#: includes/class-sync-rest.php:423
-msgid "Choose a category"
-msgstr ""
-
-#: includes/class-sync-rest.php:247
-msgid "EventWatch didn’t accept the prefecture. Check it and update the post."
-msgstr ""
-
-#: includes/class-sync-rest.php:247
-#: includes/class-sync-rest.php:428
-msgid "Choose a prefecture"
-msgstr ""
-
-#: includes/class-sync-rest.php:364
+#: includes/class-sync-rest.php:362
 msgid "Not sent"
 msgstr ""
 
-#: includes/class-sync-rest.php:364
+#: includes/class-sync-rest.php:362
 msgid "This post hasn’t been sent to EventWatch yet. It will be sent automatically when you publish."
 msgstr ""
 
-#: includes/class-sync-rest.php:365
+#: includes/class-sync-rest.php:363
 msgid "Waiting to send"
 msgstr ""
 
-#: includes/class-sync-rest.php:365
+#: includes/class-sync-rest.php:363
 msgid "This post will be sent to EventWatch shortly, usually within a few minutes."
 msgstr ""
 
-#: includes/class-sync-rest.php:366
+#: includes/class-sync-rest.php:364
 msgid "Under review"
 msgstr ""
 
-#: includes/class-sync-rest.php:366
+#: includes/class-sync-rest.php:364
 msgid "EventWatch is checking the details. Once it’s listed, you’ll see it here."
 msgstr ""
 
-#: includes/class-sync-rest.php:367
+#: includes/class-sync-rest.php:365
 msgid "Listed"
 msgstr ""
 
-#: includes/class-sync-rest.php:367
+#: includes/class-sync-rest.php:365
 msgid "This post is listed on EventWatch. Updates to the post are reflected there too."
 msgstr ""
 
-#: includes/class-sync-rest.php:368
+#: includes/class-sync-rest.php:366
 msgid "Changes requested"
 msgstr ""
 
-#: includes/class-sync-rest.php:368
+#: includes/class-sync-rest.php:366
 msgid "EventWatch has asked for changes. Fix the post and update it to send it again."
 msgstr ""
 
-#: includes/class-sync-rest.php:369
+#: includes/class-sync-rest.php:367
 msgid "Listing paused"
 msgstr ""
 
-#: includes/class-sync-rest.php:369
+#: includes/class-sync-rest.php:367
 msgid "EventWatch has paused this listing. It stays published on your site."
 msgstr ""
 
-#: includes/class-sync-rest.php:370
+#: includes/class-sync-rest.php:368
 msgid "Withdrawn from EventWatch"
 msgstr ""
 
-#: includes/class-sync-rest.php:370
+#: includes/class-sync-rest.php:368
 msgid "This post isn’t public on EventWatch because it isn’t published on your site. Publish it to list it again."
 msgstr ""
 
-#: includes/class-sync-rest.php:371
+#: includes/class-sync-rest.php:369
 msgid "Couldn’t send"
 msgstr ""
 
-#: includes/class-sync-rest.php:371
+#: includes/class-sync-rest.php:369
 msgid "This post couldn’t be sent to EventWatch."
 msgstr ""
 
-#: includes/class-sync-rest.php:372
+#: includes/class-sync-rest.php:370
 msgid "Not sending to EventWatch"
 msgstr ""
 
-#: includes/class-sync-rest.php:372
+#: includes/class-sync-rest.php:370
 msgid "This post won’t be sent to EventWatch. Turn sending on, and it will be sent the next time you update the post."
 msgstr ""
 
-#: includes/class-sync-rest.php:391
+#: includes/class-sync-rest.php:389
 msgid "No EventWatch API key is set. Enter a key in Settings › EventWatch, and sending resumes."
 msgstr ""
 
-#: includes/class-sync-rest.php:393
+#: includes/class-sync-rest.php:391
 msgid "This site’s URL has changed, so sending is stopped. Choose whether this site is a copy or has moved in Settings › EventWatch."
 msgstr ""
 
-#: includes/class-sync-rest.php:396
+#: includes/class-sync-rest.php:394
 msgid "Couldn’t reach EventWatch. Your site isn’t affected. Sending is retried automatically."
 msgstr ""
 
-#: includes/class-sync-rest.php:400
+#: includes/class-sync-rest.php:398
 msgid "This event was deleted on EventWatch, so it can’t be sent again. Contact EventWatch if you think this is a mistake."
 msgstr ""
 
-#: includes/class-sync-rest.php:404
+#: includes/class-sync-rest.php:402
 msgid "EventWatch already has another listing with this official page. If it’s the same event, contact EventWatch. Otherwise, enter a separate official page and update the post."
 msgstr ""
 
-#: includes/class-sync-rest.php:407
+#: includes/class-sync-rest.php:405
 msgid "EventWatch didn’t accept the details of this event. Check the event details and update the post."
 msgstr ""
 
-#: includes/class-sync-rest.php:422
+#: includes/class-sync-rest.php:420
 msgid "No EventWatch category is selected."
 msgstr ""
 
-#: includes/class-sync-rest.php:427
+#: includes/class-sync-rest.php:421
+msgid "Choose a category"
+msgstr ""
+
+#: includes/class-sync-rest.php:425
 msgid "No prefecture is selected. EventWatch needs one unless the event is held online."
 msgstr ""
 
-#: includes/class-sync-rest.php:432
+#: includes/class-sync-rest.php:426
+msgid "Choose a prefecture"
+msgstr ""
+
+#: includes/class-sync-rest.php:430
 msgid "This event has no dates. Add at least one date."
 msgstr ""
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:437
+#: includes/class-sync-rest.php:435
 #, php-format
 msgid "The notes on dates are too long. EventWatch accepts up to %s characters, and counts emoji as two. Shorten the notes."
 msgstr ""
 
-#: includes/class-sync-rest.php:444
+#: includes/class-sync-rest.php:442
 msgid "Only one of the venue name and address is entered. Enter both, or leave both empty."
 msgstr ""
 
-#: includes/class-sync-rest.php:449
+#: includes/class-sync-rest.php:447
 msgid "The venue name or address is too long for EventWatch, which counts emoji as two characters. Shorten it."
 msgstr ""
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:456
+#: includes/class-sync-rest.php:454
 #, php-format
 msgid "The official page URL is too long. EventWatch accepts up to %s characters. Enter a shorter separate official page."
 msgstr ""
 
-#: includes/class-sync-rest.php:463
+#: includes/class-sync-rest.php:461
 msgid "This event has no title. Add a title."
 msgstr ""
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:468
+#: includes/class-sync-rest.php:466
 #, php-format
 msgid "The title is too long. EventWatch accepts up to %s characters. Shorten the title."
 msgstr ""
 
 #. translators: 1: the length of the content, 2: the character limit.
-#: includes/class-sync-rest.php:475
+#: includes/class-sync-rest.php:473
 #, php-format
 msgid "The content has %1$s characters. EventWatch accepts up to %2$s characters. Shorten the content."
 msgstr ""
