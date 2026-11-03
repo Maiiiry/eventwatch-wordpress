@@ -75,7 +75,7 @@ class Api_Client {
 	 *
 	 * @param string $method メソッド。
 	 * @param string $path   `/api/` で始まるパス。
-	 * @param array  $args   body（JSON にする配列）と timeout（秒）。
+	 * @param array  $args   body（JSON にする配列）か multipart（fields と file）と、timeout（秒）。
 	 * @return array|WP_Error
 	 */
 	public function request( $method, $path, $args = array() ) {
@@ -130,7 +130,7 @@ class Api_Client {
 	 * @param string $method メソッド。
 	 * @param string $path   パス。
 	 * @param string $key    API キー。
-	 * @param array  $args   body と timeout。
+	 * @param array  $args   body か multipart と、timeout。
 	 * @return array|WP_Error
 	 */
 	private function send( $method, $path, $key, $args ) {
@@ -152,9 +152,31 @@ class Api_Client {
 		if ( isset( $args['body'] ) ) {
 			$request['headers']['Content-Type'] = 'application/json';
 			$request['body']                    = wp_json_encode( $args['body'] );
+		} elseif ( isset( $args['multipart'] ) ) {
+			$boundary                           = 'eventwatch' . wp_generate_password( 24, false );
+			$request['headers']['Content-Type'] = 'multipart/form-data; boundary=' . $boundary;
+			$request['body']                    = $this->multipart_body( $args['multipart'], $boundary );
 		}
 
 		return wp_remote_request( self::base_url() . $path, $request );
+	}
+
+	/**
+	 * Multipart の本文を組み立てる。
+	 *
+	 * @param array{fields: array<string, string>, file: array{name: string, filename: string, type: string, content: string}} $multipart パート。
+	 * @param string                                                                                                           $boundary  区切り。
+	 * @return string
+	 */
+	private function multipart_body( array $multipart, $boundary ) {
+		$body = '';
+		foreach ( $multipart['fields'] as $name => $value ) {
+			$body .= "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$name}\"\r\n\r\n{$value}\r\n";
+		}
+
+		$file = $multipart['file'];
+
+		return $body . "--{$boundary}\r\nContent-Disposition: form-data; name=\"{$file['name']}\"; filename=\"{$file['filename']}\"\r\nContent-Type: {$file['type']}\r\n\r\n{$file['content']}\r\n--{$boundary}--\r\n";
 	}
 
 	/**

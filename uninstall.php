@@ -23,6 +23,7 @@ require_once __DIR__ . '/includes/class-connection.php';
 require_once __DIR__ . '/includes/class-api-client.php';
 require_once __DIR__ . '/includes/class-sync-status.php';
 require_once __DIR__ . '/includes/class-sync-payload.php';
+require_once __DIR__ . '/includes/class-sync-image.php';
 require_once __DIR__ . '/includes/class-sync-queue.php';
 require_once __DIR__ . '/includes/class-sync-pull.php';
 require_once __DIR__ . '/includes/class-event-detail.php';

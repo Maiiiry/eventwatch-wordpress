@@ -23,9 +23,9 @@ const INTERFACE_STORE = 'core/interface';
 const PANEL_ID = `${ SYNC_PLUGIN_NAME }/${ PANEL_NAME }`;
 const SEND_FIELD = 'eventwatch_send';
 
-// 保存の応答は送信の前に作られるので、送信待ちの間だけ読み直す。
+// 保存の応答は送信の前に作られるので、送信待ちの間だけ読み直す。新しい画像は約 1 分後の cron で送るので、その後まで見る。
 const REFRESH_INTERVAL = 5000;
-const REFRESH_MAX = 3;
+const REFRESH_MAX = 24;
 
 const ICONS = {
 	check: 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
@@ -123,7 +123,16 @@ const useSyncStatus = ( postId ) => {
 			path: `/eventwatch/v1/events/${ postId }/resend`,
 			method: 'POST',
 		} )
-			.then( setStatus )
+			.then( ( next ) => {
+				setStatus( next );
+				// 上げ直しが要る投稿は cron に回るので、保存の後と同じく結果を待つ。
+				if ( next.state === 'queued' ) {
+					timer.current = window.setTimeout(
+						() => refresh( REFRESH_MAX ),
+						REFRESH_INTERVAL
+					);
+				}
+			} )
 			.catch( () => {} )
 			.finally( () => setResending( false ) );
 	};
@@ -199,6 +208,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	const blockCodes = [
 		...( status?.blocks ?? [] ),
 		...( status?.fieldErrors ?? [] ),
+		...( status?.imageIssue ?? [] ),
 		// 差し戻しの理由もパネルの中にある。
 		...( status?.state === 'fix' ? [ { code: 'fix' } ] : [] ),
 	]
@@ -283,6 +293,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	const look = STATE_LOOKS[ shown.state ] ?? STATE_LOOKS.unsent;
 	const blocks = sending ? status.blocks : [];
 	const fieldErrors = sending ? status.fieldErrors : [];
+	const imageIssue = sending ? status.imageIssue : [];
 
 	return (
 		<PluginDocumentSettingPanel name={ PANEL_NAME } title="EventWatch">
@@ -309,6 +320,19 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						) }
 						description={ __(
 							'Fix the points below, and the post is sent when you update it. Publishing on your site isn’t affected.',
+							'eventwatch'
+						) }
+					/>
+				) }
+				{ imageIssue.length > 0 && (
+					<SendBlocks
+						blocks={ imageIssue }
+						heading={ __(
+							'The featured image wasn’t sent',
+							'eventwatch'
+						) }
+						description={ __(
+							'The other details aren’t affected. If EventWatch already has an image for this event, it stays.',
 							'eventwatch'
 						) }
 					/>

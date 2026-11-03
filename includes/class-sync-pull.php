@@ -79,6 +79,10 @@ class Sync_Pull {
 	 * @return void
 	 */
 	public static function run() {
+		if ( self::can_read() ) {
+			Sync_Image::requeue();
+		}
+
 		$start = time();
 		foreach ( self::due_post_ids() as $post_id ) {
 			if ( time() - $start >= self::RUN_BUDGET || self::OUTCOME_STOP === self::pull( $post_id, self::RUN_TIMEOUT ) ) {
