@@ -34,8 +34,6 @@ class Sync_Image {
 	 */
 	const MAX_BYTES = 10484736;
 
-	const UPLOAD_TIMEOUT = 30;
-
 	/**
 	 * 結び付いていない投入画像は EventWatch で 24 時間後に回収される。余裕を持って使うのをやめる。
 	 */
@@ -206,7 +204,6 @@ class Sync_Image {
 						'content'  => $content,
 					),
 				),
-				'timeout'   => self::UPLOAD_TIMEOUT,
 			)
 		);
 

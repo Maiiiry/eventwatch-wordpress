@@ -899,6 +899,78 @@ class Sync_Image_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 本文の送信が失敗しても、送り直しでは上げた ID を使い、上げ直さない。
+	 */
+	public function test_retry_of_the_put_reuses_the_uploaded_id() {
+		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+
+		$this->put_responses[] = $this->response( 500 );
+		$this->run_queue();
+		$this->assertFalse( get_post_meta( $post, Sync_Image::RECORD, true )['attached'] );
+
+		delete_post_meta( $post, Sync_Queue::NEXT_AT );
+		$this->run_queue();
+
+		$this->assertCount( 1, $this->uploads() );
+		$this->assertCount( 2, $this->puts() );
+		$this->assertSame( self::ID_A, $this->last_put()['imageUploadId'] );
+		$this->assertTrue( get_post_meta( $post, Sync_Image::RECORD, true )['attached'] );
+	}
+
+	/**
+	 * 印を積み直さない送り直しでも、理由は決まり直す。
+	 */
+	public function test_retry_of_the_put_clears_a_resolved_issue() {
+		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+
+		$this->upload_responses[] = $this->response( 500 );
+		$this->put_responses[]    = $this->response( 500 );
+		$this->run_queue();
+		$this->assertSame( Sync_Image::ISSUE_TEMPORARY, get_post_meta( $post, Sync_Image::ISSUE, true ) );
+
+		delete_post_meta( $post, Sync_Queue::NEXT_AT );
+		$this->run_queue();
+
+		$this->assertSame( '', get_post_meta( $post, Sync_Image::ISSUE, true ) );
+		$this->assertSame( self::ID_A, $this->last_put()['imageUploadId'] );
+	}
+
+	/**
+	 * 応答に別の ID が載っていれば結び付きを立てない。
+	 */
+	public function test_response_with_another_id_does_not_mark_attached() {
+		$post = $this->event( $this->attachment( self::JPEG . 'a' ) );
+
+		$this->put_responses[] = $this->response(
+			200,
+			array(
+				'applied' => false,
+				'event'   => array(
+					'status'        => 'pendingReview',
+					'imageUploadId' => self::ID_B,
+				),
+			)
+		);
+		$this->run_queue();
+
+		$this->assertFalse( get_post_meta( $post, Sync_Image::RECORD, true )['attached'] );
+	}
+
+	/**
+	 * 失敗した投入も流量の上限に数える。
+	 */
+	public function test_failed_uploads_count_against_the_run_limit() {
+		for ( $i = 0; $i < Sync_Queue::RUN_MAX; $i++ ) {
+			$this->event( $this->attachment( self::JPEG . $i ) );
+			$this->upload_responses[] = $this->response( 500 );
+		}
+
+		$this->run_queue();
+
+		$this->assertCount( Sync_Queue::RUN_MAX, $this->requests );
+	}
+
+	/**
 	 * 結び付いた ID は古くても使う。
 	 */
 	public function test_attached_id_does_not_expire() {
