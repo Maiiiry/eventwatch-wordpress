@@ -375,7 +375,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 別の団体のキーを誤って入れても、正しいキーに戻した後の取り下げが届く。掲載をサイトから消せなくしない。
+	 * 別の団体のキーを誤って入れても、取り込みの 404 の後で、正しいキーに戻した後の取り下げが届く。
 	 */
 	public function test_withdrawal_reaches_after_wrong_key_period() {
 		$this->default = $this->http( 200, array( 'event' => $this->listed() ) );

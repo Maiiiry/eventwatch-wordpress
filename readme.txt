@@ -95,7 +95,7 @@ Your site does not depend on EventWatch. Your pages and publishing keep working 
 
 The EventWatch panel in the editor and the EventWatch column in the event list show where each event stands: not sent, waiting to send, under review, listed, changes requested, paused, withdrawn, couldn't send, or not sending. If EventWatch asks for changes, the reason appears in the panel. Fix the event and update it to send it again. The column appears only when a key is set.
 
-The plugin reads the status of events it has sent from EventWatch when you open an event in the editor, and about once an hour for up to 30 published events, oldest check first. If you have many events, a full round takes longer. These requests carry your API key, the site ID, and the event's post ID, and send no event content. Nothing is read while the site's URL change is unconfirmed. The Interested button on the event page uses the status stored on your site, so a page cache can delay changes to it. A site whose URL change is unconfirmed does not show the button.
+The plugin reads the status of events it has sent from EventWatch when you open an event in the editor, and about once an hour for up to 30 published events, oldest check first. If you have many events, a full round takes longer. These requests carry your API key, the site ID, and the event's post ID, and send no event content. Nothing is read while the site's URL change is unconfirmed. The Save button on the event page uses the status stored on your site, so a page cache can delay changes to it. A site whose URL change is unconfirmed does not show the button.
 
 = External services =
 
