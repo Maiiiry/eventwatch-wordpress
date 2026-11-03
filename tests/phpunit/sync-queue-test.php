@@ -279,11 +279,37 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 差し戻しの後は、同じ内容でも送る。再提出の契機が更新のため。
+	 * 差し戻しを取り込んだ後は、同じ内容でも送る。再提出の契機が更新のため。
 	 */
 	public function test_rejected_post_is_resent_with_same_content() {
-		$id                = $this->event();
-		$this->responses[] = $this->ok( 'rejected' );
+		$id     = $this->sent_event();
+		$remote = get_post_meta( $id, Sync_Queue::REMOTE, true );
+		update_post_meta( $id, Sync_Queue::REMOTE, array_merge( $remote, array( 'status' => 'rejected' ) ) );
+
+		wp_update_post( array( 'ID' => $id ) );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
+		// camelCase の語のまま持つ。
+		$this->assertSame( 'pendingReview', get_post_meta( $id, Sync_Queue::REMOTE, true )['status'] );
+	}
+
+	/**
+	 * 応答を失った後は、前に届いた内容へ戻しても送る。失った要求が反映されていることがある。
+	 */
+	public function test_returning_to_previous_content_after_lost_response_is_sent() {
+		$id                = $this->sent_event();
+		$this->responses[] = new \WP_Error( 'http_request_failed', 'timeout' );
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+		$this->assertSame( array( "POST /events/$id/unpublish" ), $this->sent() );
+
+		$this->requests = array();
 		wp_update_post(
 			array(
 				'ID'          => $id,
@@ -291,13 +317,42 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 			)
 		);
 		Sync_Queue::send_marked();
-		$this->requests = array();
-
-		wp_update_post( array( 'ID' => $id ) );
-		Sync_Queue::send_marked();
 
 		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
-		$this->assertSame( 'pendingReview', get_post_meta( $id, Sync_Queue::REMOTE, true )['status'] );
+	}
+
+	/**
+	 * 送信中の例外は、その 1 件を後へ回し、残りを送る。錠も返し、次の実行も張る。
+	 */
+	public function test_exception_postpones_one_and_continues() {
+		global $wpdb;
+
+		$bad  = $this->event();
+		$good = $this->event();
+		foreach ( array( $bad, $good ) as $id ) {
+			wp_update_post(
+				array(
+					'ID'          => $id,
+					'post_status' => 'publish',
+				)
+			);
+		}
+		$throw = static function ( $url, $post ) use ( $bad ) {
+			if ( $bad === $post->ID ) {
+				throw new \RuntimeException( 'another plugin failed' );
+			}
+			return $url;
+		};
+		add_filter( 'post_type_link', $throw, 10, 2 );
+		Sync_Queue::send_marked();
+		remove_filter( 'post_type_link', $throw, 10 );
+
+		$this->assertSame( array( "PUT /events/$good" ), $this->sent() );
+		$this->assertNotSame( '', (string) get_post_meta( $bad, Sync_Queue::PENDING, true ) );
+		$this->assertSame( 1, (int) get_post_meta( $bad, Sync_Queue::ATTEMPTS, true ) );
+		$this->assertGreaterThan( time(), (int) get_post_meta( $bad, Sync_Queue::NEXT_AT, true ) );
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RUN_HOOK ) );
+		$this->assertNull( $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", Sync_Queue::LOCK_OPTION ) ) );
 	}
 
 	/**

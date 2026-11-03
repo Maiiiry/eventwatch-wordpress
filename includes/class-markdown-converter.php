@@ -45,7 +45,7 @@ class Markdown_Converter {
 	 * @return string
 	 */
 	public static function from_post_content( $content ) {
-		$html = has_blocks( $content ) ? self::static_html( parse_blocks( $content ) ) : wpautop( $content );
+		$html = has_blocks( $content ) ? self::static_html( parse_blocks( $content ) ) : wpautop( self::without_embed_lines( $content ) );
 
 		return self::from_html( strip_shortcodes( $html ) );
 	}
@@ -77,6 +77,22 @@ class Markdown_Converter {
 	}
 
 	/**
+	 * クラシックの本文から、本体が埋め込みにする行を落とす。埋め込みの提供元でない URL は文字として残す。
+	 *
+	 * @param string $content 投稿の本文。
+	 * @return string
+	 */
+	private static function without_embed_lines( $content ) {
+		return (string) preg_replace_callback(
+			'|^(\s*)(https?://[^\s<>"]+)(\s*)$|im',
+			static function ( $line ) {
+				return _wp_oembed_get_object()->get_provider( $line[2], array( 'discover' => false ) ) ? '' : $line[0];
+			},
+			$content
+		);
+	}
+
+	/**
 	 * ブロックの保存された HTML を、入れ子の順につなぐ。動的なブロックは保存された HTML を持たないので消える。
 	 *
 	 * @param array $blocks parse_blocks の戻り。
@@ -86,6 +102,11 @@ class Markdown_Converter {
 		$html = '';
 
 		foreach ( $blocks as $block ) {
+			// 埋め込みのブロックは、保存された HTML に URL を文字で持つ。
+			if ( 'core/embed' === $block['blockName'] || 0 === strpos( (string) $block['blockName'], 'core-embed/' ) ) {
+				continue;
+			}
+
 			$inner = 0;
 			foreach ( $block['innerContent'] as $piece ) {
 				if ( is_string( $piece ) ) {
@@ -239,8 +260,12 @@ class Markdown_Converter {
 	 * @return string
 	 */
 	private static function escape_inline_block( $inline ) {
-		$lines = array_map( 'trim', explode( "\n", $inline ) );
-		$lines = array_values( array_filter( $lines, 'strlen' ) );
+		// 文字の ! の直後にリンクが続くと画像の記法になる。文字の [ は打ち消してあるので、ここで作るのはリンクだけ。
+		$inline = (string) preg_replace( '/(?<!\\\\)((?:\\\\\\\\)*)!\[/', '$1\\\\![', $inline );
+		// 隣り合う太字は、記号が 4 つ続くと閉じない。
+		$inline = str_replace( '****', '', $inline );
+		$lines  = array_map( 'trim', explode( "\n", $inline ) );
+		$lines  = array_values( array_filter( $lines, 'strlen' ) );
 
 		foreach ( $lines as $index => $line ) {
 			$line            = preg_replace( '/^(#{1,6})(?=\s|$)/', '\\\\$1', $line );
@@ -316,6 +341,11 @@ class Markdown_Converter {
 			return $text;
 		}
 
+		// 句読点や記号で始まる・終わる強調は、隣に文字が続くと閉じない（**「重要」**です）。星を出さず文字だけにする。
+		if ( preg_match( '/^[\p{P}\p{S}]|[\p{P}\p{S}]$/u', trim( $trimmed, '*' ) ) ) {
+			return $text;
+		}
+
 		$start = strlen( $text ) - strlen( ltrim( $text ) );
 		$end   = strlen( $text ) - strlen( rtrim( $text ) );
 
@@ -361,6 +391,7 @@ class Markdown_Converter {
 			$scheme . substr( $url, strlen( $scheme ) ),
 			array(
 				' '  => '%20',
+				'\\' => '%5C',
 				"\t" => '%09',
 				"\n" => '',
 				"\r" => '',

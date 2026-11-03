@@ -7,6 +7,7 @@
 
 namespace EventWatch;
 
+use Throwable;
 use WP_Error;
 use WP_Post;
 
@@ -405,7 +406,13 @@ class Sync_Queue {
 					break;
 				}
 
-				$outcome = 'delete' === $target[0] ? self::send_deletion( $target[1], $timeout ) : self::send_post( $target[1], $timeout );
+				try {
+					$outcome = 'delete' === $target[0] ? self::send_deletion( $target[1], $timeout ) : self::send_post( $target[1], $timeout );
+				} catch ( Throwable $e ) {
+					// ほかのプラグインのフィルターの例外など。この 1 件を後へ回し、残りを止めない。
+					self::postpone_after_exception( $target );
+					continue;
+				}
 
 				if ( self::OUTCOME_SKIPPED !== $outcome ) {
 					++$sent;
@@ -429,6 +436,32 @@ class Sync_Queue {
 		}
 
 		self::schedule_next();
+	}
+
+	/**
+	 * 例外で送れなかったものを、一時的な失敗と同じ間隔で後へ回す。
+	 *
+	 * @param array $target 送るもの。
+	 * @return void
+	 */
+	private static function postpone_after_exception( array $target ) {
+		$error = new WP_Error( Api_Client::TEMPORARY, 'Sending failed unexpectedly.' );
+
+		if ( 'delete' === $target[0] ) {
+			$row = get_option( self::DELETE_PREFIX . $target[1] );
+			if ( is_array( $row ) ) {
+				$row['attempts'] = (int) $row['attempts'] + 1;
+				$row['next_at']  = self::next_attempt_at( $row['attempts'], $error );
+				$row['error']    = $error->get_error_code();
+				update_option( self::DELETE_PREFIX . $target[1], $row, false );
+			}
+			return;
+		}
+
+		$attempts = (int) get_post_meta( $target[1], self::ATTEMPTS, true ) + 1;
+		update_post_meta( $target[1], self::ATTEMPTS, $attempts );
+		update_post_meta( $target[1], self::NEXT_AT, self::next_attempt_at( $attempts, $error ) );
+		update_post_meta( $target[1], self::ERROR, self::error_record( $error ) );
 	}
 
 	/**
@@ -477,6 +510,8 @@ class Sync_Queue {
 
 		// 応答を失っても作られていることがあるので、送る前に立てる。後の取り下げを落とさない。
 		update_post_meta( $post_id, self::EXISTS, 1 );
+		// 応答を失うと、EventWatch の内容は前に届いたものと限らない。同じ内容の省略は、成功の後だけにする。
+		delete_post_meta( $post_id, self::HASH );
 
 		$result = ( new Api_Client() )->request(
 			$method,

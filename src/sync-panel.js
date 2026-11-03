@@ -236,7 +236,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 	}, [] );
 	const { createWarningNotice, removeNotice } = useDispatch( noticesStore );
 	const needsAttention =
-		sendOn && ( status?.state === 'failed' || status?.blocks.length > 0 );
+		status?.state === 'failed' || ( sendOn && status?.blocks.length > 0 );
 
 	// 理由はパネルの中にある。パネルが見えない間は、送れていないことを通知で出す。
 	useEffect( () => {
@@ -260,7 +260,8 @@ const SyncPanelContent = ( { unsavedText } ) => {
 
 	const sending = sendOn;
 	let shown = status;
-	if ( ! sending ) {
+	// 取り下げが届いていない失敗は、切り替えの見た目より優先する。掲載が残っているため。
+	if ( ! sending && status.state !== 'failed' ) {
 		shown = { ...status, ...unsavedText.off, state: 'off' };
 	} else if ( status.state === 'off' ) {
 		shown = { ...status, ...unsavedText.unsent, state: 'unsent' };
@@ -297,7 +298,7 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						</span>
 					</div>
 				</div>
-				{ sending && shown.reason.text && (
+				{ shown.state !== 'off' && shown.reason.text && (
 					<div className="eventwatch-sync__reason">
 						<span className="eventwatch-sync__reason-label">
 							{ shown.reason.label }
@@ -305,13 +306,13 @@ const SyncPanelContent = ( { unsavedText } ) => {
 						<p>{ shown.reason.text }</p>
 					</div>
 				) }
-				{ sending && shown.meta.value && (
+				{ shown.state !== 'off' && shown.meta.value && (
 					<dl className="eventwatch-sync__meta">
 						<dt>{ shown.meta.label }</dt>
 						<dd>{ shown.meta.value }</dd>
 					</dl>
 				) }
-				{ sending && shown.canResend && (
+				{ shown.state !== 'off' && shown.canResend && (
 					<Button
 						__next40pxDefaultSize
 						variant="secondary"

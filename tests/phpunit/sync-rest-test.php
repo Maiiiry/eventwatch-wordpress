@@ -194,6 +194,40 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 「送らない」にした後の取り下げが届いていない間は、失敗を出す。届いたら「送らない」。
+	 */
+	public function test_failed_withdrawal_wins_over_off() {
+		$id = $this->event();
+		Sync_Queue::send_marked();
+
+		update_post_meta( $id, Sync_Queue::NO_SEND, 1 );
+		$this->next = $this->answer( 503 );
+		wp_update_post( array( 'ID' => $id ) );
+		Sync_Queue::send_marked();
+		$this->assertSame( 'failed', Sync_Rest::status( $id )['state'] );
+
+		$this->next = null;
+		Sync_Queue::resend( $id );
+		$this->assertSame( 'off', Sync_Rest::status( $id )['state'] );
+	}
+
+	/**
+	 * 送れない理由のうち、欄で直せるものはその欄を指す。
+	 */
+	public function test_block_fields() {
+		$id = $this->event();
+		update_post_meta( $id, Event_Meta::VENUE_NAME, '' );
+		update_post_meta( $id, Event_Meta::VENUE_ADDRESS, '住所だけ' );
+		wp_update_post( array( 'ID' => $id ) );
+		Sync_Queue::send_marked();
+
+		$blocks = Sync_Rest::status( $id )['blocks'];
+
+		$this->assertSame( array( 'venueIncomplete' ), array_column( $blocks, 'code' ) );
+		$this->assertSame( array( 'eventwatch-field-venue-name' ), array_column( $blocks, 'field' ) );
+	}
+
+	/**
 	 * 送信の失敗は、理由と次に送り直す時刻と再送のボタンを出す。
 	 */
 	public function test_failed_state() {

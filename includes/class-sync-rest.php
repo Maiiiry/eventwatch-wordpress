@@ -212,10 +212,17 @@ class Sync_Rest {
 	 * @return string
 	 */
 	private static function state( $post_id ) {
+		$error   = get_post_meta( $post_id, Sync_Queue::ERROR, true );
+		$pending = get_post_meta( $post_id, Sync_Queue::PENDING, true );
+
+		// 「送らない」にした後の取り下げが届いていない間は、EventWatch に掲載が残っている。
+		if ( $error && $pending ) {
+			return 'failed';
+		}
 		if ( get_post_meta( $post_id, Sync_Queue::NO_SEND, true ) ) {
 			return 'off';
 		}
-		if ( get_post_meta( $post_id, Sync_Queue::ERROR, true ) ) {
+		if ( $error ) {
 			return 'failed';
 		}
 		if ( get_post_meta( $post_id, Sync_Queue::PENDING, true ) ) {
@@ -321,6 +328,34 @@ class Sync_Rest {
 				break;
 			case Sync_Payload::BLOCK_OCCURRENCES:
 				$message = __( 'This event has no dates. Add at least one date.', 'eventwatch' );
+				break;
+			case Sync_Payload::BLOCK_NOTE_TOO_LONG:
+				$message = sprintf(
+					/* translators: %s: the character limit. */
+					__( 'The notes on dates are too long. EventWatch accepts up to %s characters, and counts emoji as two. Shorten the notes.', 'eventwatch' ),
+					number_format_i18n( Event_Meta::MAX_NOTE )
+				);
+				$action = __( 'Edit the notes', 'eventwatch' );
+				$field  = 'eventwatch-field-schedule-note';
+				break;
+			case Sync_Payload::BLOCK_VENUE_INCOMPLETE:
+				$message = __( 'Only one of the venue name and address is entered. Enter both, or leave both empty.', 'eventwatch' );
+				$action  = __( 'Edit the venue', 'eventwatch' );
+				$field   = 'eventwatch-field-venue-name';
+				break;
+			case Sync_Payload::BLOCK_VENUE_TOO_LONG:
+				$message = __( 'The venue name or address is too long for EventWatch, which counts emoji as two characters. Shorten it.', 'eventwatch' );
+				$action  = __( 'Edit the venue', 'eventwatch' );
+				$field   = 'eventwatch-field-venue-name';
+				break;
+			case Sync_Payload::BLOCK_URL_TOO_LONG:
+				$message = sprintf(
+					/* translators: %s: the character limit. */
+					__( 'The official page URL is too long. EventWatch accepts up to %s characters. Enter a shorter separate official page.', 'eventwatch' ),
+					number_format_i18n( Event_Meta::MAX_URL )
+				);
+				$action = __( 'Edit the official page', 'eventwatch' );
+				$field  = 'eventwatch-field-url';
 				break;
 			case Sync_Payload::BLOCK_TITLE_EMPTY:
 				$message = __( 'This event has no title. Add a title.', 'eventwatch' );

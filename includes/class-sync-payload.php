@@ -27,6 +27,10 @@ class Sync_Payload {
 	const BLOCK_CATEGORY         = 'category';
 	const BLOCK_PREFECTURE       = 'prefecture';
 	const BLOCK_OCCURRENCES      = 'occurrences';
+	const BLOCK_NOTE_TOO_LONG    = 'noteTooLong';
+	const BLOCK_VENUE_TOO_LONG   = 'venueTooLong';
+	const BLOCK_VENUE_INCOMPLETE = 'venueIncomplete';
+	const BLOCK_URL_TOO_LONG     = 'urlTooLong';
 
 	/**
 	 * 予約の公開の時刻を持つメタ。本体の予約の公開は post_modified を進めないので、これで補う。
@@ -99,7 +103,10 @@ class Sync_Payload {
 	 * @return int
 	 */
 	public static function server_length( $text ) {
-		return (int) preg_match_all( '/./su', $text ) + (int) preg_match_all( '/[\x{10000}-\x{10FFFF}]/u', $text );
+		$characters = preg_match_all( '/./su', $text );
+
+		// 不正な UTF-8 は読めないので、上限の判定を甘くしないようバイト数で数える。
+		return false === $characters ? strlen( $text ) : $characters + (int) preg_match_all( '/[\x{10000}-\x{10FFFF}]/u', $text );
 	}
 
 	/**
@@ -139,6 +146,23 @@ class Sync_Payload {
 
 		if ( ! $body['online'] && 0 === $body['prefectureCode'] ) {
 			$blocks[] = array( 'code' => self::BLOCK_PREFECTURE );
+		}
+
+		if ( self::server_length( $body['holdingPeriodNote'] ) > Event_Meta::MAX_NOTE ) {
+			$blocks[] = array( 'code' => self::BLOCK_NOTE_TOO_LONG );
+		}
+
+		$name    = trim( $body['venueName'] );
+		$address = trim( $body['venueAddress'] );
+		if ( ( '' === $name ) !== ( '' === $address ) ) {
+			$blocks[] = array( 'code' => self::BLOCK_VENUE_INCOMPLETE );
+		}
+		if ( self::server_length( $body['venueName'] ) > Event_Meta::MAX_VENUE_NAME || self::server_length( $body['venueAddress'] ) > Event_Meta::MAX_ADDRESS ) {
+			$blocks[] = array( 'code' => self::BLOCK_VENUE_TOO_LONG );
+		}
+
+		if ( strlen( $body['publisherEventPageUrl'] ) > Event_Meta::MAX_URL ) {
+			$blocks[] = array( 'code' => self::BLOCK_URL_TOO_LONG );
 		}
 
 		$length = self::server_length( $description );
