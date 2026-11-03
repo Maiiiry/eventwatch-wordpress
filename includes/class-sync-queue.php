@@ -293,7 +293,8 @@ class Sync_Queue {
 				'post_status'      => 'publish',
 				'numberposts'      => -1,
 				'fields'           => 'ids',
-				'meta_key'         => self::EXISTS, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_query_meta_key -- 送ってある投稿だけを引く。
+				// phpcs:ignore WordPress.DB.SlowDBQuery -- 送ってある投稿だけを引く。パーマリンクの変更のときだけ動く。
+				'meta_key'         => self::EXISTS,
 				'suppress_filters' => true,
 			)
 		);

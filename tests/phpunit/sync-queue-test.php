@@ -7,6 +7,8 @@
 
 namespace EventWatch\Tests;
 
+// phpcs:disable WordPress.DB.DirectDatabaseQuery -- 錠と更新日時の行を、API を通さずに作る。
+
 use EventWatch\Connection;
 use EventWatch\Event_Detail;
 use EventWatch\Event_Meta;

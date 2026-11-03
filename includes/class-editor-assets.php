@@ -59,6 +59,10 @@ class Editor_Assets {
 				array(
 					'categories'  => self::to_options( Event_Options::categories() ),
 					'prefectures' => self::to_options( Event_Options::prefectures() ),
+					'sync'        => array(
+						'hasKey'      => '' !== Connection::api_key(),
+						'unsavedText' => Sync_Rest::unsaved_text(),
+					),
 				)
 			) . ';',
 			'before'

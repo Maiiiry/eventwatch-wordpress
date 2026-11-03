@@ -50,6 +50,7 @@ class Plugin {
 		Settings::boot();
 		Connection_Admin::boot();
 		Sync_Queue::boot();
+		Sync_Rest::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
 	}

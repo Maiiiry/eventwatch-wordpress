@@ -34,10 +34,15 @@ import {
 	isVenueIncomplete,
 	rowsFromOccurrences,
 } from './validate';
+import {
+	EVENT_PANEL_ID as PANEL_ID,
+	EVENT_PANEL_NAME as PANEL_NAME,
+	PLUGIN_NAME,
+	SYNC_BLOCKS_EVENT,
+} from './panel-names';
 
-export const PLUGIN_NAME = 'eventwatch-event-details';
-const PANEL_NAME = 'event-details';
-const PANEL_ID = `${ PLUGIN_NAME }/${ PANEL_NAME }`;
+export { PLUGIN_NAME };
+
 const DOCUMENT_SIDEBAR = 'edit-post/document';
 const NOTICE_ID = 'eventwatch-event-details-paused';
 // @wordpress/interface は本体が単独のスクリプトとして配らないので、ストアを名前で引く。
@@ -348,6 +353,17 @@ const useEventFields = () => {
 	};
 };
 
+// 保存の後に送れない理由が返ったときだけ、欄を誤りにする。サイトだけで使う人には必須ではない。
+const useCategoryBlocked = () => {
+	const [ blocked, setBlocked ] = useState( false );
+	useEffect( () => {
+		const listen = ( event ) => setBlocked( event.detail.category );
+		document.addEventListener( SYNC_BLOCKS_EVENT, listen );
+		return () => document.removeEventListener( SYNC_BLOCKS_EVENT, listen );
+	}, [] );
+	return blocked;
+};
+
 const EventFields = ( {
 	fields: {
 		meta,
@@ -377,6 +393,7 @@ const EventFields = ( {
 	}, [ focusTarget ] );
 
 	const nameMissing = venueIncomplete && ! venueName.trim();
+	const categoryMissing = useCategoryBlocked() && ! meta?.eventwatch_category;
 	const addressMissing = venueIncomplete && ! venueAddress.trim();
 
 	return (
@@ -488,11 +505,27 @@ const EventFields = ( {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 				id="eventwatch-field-category"
+				className={
+					categoryMissing ? 'eventwatch-control--error' : undefined
+				}
+				aria-invalid={ categoryMissing ? true : undefined }
 				label={ __( 'EventWatch category', 'eventwatch' ) }
-				help={ __(
-					'Required to send to EventWatch. This is separate from your site’s categories.',
-					'eventwatch'
-				) }
+				help={
+					<>
+						{ categoryMissing && (
+							<FieldError>
+								{ __(
+									'Choose an EventWatch category.',
+									'eventwatch'
+								) }
+							</FieldError>
+						) }
+						{ __(
+							'Required to send to EventWatch. This is separate from your site’s categories.',
+							'eventwatch'
+						) }
+					</>
+				}
 				value={ String( meta?.eventwatch_category ?? 0 ) }
 				options={ [
 					{

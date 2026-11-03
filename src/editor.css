@@ -99,3 +99,143 @@
 .eventwatch-field-error svg {
 	flex: none;
 }
+
+.eventwatch-sync {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.eventwatch-sync__muted {
+	color: #50575e;
+	line-height: 1.6;
+}
+
+.eventwatch-sync__blocks {
+	display: flex;
+	gap: 8px;
+	padding: 10px 12px;
+	border-left: 4px solid #dba617;
+	background: #fcf9e8;
+}
+
+.eventwatch-sync__blocks-icon {
+	flex: none;
+	color: #996800;
+}
+
+.eventwatch-sync__blocks-body {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-width: 0;
+}
+
+.eventwatch-sync__blocks-body p {
+	margin: 0;
+}
+
+.eventwatch-sync__blocks-heading {
+	font-weight: 600;
+}
+
+.eventwatch-sync__blocks-body ul {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding-left: 18px;
+	list-style: disc;
+}
+
+.eventwatch-sync__state {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+}
+
+.eventwatch-sync__state svg {
+	flex: none;
+}
+
+.eventwatch-sync__state-text {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.eventwatch-sync__label {
+	font-weight: 600;
+}
+
+.eventwatch-sync__state--muted svg,
+.eventwatch-sync__state--muted .eventwatch-sync__label {
+	color: #50575e;
+}
+
+.eventwatch-sync__state--info svg,
+.eventwatch-sync__state--info .eventwatch-sync__label {
+	color: #2271b1;
+}
+
+.eventwatch-sync__state--success svg,
+.eventwatch-sync__state--success .eventwatch-sync__label {
+	color: #007017;
+}
+
+.eventwatch-sync__state--warning svg,
+.eventwatch-sync__state--warning .eventwatch-sync__label {
+	color: #996800;
+}
+
+.eventwatch-sync__state--error svg,
+.eventwatch-sync__state--error .eventwatch-sync__label {
+	color: #cc1818;
+}
+
+.eventwatch-sync__reason {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 10px 12px;
+	border-radius: 2px;
+	background: #f0f0f1;
+}
+
+.eventwatch-sync__reason-label {
+	color: #50575e;
+	font-size: 11px;
+	font-weight: 500;
+	text-transform: uppercase;
+}
+
+.eventwatch-sync__reason p {
+	margin: 0;
+	line-height: 1.6;
+}
+
+.eventwatch-sync__meta {
+	display: grid;
+	grid-template-columns: auto minmax(0, 1fr);
+	gap: 4px 8px;
+	margin: 0;
+	font-size: 12px;
+}
+
+.eventwatch-sync__meta dt {
+	color: #50575e;
+}
+
+.eventwatch-sync__meta dd {
+	margin: 0;
+}
+
+.eventwatch-sync__resend {
+	align-self: flex-start;
+}
+
+.eventwatch-sync__toggle {
+	padding-top: 12px;
+	border-top: 1px solid #ddd;
+}

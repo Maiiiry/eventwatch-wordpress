@@ -436,6 +436,31 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * キーの欄に、規約とガイドラインへの同意を出す。定数のキーは文を変える。
+	 */
+	public function test_key_field_states_consent() {
+		$empty = $this->output_of( array( Settings::class, 'render_api_key_field' ) );
+		$this->assertStringContainsString( 'By saving a key', $empty );
+		$this->assertStringContainsString( '/terms"', $empty );
+		$this->assertStringContainsString( '/post/guidelines"', $empty );
+
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$saved = $this->output_of( array( Settings::class, 'render_api_key_field' ) );
+		$this->assertStringContainsString( 'By saving a key', $saved );
+
+		$fixed = static function () {
+			return self::KEY;
+		};
+		add_filter( 'eventwatch_fixed_api_key', $fixed );
+		$constant = $this->output_of( array( Settings::class, 'render_api_key_field' ) );
+		remove_filter( 'eventwatch_fixed_api_key', $fixed );
+
+		$this->assertStringContainsString( 'By sending events with this key', $constant );
+		$this->assertStringNotContainsString( 'By saving a key', $constant );
+		$this->assertStringContainsString( '/post/guidelines"', $constant );
+	}
+
+	/**
 	 * 失効では原因と直し方を出す。団体名は escape する。
 	 */
 	public function test_status_messages() {
