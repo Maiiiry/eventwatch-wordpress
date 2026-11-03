@@ -135,7 +135,10 @@ class Sync_Queue {
 			update_post_meta( $post_id, Sync_Payload::PUBLISHED_AT_META, time() );
 		}
 
-		self::mark( (int) $post_id );
+		// 下書きの自動保存も投稿を更新する。状態が変わらない保存で、届いていない取り下げの送り直しの待ちを縮めない。
+		$same_status = $post_before instanceof WP_Post && $post_before->post_status === $post->post_status;
+
+		self::mark( (int) $post_id, true, $same_status );
 	}
 
 	/**
@@ -167,16 +170,21 @@ class Sync_Queue {
 	/**
 	 * 投稿に印を積む。
 	 *
-	 * @param int  $post_id  投稿の ID。
-	 * @param bool $schedule 次の実行を張るか。
+	 * @param int  $post_id    投稿の ID。
+	 * @param bool $schedule   次の実行を張るか。
+	 * @param bool $keep_retry 届いていない取り下げの待ちを保つか。
 	 * @return void
 	 */
-	public static function mark( $post_id, $schedule = true ) {
+	public static function mark( $post_id, $schedule = true, $keep_retry = false ) {
 		$post   = get_post( $post_id );
 		$action = $post ? self::action_for( $post ) : self::ACTION_NONE;
 
-		// キーなしのサイトにデータを増やさない。既に送ってある投稿の取り下げだけは残す。
+		// キーなしのサイトにデータを増やさない。既に送ってある投稿は、キーを入れ直したときに追いつくよう残す。
 		$unsendable = '' === Connection::api_key() && ! get_post_meta( $post_id, self::EXISTS, true );
+
+		if ( self::ACTION_UNPUBLISH === $action && $keep_retry && get_post_meta( $post_id, self::PENDING, true ) && get_post_meta( $post_id, self::ERROR, true ) ) {
+			return;
+		}
 
 		delete_post_meta( $post_id, self::ATTEMPTS );
 		delete_post_meta( $post_id, self::NEXT_AT );

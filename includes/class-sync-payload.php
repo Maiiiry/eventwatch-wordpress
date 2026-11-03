@@ -161,7 +161,7 @@ class Sync_Payload {
 			$blocks[] = array( 'code' => self::BLOCK_VENUE_TOO_LONG );
 		}
 
-		if ( strlen( $body['publisherEventPageUrl'] ) > Event_Meta::MAX_URL ) {
+		if ( self::server_length( $body['publisherEventPageUrl'] ) > Event_Meta::MAX_URL ) {
 			$blocks[] = array( 'code' => self::BLOCK_URL_TOO_LONG );
 		}
 

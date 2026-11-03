@@ -39,6 +39,13 @@ class Markdown_Converter {
 	const SCHEMES = array( 'http', 'https', 'mailto' );
 
 	/**
+	 * 強調の記号を出さずに描いている間か。
+	 *
+	 * @var bool
+	 */
+	private static $plain_inline = false;
+
+	/**
 	 * 投稿の本文を変換する。
 	 *
 	 * @param string $content 投稿の本文。
@@ -62,7 +69,7 @@ class Markdown_Converter {
 		}
 
 		if ( ! class_exists( DOMDocument::class ) ) {
-			return trim( html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' ) );
+			return trim( self::escape_text( html_entity_decode( wp_strip_all_tags( $html ), ENT_QUOTES, 'UTF-8' ) ) );
 		}
 
 		$document = new DOMDocument();
@@ -133,7 +140,7 @@ class Markdown_Converter {
 
 		foreach ( $parent_node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
 			if ( ! self::is_block( $child ) ) {
-				$inline .= self::inline( $child );
+				$inline = self::append_inline( $inline, $child );
 				continue;
 			}
 
@@ -262,8 +269,6 @@ class Markdown_Converter {
 	private static function escape_inline_block( $inline ) {
 		// 文字の ! の直後にリンクが続くと画像の記法になる。文字の [ は打ち消してあるので、ここで作るのはリンクだけ。
 		$inline = (string) preg_replace( '/(?<!\\\\)((?:\\\\\\\\)*)!\[/', '$1\\\\![', $inline );
-		// 隣り合う太字は、記号が 4 つ続くと閉じない。
-		$inline = str_replace( '****', '', $inline );
 		$lines  = array_map( 'trim', explode( "\n", $inline ) );
 		$lines  = array_values( array_filter( $lines, 'strlen' ) );
 
@@ -285,10 +290,30 @@ class Markdown_Converter {
 	private static function inline_children( DOMNode $node ) {
 		$text = '';
 		foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
-			$text .= self::inline( $child );
+			$text = self::append_inline( $text, $child );
 		}
 
 		return $text;
+	}
+
+	/**
+	 * 行の中の 1 つをつなぐ。強調の記号どうしが続くと閉じないので、後ろの強調を文字だけにする。
+	 *
+	 * @param string  $text これまでの文字列。
+	 * @param DOMNode $node 足す要素か文字。
+	 * @return string
+	 */
+	private static function append_inline( $text, DOMNode $node ) {
+		$next = self::inline( $node );
+
+		if ( '*' === substr( $next, 0, 1 ) && preg_match( '/(?<!\\\\)(?:\\\\\\\\)*\*$/', $text ) ) {
+			$outer              = self::$plain_inline;
+			self::$plain_inline = true;
+			$next               = self::inline( $node );
+			self::$plain_inline = $outer;
+		}
+
+		return $text . $next;
 	}
 
 	/**
@@ -317,10 +342,10 @@ class Markdown_Converter {
 				return "\n";
 			case 'strong':
 			case 'b':
-				return self::wrap( self::inline_children( $node ), '**' );
+				return self::$plain_inline ? self::inline_children( $node ) : self::wrap( self::inline_children( $node ), '**' );
 			case 'em':
 			case 'i':
-				return self::wrap( self::inline_children( $node ), '*' );
+				return self::$plain_inline ? self::inline_children( $node ) : self::wrap( self::inline_children( $node ), '*' );
 			case 'a':
 				return self::link( $node );
 		}
@@ -341,8 +366,8 @@ class Markdown_Converter {
 			return $text;
 		}
 
-		// 句読点や記号で始まる・終わる強調は、隣に文字が続くと閉じない（**「重要」**です）。星を出さず文字だけにする。
-		if ( preg_match( '/^[\p{P}\p{S}]|[\p{P}\p{S}]$/u', trim( $trimmed, '*' ) ) ) {
+		// 句読点・記号・全角空白で始まる・終わる強調は、隣に文字が続くと閉じない（**「重要」**です）。星を出さず文字だけにする。
+		if ( preg_match( '/^[\p{P}\p{S}\p{Z}]|[\p{P}\p{S}\p{Z}]$/u', trim( $trimmed, '*' ) ) ) {
 			return $text;
 		}
 
@@ -391,6 +416,7 @@ class Markdown_Converter {
 			$scheme . substr( $url, strlen( $scheme ) ),
 			array(
 				' '  => '%20',
+				'*'  => '%2A',
 				'\\' => '%5C',
 				"\t" => '%09',
 				"\n" => '',

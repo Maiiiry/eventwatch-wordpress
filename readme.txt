@@ -83,7 +83,7 @@ Once a key is set, events are sent when you publish them, including scheduled ev
 
 Events you published before entering a key are not sent automatically. They are sent the next time you update them.
 
-The content is sent as Markdown with headings, paragraphs, lists, quotes, links, and emphasis. Images and embeds in the content are not sent. An event isn't sent if it has no title, no dates, no EventWatch category, or no prefecture (unless it's held online), or if its title is over 256 characters or its content is over 10,000 characters after conversion. The panel lists the reasons, and publishing on your site isn't affected.
+The content is sent as Markdown with headings, paragraphs, lists, quotes, links, and emphasis. Images and embeds in the content are not sent. An event isn't sent if it has no title, no dates, no EventWatch category, or no prefecture (unless it's held online), or if its title is over 256 characters or its content is over 10,000 characters after conversion. It also isn't sent if only one of the venue name and address is entered, or if the notes on dates, the venue, or the official page URL are over EventWatch's limits, which count emoji as two characters. The panel lists the reasons, and publishing on your site isn't affected.
 
 If EventWatch can't be reached, sending is retried automatically after 1 minute, 5 minutes, 30 minutes, and 2 hours, and then every 6 hours. Only the latest version of an event is sent. Retries use WP-Cron, which only runs when someone visits your site. To retry on time, run WP-Cron from your server's cron: https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/ . If your key is rejected or your organization is suspended, sending stops until you enter a new key, "Check connection" succeeds, or you update an event.
 
@@ -103,7 +103,7 @@ WordPress publishes scheduled events with WP-Cron, which only runs when someone 
 
 = Removing the plugin =
 
-Deleting the plugin removes its settings, including the API key and the site ID, the send status of each event, and the capabilities it added to user roles. It also tells EventWatch to detach this site's events: they stay listed on EventWatch and you can edit them there. If EventWatch can't be reached, the plugin is still deleted; in that case, revoke the API key on EventWatch. Your events stay in the database unless you turn on "Delete all events when the plugin is deleted" in Settings > EventWatch. If you reinstall the plugin, the site gets a new site ID, so EventWatch treats it as a new site: when you publish the remaining events, they can be sent as separate posts.
+Deleting the plugin removes its settings, including the API key and the site ID, the send status of each event, and the capabilities it added to user roles. It also tells EventWatch to detach this site's events: they stay listed on EventWatch and you can edit them there. If EventWatch can't be reached, the plugin is still deleted; in that case, revoke the API key on EventWatch. Your events stay in the database, along with your choice not to send an event, unless you turn on "Delete all events when the plugin is deleted" in Settings > EventWatch. If you reinstall the plugin, the site gets a new site ID, so EventWatch treats it as a new site: when you publish the remaining events, they can be sent as separate posts.
 
 = Translations =
 

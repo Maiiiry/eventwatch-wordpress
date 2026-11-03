@@ -148,6 +148,19 @@ class Sync_Rest {
 			'value' => '',
 		);
 
+		// 止まっている間は、最初の 1 件にしか理由が残らない。ほかの送信待ちにも同じ理由を出す。
+		if ( 'queued' === $state ) {
+			$stopped = self::stopped_reason();
+			if ( '' !== $stopped ) {
+				$state = 'failed';
+				$error = array(
+					'code'    => $stopped,
+					'apiCode' => '',
+					'status'  => 0,
+				);
+			}
+		}
+
 		if ( 'failed' === $state && is_array( $error ) ) {
 			$reason = array(
 				'label' => __( 'Reason', 'eventwatch' ),
@@ -176,13 +189,36 @@ class Sync_Rest {
 		return array(
 			'state'       => $state,
 			'label'       => $text[ $state ][0],
-			'description' => $text[ $state ][1],
+			'description' => 'unsent' === $state && 'publish' === get_post_status( $post_id ) ? __( 'This post hasn’t been sent to EventWatch yet. It will be sent the next time you update it.', 'eventwatch' ) : $text[ $state ][1],
 			'reason'      => $reason,
 			'meta'        => $meta,
 			// 印が残っているものだけ。送り直しても変わらない失敗は、内容を直して更新する。
 			'canResend'   => 'failed' === $state && '' !== (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ),
 			'blocks'      => 'off' !== $state && is_array( $blocks ) ? array_map( array( self::class, 'block_item' ), $blocks ) : array(),
 		);
+	}
+
+	/**
+	 * 送信が止まっている理由のコード。止まっていなければ空。
+	 *
+	 * @return string
+	 */
+	private static function stopped_reason() {
+		if ( '' === Connection::api_key() ) {
+			return Api_Client::NO_KEY;
+		}
+		if ( Site_Identity::has_changed() ) {
+			return Api_Client::SITE_CHANGED;
+		}
+
+		switch ( Connection::state()['status'] ) {
+			case Connection::UNAUTHORIZED:
+				return Api_Client::UNAUTHORIZED;
+			case Connection::SUSPENDED:
+				return Api_Client::SUSPENDED;
+		}
+
+		return '';
 	}
 
 	/**

@@ -80,7 +80,7 @@ class Uninstall_Test extends WP_UnitTestCase {
 		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
 		$this->assertFalse( wp_next_scheduled( Sync_Queue::RESCAN_HOOK ) );
 		$this->assertSame( '', get_post_meta( $post_id, Sync_Queue::HASH, true ) );
-		$this->assertSame( '', get_post_meta( $post_id, Sync_Queue::NO_SEND, true ) );
+		$this->assertSame( '1', get_post_meta( $post_id, Sync_Queue::NO_SEND, true ) );
 		$this->assertSame( '', get_post_meta( $post_id, Event_Detail::LISTING_SLUG, true ) );
 		$this->assertInstanceOf( \WP_Post::class, get_post( $post_id ) );
 	}

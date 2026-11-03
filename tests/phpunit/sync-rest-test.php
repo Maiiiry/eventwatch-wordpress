@@ -194,6 +194,37 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 止まっている間は、ほかの送信待ちにも理由を出す。「数分で送ります」と言わない。
+	 */
+	public function test_other_queued_posts_show_why_sending_stopped() {
+		$first      = $this->event();
+		$second     = $this->event();
+		$this->next = $this->answer( 401 );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( 'failed', Sync_Rest::status( $first )['state'] );
+		$status = Sync_Rest::status( $second );
+		$this->assertSame( 'failed', $status['state'] );
+		$this->assertStringContainsString( 'rejected this API key', $status['reason']['text'] );
+
+		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		Connection::forget();
+		delete_post_meta( $first, Sync_Queue::ERROR );
+		$this->assertStringContainsString( 'URL has changed', Sync_Rest::status( $first )['reason']['text'] );
+	}
+
+	/**
+	 * 公開中でまだ送っていない投稿には、更新で送ると伝える。公開を勧めない。
+	 */
+	public function test_unsent_text_for_published_post() {
+		$id = $this->event();
+		Sync_Queue::forget_all();
+
+		$this->assertSame( 'unsent', Sync_Rest::status( $id )['state'] );
+		$this->assertStringContainsString( 'next time you update', Sync_Rest::status( $id )['description'] );
+	}
+
+	/**
 	 * 「送らない」にした後の取り下げが届いていない間は、失敗を出す。届いたら「送らない」。
 	 */
 	public function test_failed_withdrawal_wins_over_off() {

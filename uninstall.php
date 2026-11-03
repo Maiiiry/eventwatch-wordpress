@@ -68,8 +68,9 @@ $eventwatch_clean_site = static function () use ( $eventwatch_delete_site_option
 		wp_clear_scheduled_hook( $eventwatch_hook );
 	}
 
-	// サイト ID が消えるので、入れ直すと別のサイトになる。送信の記録と「送らない」を残しても効かない。
-	foreach ( array_merge( EventWatch\Sync_Queue::meta_keys(), array( EventWatch\Sync_Queue::NO_SEND, EventWatch\Event_Detail::LISTING_SLUG ) ) as $eventwatch_meta_key ) {
+	// サイト ID が消えるので、入れ直すと別のサイトになる。送信の記録は残しても効かない。
+	// 「送らない」は利用者の選択なので残す。消すと、入れ直した後の更新で送られる。
+	foreach ( array_merge( EventWatch\Sync_Queue::meta_keys(), array( EventWatch\Event_Detail::LISTING_SLUG ) ) as $eventwatch_meta_key ) {
 		delete_post_meta_by_key( $eventwatch_meta_key );
 	}
 

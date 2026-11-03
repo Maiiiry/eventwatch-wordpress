@@ -9,6 +9,7 @@ namespace EventWatch\Tests;
 
 // phpcs:disable WordPress.DB.DirectDatabaseQuery -- 錠と更新日時の行を、API を通さずに作る。
 
+use EventWatch\Capabilities;
 use EventWatch\Connection;
 use EventWatch\Event_Detail;
 use EventWatch\Event_Meta;
@@ -1180,6 +1181,114 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		delete_option( Post_Type::SLUG_OPTION );
 		wp_clear_scheduled_hook( Sync_Queue::RESCAN_HOOK );
 		Post_Type::register();
+	}
+
+	/**
+	 * 下書きの自動保存は、まだ送っていない投稿でも、取り下げ済みの投稿でも送らない。
+	 */
+	public function test_autosave_of_draft_sends_nothing() {
+		$never = $this->event();
+		$this->autosave_as_editor( $never );
+		$withdrawn         = $this->sent_event();
+		$this->responses[] = $this->ok( 'private' );
+		wp_update_post(
+			array(
+				'ID'          => $withdrawn,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+		$this->requests = array();
+
+		$this->autosave_as_editor( $withdrawn );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array(), $this->requests );
+		$this->assertSame( '', (string) get_post_meta( $never, Sync_Queue::PENDING, true ) );
+	}
+
+	/**
+	 * 届いていない取り下げの送り直しの待ちを、自動保存で縮めない。今すぐ送り直すは待たない。
+	 */
+	public function test_autosave_keeps_retry_wait_of_withdrawal() {
+		$id                = $this->sent_event();
+		$this->responses[] = $this->response( 503 );
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+		$next           = (int) get_post_meta( $id, Sync_Queue::NEXT_AT, true );
+		$this->requests = array();
+
+		$this->autosave_as_editor( $id );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array(), $this->requests );
+		$this->assertSame( $next, (int) get_post_meta( $id, Sync_Queue::NEXT_AT, true ) );
+		$this->assertSame( 1, (int) get_post_meta( $id, Sync_Queue::ATTEMPTS, true ) );
+
+		$this->responses[] = $this->ok( 'private' );
+		Sync_Queue::resend( $id );
+
+		$this->assertSame( array( "POST /events/$id/unpublish" ), $this->sent() );
+		$this->assertSame( '', (string) get_post_meta( $id, Sync_Queue::PENDING, true ) );
+	}
+
+	/**
+	 * 公開中の投稿のリビジョンの保存は送らない。
+	 */
+	public function test_revision_sends_nothing() {
+		$id = $this->sent_event();
+		wp_save_post_revision( $id );
+		_wp_put_post_revision( get_post( $id ), true );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array(), $this->requests );
+		$this->assertSame( '', (string) get_post_meta( $id, Sync_Queue::PENDING, true ) );
+	}
+
+	/**
+	 * キーなしでも、送ってある公開中の投稿の更新は積み、キーを入れると追いつく。
+	 */
+	public function test_update_of_sent_post_without_key_catches_up() {
+		$id = $this->sent_event();
+		delete_option( Connection::KEY_OPTION );
+		add_option( Connection::KEY_OPTION, '', '', false );
+		wp_update_post(
+			array(
+				'ID'         => $id,
+				'post_title' => 'キーなしの間の題',
+			)
+		);
+		Sync_Queue::send_marked();
+		$this->assertSame( array(), $this->requests );
+
+		update_option( Connection::KEY_OPTION, self::KEY );
+		Sync_Queue::run();
+
+		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
+		$this->assertSame( 'キーなしの間の題', $this->requests[0]['body']['title'] );
+	}
+
+	/**
+	 * 編集者の自動保存を流す。編集画面と同じ口を通す。
+	 *
+	 * @param int $id 投稿の ID。
+	 * @return void
+	 */
+	private function autosave_as_editor( $id ) {
+		Capabilities::grant();
+		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
+		if ( is_multisite() ) {
+			grant_super_admin( get_current_user_id() );
+		}
+		$request = new \WP_REST_Request( 'POST', '/wp/v2/' . Post_Type::POST_TYPE . '/' . $id . '/autosaves' );
+		$request->set_param( 'content', '<p>自動保存の本文 ' . wp_generate_password( 6, false ) . '</p>' );
+		$this->assertSame( 200, rest_do_request( $request )->get_status() );
+		wp_set_current_user( 0 );
 	}
 
 	/**
