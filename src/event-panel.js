@@ -6,7 +6,7 @@ import {
 	ToggleControl,
 } from '@wordpress/components';
 import { useEntityProp } from '@wordpress/core-data';
-import { useDispatch, useRegistry, useSelect } from '@wordpress/data';
+import { useDispatch, useSelect } from '@wordpress/data';
 import {
 	PluginDocumentSettingPanel,
 	store as editorStore,
@@ -14,7 +14,6 @@ import {
 import { useEffect, useRef, useState } from '@wordpress/element';
 import { __, sprintf } from '@wordpress/i18n';
 import { store as noticesStore } from '@wordpress/notices';
-import { store as preferencesStore } from '@wordpress/preferences';
 
 import {
 	ERROR_END_BEFORE_START,
@@ -34,17 +33,22 @@ import {
 	isVenueIncomplete,
 	rowsFromOccurrences,
 } from './validate';
+import {
+	EVENT_PANEL_ID as PANEL_ID,
+	EVENT_PANEL_NAME as PANEL_NAME,
+	PLUGIN_NAME,
+	SYNC_BLOCKS_EVENT,
+} from './panel-names';
+import useOpenPanelOnce from './use-open-panel-once';
 
-export const PLUGIN_NAME = 'eventwatch-event-details';
-const PANEL_NAME = 'event-details';
-const PANEL_ID = `${ PLUGIN_NAME }/${ PANEL_NAME }`;
+export { PLUGIN_NAME };
+
 const DOCUMENT_SIDEBAR = 'edit-post/document';
 const NOTICE_ID = 'eventwatch-event-details-paused';
 // @wordpress/interface は本体が単独のスクリプトとして配らないので、ストアを名前で引く。
 const INTERFACE_STORE = 'core/interface';
 const POST_TYPE = 'eventwatch_event';
 const LOCK_NAME = 'eventwatch-event-details';
-const PREFERENCE_SCOPE = 'eventwatch';
 const PREFERENCE_OPENED = 'eventDetailsOpenedOnce';
 
 const OCCURRENCES = 'eventwatch_occurrences';
@@ -204,8 +208,23 @@ const OccurrenceRow = ( {
 	);
 };
 
+// 保存の後に送れない理由が返ったときだけ、欄を誤りにする。サイトだけで使う人には必須ではない。
+const useSyncBlocks = () => {
+	const [ blocked, setBlocked ] = useState( {
+		category: false,
+		prefecture: false,
+	} );
+	useEffect( () => {
+		const listen = ( event ) => setBlocked( event.detail );
+		document.addEventListener( SYNC_BLOCKS_EVENT, listen );
+		return () => document.removeEventListener( SYNC_BLOCKS_EVENT, listen );
+	}, [] );
+	return blocked;
+};
+
 // パネルを畳むと中身が外れるので、書きかけの組と保存の停止はパネルの外で持つ。
 const useEventFields = () => {
+	const blocked = useSyncBlocks();
 	const [ meta, setMeta ] = useEntityProp( 'postType', POST_TYPE, 'meta' );
 	const stored = meta?.[ OCCURRENCES ];
 
@@ -345,6 +364,7 @@ const useEventFields = () => {
 		note,
 		venueIncomplete,
 		urlInvalid,
+		blocked,
 	};
 };
 
@@ -365,6 +385,7 @@ const EventFields = ( {
 		note,
 		venueIncomplete,
 		urlInvalid,
+		blocked,
 	},
 } ) => {
 	// パネルの中身は Slot が遅れて描くので、新しい組の要素を待てるこの中で動かす。
@@ -377,6 +398,11 @@ const EventFields = ( {
 	}, [ focusTarget ] );
 
 	const nameMissing = venueIncomplete && ! venueName.trim();
+	const categoryMissing = blocked.category && ! meta?.eventwatch_category;
+	const prefectureMissing =
+		blocked.prefecture &&
+		! meta?.eventwatch_prefecture &&
+		! meta?.eventwatch_online;
 	const addressMissing = venueIncomplete && ! venueAddress.trim();
 
 	return (
@@ -471,7 +497,18 @@ const EventFields = ( {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 				id="eventwatch-field-prefecture"
+				className={
+					prefectureMissing ? 'eventwatch-control--error' : undefined
+				}
+				aria-invalid={ prefectureMissing ? true : undefined }
 				label={ __( 'Prefecture', 'eventwatch' ) }
+				help={
+					prefectureMissing ? (
+						<FieldError>
+							{ __( 'Choose a prefecture.', 'eventwatch' ) }
+						</FieldError>
+					) : undefined
+				}
 				value={ String( meta?.eventwatch_prefecture ?? 0 ) }
 				options={ [
 					{
@@ -488,11 +525,27 @@ const EventFields = ( {
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 				id="eventwatch-field-category"
+				className={
+					categoryMissing ? 'eventwatch-control--error' : undefined
+				}
+				aria-invalid={ categoryMissing ? true : undefined }
 				label={ __( 'EventWatch category', 'eventwatch' ) }
-				help={ __(
-					'Required to send to EventWatch. This is separate from your site’s categories.',
-					'eventwatch'
-				) }
+				help={
+					<>
+						{ categoryMissing && (
+							<FieldError>
+								{ __(
+									'Choose an EventWatch category.',
+									'eventwatch'
+								) }
+							</FieldError>
+						) }
+						{ __(
+							'Required to send to EventWatch. This is separate from your site’s categories.',
+							'eventwatch'
+						) }
+					</>
+				}
 				value={ String( meta?.eventwatch_category ?? 0 ) }
 				options={ [
 					{
@@ -560,38 +613,8 @@ const EventFields = ( {
 	);
 };
 
-const useOpenPanelOnce = () => {
-	const opened = useSelect(
-		( select ) =>
-			select( preferencesStore ).get(
-				PREFERENCE_SCOPE,
-				PREFERENCE_OPENED
-			),
-		[]
-	);
-	const registry = useRegistry();
-
-	// 既定では閉じて出る。最初の 1 度だけ開き、あとは利用者の開閉を覚えさせる。
-	useEffect( () => {
-		if ( opened ) {
-			return;
-		}
-		// toggle が 2 回走ると閉じてしまうので、先に印を立て、開閉はその時点の値を読む。
-		registry
-			.dispatch( preferencesStore )
-			.set( PREFERENCE_SCOPE, PREFERENCE_OPENED, true );
-		if (
-			! registry.select( editorStore ).isEditorPanelOpened( PANEL_ID )
-		) {
-			registry
-				.dispatch( editorStore )
-				.toggleEditorPanelOpened( PANEL_ID );
-		}
-	}, [ opened, registry ] );
-};
-
 const EventPanelContent = () => {
-	useOpenPanelOnce();
+	useOpenPanelOnce( PANEL_ID, PREFERENCE_OPENED );
 	const fields = useEventFields();
 
 	return (

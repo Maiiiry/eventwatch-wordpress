@@ -211,13 +211,19 @@ class Api_Client {
 		}
 
 		$data = array( 'status' => $status );
+		$code = $this->error_code( $body );
+
+		// 呼び出し側が理由を見分けるため。語だけを渡し、応答の本文は渡さない。
+		if ( preg_match( '/^[A-Za-z]{1,64}$/', $code ) ) {
+			$data['code'] = $code;
+		}
 
 		if ( 401 === $status ) {
 			return new WP_Error( self::UNAUTHORIZED, 'The EventWatch API key was rejected.', $data );
 		}
 
 		if ( 403 === $status ) {
-			return self::CODE_SUSPENDED === $this->error_code( $body )
+			return self::CODE_SUSPENDED === $code
 				? new WP_Error( self::SUSPENDED, 'The EventWatch organization is suspended.', $data )
 				: new WP_Error( self::FORBIDDEN, 'The EventWatch API key cannot do this.', $data );
 		}

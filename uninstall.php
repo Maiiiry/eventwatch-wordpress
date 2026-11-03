@@ -18,6 +18,14 @@ global $wpdb;
 // 削除のときは本体のファイルが読み込まれないので、自動の読み込みも効かない。
 require_once __DIR__ . '/includes/class-capabilities.php';
 require_once __DIR__ . '/includes/class-post-type.php';
+require_once __DIR__ . '/includes/class-site-identity.php';
+require_once __DIR__ . '/includes/class-connection.php';
+require_once __DIR__ . '/includes/class-api-client.php';
+require_once __DIR__ . '/includes/class-sync-status.php';
+require_once __DIR__ . '/includes/class-sync-payload.php';
+require_once __DIR__ . '/includes/class-sync-queue.php';
+require_once __DIR__ . '/includes/class-event-detail.php';
+require_once __DIR__ . '/includes/class-plugin.php';
 
 $eventwatch_like_patterns = array_map(
 	static function ( string $prefix ): string {
@@ -47,6 +55,25 @@ $eventwatch_delete_site_options = static function () use ( $eventwatch_like_patt
 };
 
 $eventwatch_clean_site = static function () use ( $eventwatch_delete_site_options ): void {
+	// 設定を消す前に、EventWatch に残る投稿の切り離しを送る。送れなくても削除は止めない。URL が変わった複製からは送られない。
+	if ( '' !== EventWatch\Connection::api_key() ) {
+		( new EventWatch\Api_Client() )->request(
+			'DELETE',
+			EventWatch\Sync_Queue::PATH . rawurlencode( EventWatch\Site_Identity::id() ),
+			array( 'timeout' => EventWatch\Sync_Queue::IMMEDIATE_TIMEOUT )
+		);
+	}
+
+	foreach ( EventWatch\Plugin::CRON_HOOKS as $eventwatch_hook ) {
+		wp_clear_scheduled_hook( $eventwatch_hook );
+	}
+
+	// サイト ID が消えるので、入れ直すと別のサイトになる。送信の記録は残しても効かない。
+	// 「送らない」は利用者の選択なので残す。消すと、入れ直した後の更新で送られる。
+	foreach ( array_merge( EventWatch\Sync_Queue::meta_keys(), array( EventWatch\Event_Detail::LISTING_SLUG ) ) as $eventwatch_meta_key ) {
+		delete_post_meta_by_key( $eventwatch_meta_key );
+	}
+
 	EventWatch\Capabilities::remove_from_all_roles();
 
 	// 設定も消すので、消す前に読む。

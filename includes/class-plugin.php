@@ -25,7 +25,7 @@ class Plugin {
 	 *
 	 * @var string[]
 	 */
-	const CRON_HOOKS = array();
+	const CRON_HOOKS = array( Sync_Queue::RUN_HOOK, Sync_Queue::RESCAN_HOOK );
 
 	/**
 	 * フックを登録する。
@@ -49,6 +49,8 @@ class Plugin {
 		Event_Detail::boot();
 		Settings::boot();
 		Connection_Admin::boot();
+		Sync_Queue::boot();
+		Sync_Rest::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
 	}
@@ -76,6 +78,7 @@ class Plugin {
 				switch_to_blog( $site_id );
 				Capabilities::grant();
 				Site_Identity::ensure();
+				Sync_Queue::schedule_next();
 				// switch_to_blog では rewrite の定義が切り替わらないので、flush せずに消して次の読み込みで作らせる。
 				delete_option( 'rewrite_rules' );
 				restore_current_blog();
@@ -85,6 +88,7 @@ class Plugin {
 
 		Capabilities::grant();
 		Site_Identity::ensure();
+		Sync_Queue::schedule_next();
 		Post_Type::register();
 		flush_rewrite_rules();
 	}

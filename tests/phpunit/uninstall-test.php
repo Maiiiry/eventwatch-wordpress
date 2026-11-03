@@ -7,9 +7,14 @@
 
 namespace EventWatch\Tests;
 
+use EventWatch\Api_Client;
 use EventWatch\Capabilities;
+use EventWatch\Connection;
+use EventWatch\Event_Detail;
 use EventWatch\Event_Meta;
 use EventWatch\Post_Type;
+use EventWatch\Site_Identity;
+use EventWatch\Sync_Queue;
 use WP_UnitTestCase;
 
 /**
@@ -35,6 +40,72 @@ class Uninstall_Test extends WP_UnitTestCase {
 			define( 'WP_UNINSTALL_PLUGIN', 'eventwatch/eventwatch.php' );
 		}
 		require dirname( __DIR__, 2 ) . '/uninstall.php';
+	}
+
+	/**
+	 * キーがあれば切り離しを短いタイムアウトで送り、予定と同期のメタを消す。
+	 */
+	public function test_sends_detach_and_clears_cron_and_sync_meta() {
+		Site_Identity::ensure();
+		update_option( Connection::KEY_OPTION, 'ewk_0123456789012345678901234567890123456789012' );
+		$site_id = Site_Identity::id();
+		$post_id = self::factory()->post->create( array( 'post_type' => Post_Type::POST_TYPE ) );
+		update_post_meta( $post_id, Sync_Queue::HASH, 'x' );
+		update_post_meta( $post_id, Sync_Queue::NO_SEND, 1 );
+		update_post_meta( $post_id, Event_Detail::LISTING_SLUG, 'abc' );
+		wp_schedule_single_event( time() + 100, Sync_Queue::RUN_HOOK );
+		wp_schedule_single_event( time() + 100, Sync_Queue::RESCAN_HOOK );
+		$sent  = array();
+		$watch = static function ( $pre, $args, $url ) use ( &$sent ) {
+			$sent[] = array( $args['method'], $url, $args['timeout'] );
+			return new \WP_Error( 'http_request_failed', 'EventWatch is down' );
+		};
+		add_filter( 'pre_http_request', $watch, 10, 3 );
+
+		$this->run_uninstall();
+
+		remove_filter( 'pre_http_request', $watch, 10 );
+
+		$this->assertSame(
+			array( array( 'DELETE', Api_Client::base_url() . '/api/v1.0/org-api/sites/' . $site_id, (float) Sync_Queue::IMMEDIATE_TIMEOUT ) ),
+			array_map(
+				static function ( $request ) {
+					return array( $request[0], $request[1], (float) $request[2] );
+				},
+				$sent
+			)
+		);
+		// 送れなくても消える。
+		$this->assertSame( 'gone', get_option( Connection::KEY_OPTION, 'gone' ) );
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RESCAN_HOOK ) );
+		$this->assertSame( '', get_post_meta( $post_id, Sync_Queue::HASH, true ) );
+		$this->assertSame( '1', get_post_meta( $post_id, Sync_Queue::NO_SEND, true ) );
+		$this->assertSame( '', get_post_meta( $post_id, Event_Detail::LISTING_SLUG, true ) );
+		$this->assertInstanceOf( \WP_Post::class, get_post( $post_id ) );
+	}
+
+	/**
+	 * キーが無ければ、複製と判定されていれば、切り離しを送らない。
+	 */
+	public function test_sends_no_detach_without_key_or_from_copy() {
+		$sent  = 0;
+		$watch = static function () use ( &$sent ) {
+			++$sent;
+			return new \WP_Error( 'http_request_failed', 'EventWatch is down' );
+		};
+		add_filter( 'pre_http_request', $watch );
+
+		$this->run_uninstall();
+		$this->assertSame( 0, $sent );
+
+		Site_Identity::ensure();
+		update_option( Connection::KEY_OPTION, 'ewk_0123456789012345678901234567890123456789012' );
+		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		$this->run_uninstall();
+		$this->assertSame( 0, $sent );
+
+		remove_filter( 'pre_http_request', $watch );
 	}
 
 	/**

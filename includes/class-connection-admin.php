@@ -52,6 +52,7 @@ class Connection_Admin {
 		$state = Connection::check();
 
 		if ( Connection::CONNECTED === $state['status'] ) {
+			Sync_Queue::resume();
 			self::report( self::status_text( $state ), 'success' );
 		} elseif ( in_array( $state['status'], array( Connection::UNREACHABLE, Connection::FORBIDDEN ), true ) ) {
 			self::report( self::status_text( $state ), 'warning' );

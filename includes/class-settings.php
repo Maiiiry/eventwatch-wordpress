@@ -382,6 +382,7 @@ class Settings {
 			'<p class="description">%s</p>',
 			esc_html__( 'The key you issued in EventWatch under Organization settings › Site connection. Saved keys are hidden.', 'eventwatch' )
 		);
+		self::render_consent();
 		if ( ! $recommend_constant ) {
 			return;
 		}
@@ -398,6 +399,27 @@ class Settings {
 				esc_html__( 'On a multisite network, the constant applies to every site. To use a different key for each site, save the key on each site’s settings page.', 'eventwatch' )
 			);
 		}
+	}
+
+	/**
+	 * 投稿の規約への同意。EventWatch の投稿フォームの送信と同じ形で、操作に添えて伝える。
+	 * 定数のキーは欄を通らないので、チェックボックスでは取れない。
+	 *
+	 * @return void
+	 */
+	private static function render_consent() {
+		printf(
+			'<p class="description">%1$s <a href="%2$s" target="_blank" rel="noopener noreferrer">%3$s</a> <a href="%4$s" target="_blank" rel="noopener noreferrer">%5$s</a></p>',
+			esc_html(
+				'' !== Connection::fixed_key()
+					? __( 'By sending events with this key, you agree to the EventWatch Terms of Service and Posting Guidelines.', 'eventwatch' )
+					: __( 'By saving a key, you agree to the EventWatch Terms of Service and Posting Guidelines.', 'eventwatch' )
+			),
+			esc_url( Connection_Admin::web_url( '/terms' ) ),
+			esc_html__( 'Terms of Service', 'eventwatch' ),
+			esc_url( Connection_Admin::web_url( '/post/guidelines' ) ),
+			esc_html__( 'Posting Guidelines', 'eventwatch' )
+		);
 	}
 
 	/**

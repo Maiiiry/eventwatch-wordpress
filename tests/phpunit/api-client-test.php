@@ -573,4 +573,45 @@ class Api_Client_Test extends WP_UnitTestCase {
 		delete_option( Connection::KEY_OPTION );
 		$this->assertSame( '', Connection::masked_key() );
 	}
+
+	/**
+	 * 誤りの本文の code を、語のときだけ data に渡す。ほかの本文は渡さない。
+	 */
+	public function test_error_data_carries_only_the_code_word() {
+		update_option( Connection::KEY_OPTION, 'ewk_0123456789012345678901234567890123456789012' );
+		Site_Identity::use_as_moved();
+		$bodies = array();
+		$answer = static function () use ( &$bodies ) {
+			return array(
+				'headers'  => array(),
+				'body'     => array_shift( $bodies ),
+				'response' => array( 'code' => 409 ),
+				'cookies'  => array(),
+				'filename' => null,
+			);
+		};
+		add_filter( 'pre_http_request', $answer, 1 );
+
+		$bodies = array(
+			'{"code":"eventDeleted","message":"secret text"}',
+			'{"code":"not a word <b>"}',
+			'{"message":"no code"}',
+		);
+
+		$deleted = ( new Api_Client() )->request( 'PUT', '/api/x', array( 'body' => array() ) );
+		$odd     = ( new Api_Client() )->request( 'PUT', '/api/x', array( 'body' => array() ) );
+		$none    = ( new Api_Client() )->request( 'PUT', '/api/x', array( 'body' => array() ) );
+
+		remove_filter( 'pre_http_request', $answer, 1 );
+
+		$this->assertSame(
+			array(
+				'status' => 409,
+				'code'   => 'eventDeleted',
+			),
+			$deleted->get_error_data()
+		);
+		$this->assertSame( array( 'status' => 409 ), $odd->get_error_data() );
+		$this->assertSame( array( 'status' => 409 ), $none->get_error_data() );
+	}
 }
