@@ -600,7 +600,7 @@ class Markdown_Blocks {
 	 * @return string
 	 */
 	private static function inline( $text ) {
-		$html   = '';
+		$parts  = array();
 		$length = strlen( $text );
 		$i      = 0;
 
@@ -610,40 +610,172 @@ class Markdown_Blocks {
 
 			if ( '\\' === $char ) {
 				if ( "\n" === $next ) {
-					$html .= '<br>';
-					$i    += 2;
+					$parts[] = '<br>';
+					$i      += 2;
 				} elseif ( '' !== $next && ctype_punct( $next ) ) {
-					$html .= esc_html( $next );
-					$i    += 2;
+					$parts[] = esc_html( $next );
+					$i      += 2;
 				} else {
-					$html .= '\\';
+					$parts[] = '\\';
 					++$i;
 				}
 				continue;
 			}
 
 			if ( "\n" === $char ) {
-				$html = (string) preg_replace( '/ +$/', '', $html ) . '<br>';
+				$last = count( $parts ) - 1;
+				if ( $last >= 0 && is_string( $parts[ $last ] ) ) {
+					$parts[ $last ] = rtrim( $parts[ $last ], ' ' );
+				}
+				$parts[] = '<br>';
 				++$i;
+				continue;
+			}
+
+			if ( ( '*' === $char || '_' === $char ) && preg_match( '/^(?:\*+|_+)/', substr( $text, $i ), $run ) ) {
+				$parts[] = self::delimiter( $text, $i, $run[0] );
+				$i      += strlen( $run[0] );
 				continue;
 			}
 
 			$matched = self::inline_at( $text, $i );
 			if ( null !== $matched ) {
-				$html .= $matched[0];
-				$i     = $matched[1];
+				$parts[] = $matched[0];
+				$i       = $matched[1];
 				continue;
 			}
 
 			// esc_html は不正な UTF-8 を空にするので、1 バイトずつ渡さない。記号の無い間をまとめて渡す。
-			if ( preg_match( '/^[^\\\\\n`!\[<&*_~]+/', substr( $text, $i ), $run ) ) {
-				$html .= esc_html( $run[0] );
-				$i    += strlen( $run[0] );
+			if ( preg_match( '/^[^\\\\\n`!\[<&*_~]+/', substr( $text, $i ), $plain ) ) {
+				$parts[] = esc_html( $plain[0] );
+				$i      += strlen( $plain[0] );
 				continue;
 			}
 
-			$html .= '&' === $char ? '&amp;' : esc_html( $char );
+			$parts[] = '&' === $char ? '&amp;' : esc_html( $char );
 			++$i;
+		}
+
+		return self::join_parts( self::match_delimiters( $parts ) );
+	}
+
+	/**
+	 * 強調の記号の連なりを、開けるか閉じられるかとともに読む。規則は CommonMark と同じ。
+	 *
+	 * 区切りの判定が EventWatch の表示とずれると、同じ本文の強調の範囲が変わる。
+	 *
+	 * @param string $text 文字列。
+	 * @param int    $i    位置。
+	 * @param string $run  記号の連なり。
+	 * @return array
+	 */
+	private static function delimiter( $text, $i, $run ) {
+		$prev = preg_match( '/.\z/su', substr( $text, 0, $i ), $before ) ? $before[0] : ' ';
+		$next = preg_match( '/\A./su', (string) substr( $text, $i + strlen( $run ) ), $after ) ? $after[0] : ' ';
+
+		$prev_space = (bool) preg_match( '/^[\s\p{Z}]$/u', $prev );
+		$next_space = (bool) preg_match( '/^[\s\p{Z}]$/u', $next );
+		$prev_punct = (bool) preg_match( '/^[\p{P}\p{S}]$/u', $prev );
+		$next_punct = (bool) preg_match( '/^[\p{P}\p{S}]$/u', $next );
+
+		$left  = ! $next_space && ( ! $next_punct || $prev_space || $prev_punct );
+		$right = ! $prev_space && ( ! $prev_punct || $next_space || $next_punct );
+
+		if ( '_' === $run[0] ) {
+			$can_open  = $left && ( ! $right || $prev_punct );
+			$can_close = $right && ( ! $left || $next_punct );
+		} else {
+			$can_open  = $left;
+			$can_close = $right;
+		}
+
+		return array(
+			'char'      => $run[0],
+			'length'    => strlen( $run ),
+			'count'     => strlen( $run ),
+			'can_open'  => $can_open,
+			'can_close' => $can_close,
+			'open'      => '',
+			'close'     => '',
+		);
+	}
+
+	/**
+	 * 閉じる記号から順に、一番近い開く記号と組にする。間に残った記号は文字にする。
+	 *
+	 * @param array $parts 文字列と記号の並び。
+	 * @return array
+	 */
+	private static function match_delimiters( array $parts ) {
+		foreach ( array_keys( $parts ) as $closer ) {
+			if ( ! is_array( $parts[ $closer ] ) || ! $parts[ $closer ]['can_close'] ) {
+				continue;
+			}
+
+			while ( $parts[ $closer ]['count'] > 0 ) {
+				$opener = self::find_opener( $parts, $closer );
+				if ( null === $opener ) {
+					break;
+				}
+
+				$use = $parts[ $opener ]['count'] >= 2 && $parts[ $closer ]['count'] >= 2 ? 2 : 1;
+				$tag = 2 === $use ? 'strong' : 'em';
+
+				$parts[ $opener ]['count'] -= $use;
+				$parts[ $closer ]['count'] -= $use;
+				$parts[ $opener ]['open']   = "<{$tag}>" . $parts[ $opener ]['open'];
+				$parts[ $closer ]['close'] .= "</{$tag}>";
+
+				for ( $k = $opener + 1; $k < $closer; ++$k ) {
+					if ( is_array( $parts[ $k ] ) ) {
+						$parts[ $k ]['can_open']  = false;
+						$parts[ $k ]['can_close'] = false;
+					}
+				}
+			}
+		}
+
+		return $parts;
+	}
+
+	/**
+	 * 閉じる記号と組になる、一番近い開く記号。
+	 *
+	 * @param array $parts  文字列と記号の並び。
+	 * @param int   $closer 閉じる記号の位置。
+	 * @return int|null
+	 */
+	private static function find_opener( array $parts, $closer ) {
+		$close = $parts[ $closer ];
+
+		for ( $k = $closer - 1; $k >= 0; --$k ) {
+			$open = $parts[ $k ];
+			if ( ! is_array( $open ) || $open['char'] !== $close['char'] || 0 === $open['count'] || ! $open['can_open'] ) {
+				continue;
+			}
+
+			// CommonMark の 3 の倍数の規則。どちらかが開閉の両方になれるときの組み方を決める。
+			$both = $open['can_close'] || $close['can_open'];
+			if ( $both && 0 === ( $open['length'] + $close['length'] ) % 3 && ( 0 !== $open['length'] % 3 || 0 !== $close['length'] % 3 ) ) {
+				continue;
+			}
+
+			return $k;
+		}
+
+		return null;
+	}
+
+	/**
+	 * 文字列と記号の並びをつなぐ。組にならなかった記号は文字として残す。
+	 *
+	 * @param array $parts 文字列と記号の並び。
+	 * @return string
+	 */
+	private static function join_parts( array $parts ) {
+		$html = '';
+		foreach ( $parts as $part ) {
+			$html .= is_string( $part ) ? $part : $part['close'] . str_repeat( $part['char'], $part['count'] ) . $part['open'];
 		}
 
 		return $html;
@@ -673,8 +805,9 @@ class Markdown_Blocks {
 			return array( $tag, $i + strlen( $image[0] ) );
 		}
 
-		if ( '[' === $char && preg_match( '/^\[((?:[^\[\]\\\\]|\\\\.|!\[[^\]]*\]\([^)]*\))*)\]\(\s*<?((?:[^()\s>]|\([^()\s]*\))*)>?(?:\s+"[^"]*")?\s*\)/', $rest, $link ) ) {
-			return array( '<a href="' . esc_url( $link[2] ) . '">' . self::inline( $link[1] ) . '</a>', $i + strlen( $link[0] ) );
+		if ( '[' === $char && preg_match( '/^\[((?:[^\[\]\\\\]|\\\\.|!\[[^\]]*\]\([^)]*\))*)\]\(\s*(?:<([^<>\s]*)>|((?:[^()\s<>]|\([^()\s]*\))*))(?:\s+"[^"]*")?\s*\)/', $rest, $link ) ) {
+			$url = '' !== $link[2] ? $link[2] : ( isset( $link[3] ) ? $link[3] : '' );
+			return array( '<a href="' . esc_url( $url ) . '">' . self::inline( $link[1] ) . '</a>', $i + strlen( $link[0] ) );
 		}
 
 		if ( '<' === $char && preg_match( '/^<((?:https?:\/\/|mailto:)[^\s<>]+)>/i', $rest, $auto ) ) {
@@ -685,57 +818,32 @@ class Markdown_Blocks {
 			return array( esc_html( html_entity_decode( $entity[0], ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ), $i + strlen( $entity[0] ) );
 		}
 
-		foreach ( array(
-			'***' => 'em><strong',
-			'**'  => 'strong',
-			'__'  => 'strong',
-			'~~'  => 'del',
-			'*'   => 'em',
-			'_'   => 'em',
-		) as $mark => $tag ) {
-			$matched = self::emphasis( $text, $i, $mark, $tag );
-			if ( null !== $matched ) {
-				return $matched;
-			}
-		}
-
-		return null;
+		return self::strikethrough( $text, $i );
 	}
 
 	/**
-	 * 強調を読む。記号の内側に空白があるものと、単語の中の `_` は強調にしない。
+	 * 打ち消しを読む。記号の内側に空白があるものは打ち消しにしない。
 	 *
 	 * @param string $text 文字列。
 	 * @param int    $i    位置。
-	 * @param string $mark 記号。
-	 * @param string $tag  要素。
 	 * @return array{0: string, 1: int}|null
 	 */
-	private static function emphasis( $text, $i, $mark, $tag ) {
-		$width = strlen( $mark );
-		if ( substr( $text, $i, $width ) !== $mark ) {
+	private static function strikethrough( $text, $i ) {
+		if ( '~~' !== substr( $text, $i, 2 ) ) {
 			return null;
 		}
 
-		$after = substr( $text, $i + $width, 1 );
-		if ( '' === $after || ctype_space( $after ) || $after === $mark[0] ) {
-			return null;
-		}
-		if ( '_' === $mark[0] && $i > 0 && ctype_alnum( $text[ $i - 1 ] ) ) {
+		$after = substr( $text, $i + 2, 1 );
+		if ( '' === $after || ctype_space( $after ) || '~' === $after ) {
 			return null;
 		}
 
-		$from = $i + $width;
-		while ( false !== ( $end = strpos( $text, $mark, $from ) ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition,Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- 次の閉じる記号を順に探す。
-			$escaped = '\\' === $text[ $end - 1 ];
-			$spaced  = ctype_space( $text[ $end - 1 ] );
-			$longer  = substr( $text, $end + $width, 1 ) === $mark[0] && $width < 3;
-			$inword  = '_' === $mark[0] && ctype_alnum( substr( $text, $end + $width, 1 ) );
-
-			if ( ! $escaped && ! $spaced && ! $longer && ! $inword ) {
-				return array( "<{$tag}>" . self::inline( substr( $text, $i + $width, $end - $i - $width ) ) . '</' . implode( '></', array_reverse( explode( '><', $tag ) ) ) . '>', $end + $width );
+		$from = $i + 2;
+		while ( false !== ( $end = strpos( $text, '~~', $from ) ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition,Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- 次の閉じる記号を順に探す。
+			if ( '\\' !== $text[ $end - 1 ] && ! ctype_space( $text[ $end - 1 ] ) ) {
+				return array( '<del>' . self::inline( substr( $text, $i + 2, $end - $i - 2 ) ) . '</del>', $end + 2 );
 			}
-			$from = $end + $width;
+			$from = $end + 2;
 		}
 
 		return null;

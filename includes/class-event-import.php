@@ -163,17 +163,8 @@ class Event_Import {
 				'post_status'    => self::LIVE_STATUSES,
 				'posts_per_page' => 100,
 				'fields'         => 'ids',
-				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- 取り込みの画面を開いたときだけ引く。
-				'meta_query'     => array(
-					array(
-						'key'     => Sync_Queue::IMPORT_SOURCE,
-						'compare' => 'EXISTS',
-					),
-					array(
-						'key'     => Sync_Queue::EXISTS,
-						'compare' => 'NOT EXISTS',
-					),
-				),
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- 取り込みの画面を開いたときだけ引く。
+				'meta_key'       => Sync_Queue::IMPORT_ORIGINAL,
 			)
 		);
 
@@ -289,7 +280,8 @@ class Event_Import {
 	 */
 	private static function import_one( $event_id ) {
 		$local = self::find_local( $event_id );
-		if ( $local && get_post_meta( $local, Sync_Queue::EXISTS, true ) ) {
+		// 控えが残っている間は結び付いていない。「送らない」を切って公開すると、結び付かないまま EXISTS が立つ。
+		if ( $local && ! get_post_meta( $local, Sync_Queue::IMPORT_ORIGINAL, true ) ) {
 			return self::imported( $event_id, $local );
 		}
 
@@ -535,13 +527,15 @@ class Event_Import {
 			'content'   => '',
 			'thumbnail' => 0,
 		);
-		$touched   = 'draft' !== get_post_status( $post_id ) || self::content_digest( $post_id ) !== $original['content'];
+		$is_draft  = 'draft' === get_post_status( $post_id );
 		$thumbnail = (int) get_post_thumbnail_id( $post_id );
+		$touched   = ! $is_draft || $thumbnail !== (int) $original['thumbnail'] || self::content_digest( $post_id ) !== $original['content'];
 
 		Sync_Queue::without_marking(
-			static function () use ( $post_id, $event ) {
+			static function () use ( $post_id, $event, $is_draft ) {
 				delete_post_meta( $post_id, Sync_Queue::NO_SEND );
-				if ( ! empty( $event['visible'] ) ) {
+				// オーナーが選んだ状態は変えない。
+				if ( $is_draft && ! empty( $event['visible'] ) ) {
 					wp_update_post(
 						array(
 							'ID'          => $post_id,
@@ -591,9 +585,10 @@ class Event_Import {
 				self::STATUS_STOP,
 				$event_id,
 				array(
-					'title'  => self::local_title( $event_id, $post_id ),
-					'postId' => (int) $post_id,
-					'reason' => self::stop_reason( $error->get_error_code() ),
+					'title'   => self::local_title( $event_id, $post_id ),
+					'postId'  => (int) $post_id,
+					'editUrl' => self::edit_url( $post_id ),
+					'reason'  => self::stop_reason( $error->get_error_code() ),
 				)
 			);
 		}

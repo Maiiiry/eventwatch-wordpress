@@ -396,6 +396,21 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public static function forget_all() {
+		// 結び付く前の下書きの「送らない」は、取り込みが立てた印で利用者の選択ではない。
+		$unlinked = get_posts(
+			array(
+				'post_type'      => Post_Type::POST_TYPE,
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- 複製の選択でだけ引く。
+				'meta_key'       => self::IMPORT_ORIGINAL,
+			)
+		);
+		foreach ( $unlinked as $post_id ) {
+			delete_post_meta( $post_id, self::NO_SEND );
+		}
+
 		foreach ( self::meta_keys() as $key ) {
 			delete_post_meta_by_key( $key );
 		}
@@ -901,6 +916,7 @@ class Sync_Queue {
 		// 作り直す投稿は本文の画像を参照していないので、宛先を送ると断られる。取り込みのやり直しの対象でもなくなる。
 		delete_post_meta( $post_id, self::IMPORT_SOURCE );
 		delete_post_meta( $post_id, self::IMPORT_IMAGES );
+		delete_post_meta( $post_id, self::IMPORT_ORIGINAL );
 		// 取り下げる先が無いので、投入画像も回収される。取り込みの 404 は別の団体のキーでも起きるので、ここだけで消す。
 		Sync_Image::forget( $post_id );
 		self::clear_remote( $post_id );

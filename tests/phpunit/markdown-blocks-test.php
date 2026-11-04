@@ -94,6 +94,12 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 			'空白の前の *'     => array( '2 * 3 * 4', '2 * 3 * 4' ),
 			'閉じない記号'      => array( '**a', '**a' ),
 			'日本語の中の太字'    => array( 'これは**大事**です', 'これは<strong>大事</strong>です' ),
+			'太字の中の強調'     => array( '**a *b***', '<strong>a <em>b</em></strong>' ),
+			'強調の中の太字'     => array( '*a **b***', '<em>a <strong>b</strong></em>' ),
+			'先頭の太字の強調'    => array( '***a** b*', '<em><strong>a</strong> b</em>' ),
+			'先頭の強調の太字'    => array( '***a* b**', '<strong><em>a</em> b</strong>' ),
+			'余った星'        => array( '**a***', '<strong>a</strong>*' ),
+			'句読点で閉じない太字'  => array( '**「重要」**です', '**「重要」**です' ),
 			'太字の強調'       => array( '***a***', '<em><strong>a</strong></em>' ),
 			'単語の中で閉じない _' => array( '_foo_bar_', '<em>foo_bar</em>' ),
 			'単語の中で開かない _' => array( 'a_b_ c', 'a_b_ c' ),
@@ -143,6 +149,10 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 			'打ち消した記号'   => array( '\\*\\*太字にしない\\*\\*' ),
 			'文字の &'     => array( 'A & B' ),
 			'タスクリストは文字' => array( "- [ ] a\n- [x] b", "- \\[ \\] a\n- \\[x\\] b" ),
+			'太字の中の強調'   => array( '**a *b***' ),
+			'強調の中の太字'   => array( '*a **b***' ),
+			'先頭の太字の強調'  => array( '***a** b*' ),
+			'先頭の強調の太字'  => array( '***a* b**' ),
 			'太字の強調'     => array( '***a***' ),
 			'コードの文字参照'  => array( "```\n&lt;div&gt; &amp; x\n```" ),
 			'行の中の文字参照'  => array( '`&amp;` です' ),
@@ -223,6 +233,30 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 		$url = 'https://cdn.example.com/a.jpg';
 		$this->assertSame( array( $url ), Markdown_Blocks::image_urls( "![説明 [x]]({$url})" ) );
 		$this->assertSame( array( $url ), Markdown_Blocks::image_urls( "前 ![説明 [x]]({$url})" ) );
+	}
+
+	/**
+	 * 整形済みの中のコメントを送らない。
+	 */
+	public function test_preformatted_skips_comments() {
+		$this->assertSame( "```\nab\ncd\n```", Markdown_Converter::from_html( '<pre>a<!-- secret -->b<br>c<span>d</span></pre>' ) );
+	}
+
+	/**
+	 * セルの中にブロックの記号を出さない。
+	 */
+	public function test_table_cell_has_no_block_marks() {
+		$html = '<table><tr><td><h2>H</h2></td><td><ul><li>a</li><li>b</li></ul></td><td><blockquote>q</blockquote></td></tr></table>';
+
+		$this->assertSame( "| H | a b | q |\n| --- | --- | --- |", Markdown_Converter::from_html( $html ) );
+	}
+
+	/**
+	 * 山括弧が揃わないリンクの宛先もリンクにしない。
+	 */
+	public function test_unpaired_angle_is_not_link() {
+		$this->assertStringNotContainsString( '<a ', Markdown_Blocks::from_markdown( '[a](<https://evil.example/)' ) );
+		$this->assertStringContainsString( 'href="https://example.com/"', Markdown_Blocks::from_markdown( '[a](<https://example.com/>)' ) );
 	}
 
 	/**

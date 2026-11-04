@@ -108,8 +108,7 @@ class Import_Admin {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- 表のページ送りで読むだけ。
-		$paged  = isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1;
-		$listed = Event_Import::list_page( $paged - 1 );
+		$listed = self::read_list( isset( $_GET['paged'] ) ? max( 1, absint( $_GET['paged'] ) ) : 1 );
 		?>
 		<div class="wrap">
 			<h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
@@ -130,6 +129,22 @@ class Import_Admin {
 			<noscript><div class="notice notice-warning inline"><p><?php esc_html_e( 'Importing needs JavaScript. Turn it on, then reload this page.', 'eventwatch' ); ?></p></div></noscript>
 		</div>
 		<?php
+	}
+
+	/**
+	 * 表の一覧を読む。取り込むと投稿が減るので、ページが無くなっていたら最後のページを読み直す。
+	 *
+	 * @param int $paged 1 から数えたページ。
+	 * @return array{list: array, total: int}|WP_Error
+	 */
+	public static function read_list( $paged ) {
+		$listed = Event_Import::list_page( $paged - 1 );
+
+		if ( ! is_wp_error( $listed ) && ! $listed['list'] && $listed['total'] > 0 && $paged > 1 ) {
+			return Event_Import::list_page( (int) ceil( $listed['total'] / Event_Import::PAGE_SIZE ) - 1 );
+		}
+
+		return $listed;
 	}
 
 	/**

@@ -329,7 +329,7 @@ function App( { unlinked, canImport } ) {
 			} ) )
 		);
 
-		const { stopReason: reason } = await runImport( {
+		await runImport( {
 			ids,
 			sleep,
 			shouldStop: () => stopRef.current,
@@ -353,7 +353,7 @@ function App( { unlinked, canImport } ) {
 						rows.filter( ( row ) => row.eventId !== id )
 					);
 					updateRow( result );
-				} else if ( 'failed' === state ) {
+				} else if ( 'failed' === state || 'stop' === state ) {
 					updateRow( result );
 					setFailed( ( rows ) => [
 						...rows.filter( ( row ) => row.eventId !== id ),
@@ -363,7 +363,6 @@ function App( { unlinked, canImport } ) {
 			},
 		} );
 
-		setStopReason( reason );
 		finish();
 	};
 

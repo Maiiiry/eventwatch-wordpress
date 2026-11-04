@@ -1055,6 +1055,121 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 結び付く前にアイキャッチ画像を外していたら、外した内容を送る。
+	 */
+	public function test_removed_thumbnail_is_sent_after_retry() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		delete_post_thumbnail( $first['postId'] );
+
+		$this->link_answer = null;
+		$this->api         = array();
+		Event_Import::run( self::ID );
+		Sync_Queue::run();
+
+		$puts = array_values( array_filter( $this->api, static fn( $r ) => 'PUT' === $r[0] ) );
+		$this->assertCount( 1, $puts );
+		$this->assertArrayNotHasKey( 'imageUploadId', $puts[0][2] );
+	}
+
+	/**
+	 * オーナーが選んだ状態をやり直しで変えない。
+	 */
+	public function test_retry_keeps_chosen_status() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		wp_update_post(
+			array(
+				'ID'          => $first['postId'],
+				'post_status' => 'private',
+			)
+		);
+
+		$this->link_answer = null;
+		$this->assertSame( 'imported', Event_Import::run( self::ID )['status'] );
+
+		$this->assertSame( 'private', get_post_status( $first['postId'] ) );
+	}
+
+	/**
+	 * 「送らない」を切って公開した下書きは、結び付いたことにしない。
+	 */
+	public function test_toggled_draft_is_not_reported_as_imported() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		delete_post_meta( $first['postId'], Sync_Queue::NO_SEND );
+		wp_update_post(
+			array(
+				'ID'          => $first['postId'],
+				'post_status' => 'publish',
+			)
+		);
+		Sync_Queue::run();
+		$this->assertSame( '1', get_post_meta( $first['postId'], Sync_Queue::EXISTS, true ) );
+
+		$this->link_answer = $this->http( 409, array( 'code' => 'externalIdentifierInUse' ) );
+		$result            = Event_Import::run( self::ID );
+
+		$this->assertSame( 'failed', $result['status'] );
+		$this->assertSame( $first['postId'], $result['postId'] );
+		$this->assertSame( self::ID, Event_Import::unlinked_drafts()[0]['id'] );
+	}
+
+	/**
+	 * 複製の選択で、結び付く前の下書きの「送らない」を残さない。利用者が選んだものは残す。
+	 */
+	public function test_forget_all_clears_import_no_send_only() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		$chosen            = self::factory()->post->create( array( 'post_type' => Post_Type::POST_TYPE ) );
+		update_post_meta( $chosen, Sync_Queue::NO_SEND, 1 );
+
+		Sync_Queue::forget_all();
+
+		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Queue::NO_SEND, true ) );
+		$this->assertSame( '1', get_post_meta( $chosen, Sync_Queue::NO_SEND, true ) );
+	}
+
+	/**
+	 * 最後のページを取り込み終えたら、前のページを読む。
+	 */
+	public function test_read_list_falls_back_to_last_page() {
+		$pages = array();
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$pages ) {
+				if ( false === strpos( $url, '/org-api/events' ) ) {
+					return $pre;
+				}
+				preg_match( '/page=(\d+)/', $url, $page );
+				$pages[] = (int) $page[1];
+				return $this->http(
+					200,
+					array(
+						'list'  => 0 === (int) $page[1] ? array( $this->event() ) : array(),
+						'total' => 20,
+					)
+				);
+			},
+			5,
+			3
+		);
+
+		$listed = Import_Admin::read_list( 2 );
+
+		$this->assertSame( array( 1, 0 ), $pages );
+		$this->assertCount( 1, $listed['list'] );
+	}
+
+	/**
+	 * 本当に空なら読み直さない。
+	 */
+	public function test_read_list_empty() {
+		$this->assertSame( array(), Import_Admin::read_list( 1 )['list'] );
+		$this->assertCount( 1, $this->api );
+	}
+
+	/**
 	 * 手を入れずにやり直したら送らない。
 	 */
 	public function test_untouched_retry_sends_nothing() {

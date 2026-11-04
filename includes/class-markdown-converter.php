@@ -10,6 +10,7 @@ namespace EventWatch;
 use DOMDocument;
 use DOMElement;
 use DOMNode;
+use DOMText;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -262,10 +263,10 @@ class Markdown_Converter {
 		foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
 			if ( 'br' === strtolower( $child->nodeName ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
 				$text .= "\n";
-			} elseif ( $child->hasChildNodes() ) {
-				$text .= self::preformatted_text( $child );
-			} else {
+			} elseif ( $child instanceof DOMText ) {
 				$text .= (string) $child->nodeValue; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			} elseif ( $child instanceof DOMElement ) {
+				$text .= self::preformatted_text( $child );
 			}
 		}
 
@@ -325,12 +326,27 @@ class Markdown_Converter {
 		$cells = array();
 		foreach ( $row->childNodes as $cell ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
 			if ( in_array( strtolower( $cell->nodeName ), array( 'td', 'th' ), true ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
-				$text    = trim( (string) preg_replace( '/ *\n */', ' ', implode( ' ', self::blocks( $cell ) ) ) );
+				$text    = trim( (string) preg_replace( '/ *\n */', ' ', self::escape_inline_block( self::cell_text( $cell ) ) ) );
 				$cells[] = str_replace( '|', '\\|', $text );
 			}
 		}
 
 		return $cells;
+	}
+
+	/**
+	 * セルの中の文字。表の中では行の中の記法しか効かないので、ブロックの記号を付けずに空白でつなぐ。
+	 *
+	 * @param DOMNode $node 親。
+	 * @return string
+	 */
+	private static function cell_text( DOMNode $node ) {
+		$text = '';
+		foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			$text = self::is_block( $child ) ? trim( rtrim( $text ) . ' ' . self::cell_text( $child ) ) . ' ' : self::append_inline( $text, $child );
+		}
+
+		return $text;
 	}
 
 	/**
