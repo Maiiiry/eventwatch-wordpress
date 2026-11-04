@@ -1337,8 +1337,8 @@ msgid "Send all to EventWatch"
 msgstr "EventWatch へまとめて送る"
 
 #: includes/class-settings.php:540
-msgid "Each event goes to review on EventWatch. Events are sent a few dozen at a time, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included."
-msgstr "どのイベントも EventWatch の審査に並びます。数十件ずつ送るので、時間がかかることがあります。「送らない」にしたイベント、終了したイベント、必要な項目が足りないイベントは含みません。"
+msgid "Each event goes to review on EventWatch. Events are sent a few dozen at a time with WP-Cron, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included."
+msgstr "どのイベントも EventWatch の審査に並びます。WP-Cron で数十件ずつ送るので、時間がかかることがあります。「送らない」にしたイベント、終了したイベント、必要な項目が足りないイベントは含みません。"
 
 #: includes/class-connection-admin.php:132
 msgid "Events can’t be sent right now. Check the connection status on this page."

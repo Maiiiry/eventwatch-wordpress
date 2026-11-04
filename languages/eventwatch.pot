@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-04T15:04:47+00:00\n"
+"POT-Creation-Date: 2026-11-04T15:28:30+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -1053,7 +1053,7 @@ msgid "Send all to EventWatch"
 msgstr ""
 
 #: includes/class-settings.php:540
-msgid "Each event goes to review on EventWatch. Events are sent a few dozen at a time, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included."
+msgid "Each event goes to review on EventWatch. Events are sent a few dozen at a time with WP-Cron, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included."
 msgstr ""
 
 #: includes/class-settings.php:554

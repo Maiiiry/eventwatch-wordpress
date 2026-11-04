@@ -537,7 +537,7 @@ class Settings {
 		);
 		printf(
 			'<p class="description">%s</p>',
-			esc_html__( 'Each event goes to review on EventWatch. Events are sent a few dozen at a time, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included.', 'eventwatch' )
+			esc_html__( 'Each event goes to review on EventWatch. Events are sent a few dozen at a time with WP-Cron, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included.', 'eventwatch' )
 		);
 	}
 
