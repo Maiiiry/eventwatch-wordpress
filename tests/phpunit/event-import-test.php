@@ -114,7 +114,7 @@ class Event_Import_Test extends WP_UnitTestCase {
 	 * @return array|\WP_Error
 	 */
 	public function answer_request( $pre, $args, $url ) {
-		if ( is_wp_error( $pre ) ) {
+		if ( false !== $pre ) {
 			return $pre;
 		}
 
@@ -1002,6 +1002,101 @@ class Event_Import_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $puts );
 		$this->assertSame( '直した', $puts[0][2]['description'] );
 		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Queue::NO_SEND, true ) );
+	}
+
+	/**
+	 * 結び付く前に公開しただけの下書きも、やり直しの後に提出する。
+	 */
+	public function test_published_draft_is_sent_after_retry() {
+		$draft             = array(
+			'status'  => 'draft',
+			'visible' => false,
+		);
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event( $draft ) );
+		wp_update_post(
+			array(
+				'ID'          => $first['postId'],
+				'post_status' => 'publish',
+			)
+		);
+
+		$this->link_answer = null;
+		$this->listed      = array( $this->event( $draft ) );
+		$this->api         = array();
+		Event_Import::run( self::ID );
+		Sync_Queue::run();
+
+		$this->assertCount( 1, array_filter( $this->api, static fn( $r ) => 'PUT' === $r[0] ) );
+		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Queue::IMPORT_ORIGINAL, true ) );
+	}
+
+	/**
+	 * 掲載中の投稿の下書きに手を入れていたら、公開したときに直した内容を送る。
+	 */
+	public function test_edited_listed_draft_is_sent_after_retry() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		wp_update_post(
+			array(
+				'ID'           => $first['postId'],
+				'post_content' => '<!-- wp:paragraph --><p>直した</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$this->link_answer = null;
+		$this->api         = array();
+		Event_Import::run( self::ID );
+		Sync_Queue::run();
+
+		$puts = array_values( array_filter( $this->api, static fn( $r ) => 'PUT' === $r[0] ) );
+		$this->assertCount( 1, $puts );
+		$this->assertSame( '直した', $puts[0][2]['description'] );
+	}
+
+	/**
+	 * 手を入れずにやり直したら送らない。
+	 */
+	public function test_untouched_retry_sends_nothing() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+
+		$this->link_answer = null;
+		$this->api         = array();
+		Event_Import::run( self::ID );
+		Sync_Queue::run();
+
+		$this->assertCount( 1, $this->api );
+		$this->assertStringEndsWith( '/link', $this->api[0][1] );
+		$this->assertSame( 'publish', get_post_status( $first['postId'] ) );
+	}
+
+	/**
+	 * 一覧を読めないときの動きを、失敗の種類で分ける。
+	 */
+	public function test_rest_prepare_errors() {
+		$cases = array(
+			array( 401, 'stop' ),
+			array( 500, 'failed' ),
+			array( 400, 'failed' ),
+		);
+		add_filter(
+			'pre_http_request',
+			function ( $pre, $args, $url ) use ( &$cases ) {
+				return false !== strpos( $url, '/org-api/events' ) ? $this->http( $cases[0][0] ) : $pre;
+			},
+			5,
+			3
+		);
+
+		while ( $cases ) {
+			$request = new WP_REST_Request( WP_REST_Server::CREATABLE, '/eventwatch/v1/import/prepare' );
+			$request->set_body_params( array( 'eventIds' => array( self::ID ) ) );
+			$data = rest_do_request( $request )->get_data();
+			$this->assertSame( $cases[0][1], $data['status'], (string) $cases[0][0] );
+			$this->assertNotEmpty( $data['reason'] );
+			array_shift( $cases );
+		}
 	}
 
 	/**

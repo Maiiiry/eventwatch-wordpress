@@ -402,6 +402,7 @@ class Event_Import {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
+		// 管理者は HTML も上げられるので、画像の拡張子に絞る。中身が拡張子と合わなければ本体が断る。
 		$name = sanitize_file_name( basename( (string) wp_parse_url( $url, PHP_URL_PATH ) ) );
 		if ( ! wp_check_filetype( $name, self::IMAGE_TYPES )['type'] ) {
 			return new WP_Error( 'eventwatch_import_not_image', 'The address is not an image.' );
@@ -410,12 +411,6 @@ class Event_Import {
 		$file = download_url( $url, self::IMAGE_TIMEOUT );
 		if ( is_wp_error( $file ) ) {
 			return $file;
-		}
-
-		// 管理者は HTML も上げられるので、中身と拡張子を確かめてからアップロードの場所へ移す。
-		if ( ! in_array( wp_get_image_mime( $file ), self::IMAGE_TYPES, true ) ) {
-			wp_delete_file( $file );
-			return new WP_Error( 'eventwatch_import_not_image', 'The file is not an image.' );
 		}
 
 		$attachment = media_handle_sideload(
