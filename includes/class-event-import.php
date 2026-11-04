@@ -557,7 +557,7 @@ class Event_Import {
 		Sync_Queue::record_linked( $post_id, $event );
 		delete_post_meta( $post_id, Sync_Queue::IMPORT_ORIGINAL );
 
-		// やり直しの前にオーナーが手を入れた内容は EventWatch に届いていない。公開と非公開の選択は送る。下書きのままなら審査から外さない。
+		// やり直しの前にオーナーが手を入れた内容は EventWatch に届いていない。オーナーが選んだ状態は送る。下書きのままなら審査から外さない。
 		if ( $touched && ( ! $is_draft || ! empty( $event['visible'] ) ) ) {
 			delete_post_meta( $post_id, Sync_Queue::HASH );
 			Sync_Queue::mark( $post_id );

@@ -281,6 +281,17 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * リンクの中にリンクを作らない。内側のリンクが勝つ。
+	 */
+	public function test_nested_link_keeps_inner() {
+		$html = Markdown_Blocks::from_markdown( '[see [a](https://example.com/in) now](https://example.com/out)' );
+
+		$this->assertSame( 1, substr_count( $html, '<a ' ) );
+		$this->assertStringContainsString( 'href="https://example.com/in"', $html );
+		$this->assertStringContainsString( '<a href="https://example.com/x"><img', Markdown_Blocks::from_markdown( '[![a](https://cdn.example.com/a.jpg)](https://example.com/x)', array( 'https://cdn.example.com/a.jpg' => self::factory()->attachment->create( array( 'file' => 'a.jpg' ) ) ) ) );
+	}
+
+	/**
 	 * 山括弧が揃わないリンクの宛先もリンクにしない。
 	 */
 	public function test_unpaired_angle_is_not_link() {
