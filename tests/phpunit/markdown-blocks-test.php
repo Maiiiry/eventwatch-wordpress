@@ -94,6 +94,12 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 			'空白の前の *'     => array( '2 * 3 * 4', '2 * 3 * 4' ),
 			'閉じない記号'      => array( '**a', '**a' ),
 			'日本語の中の太字'    => array( 'これは**大事**です', 'これは<strong>大事</strong>です' ),
+			'太字の強調'       => array( '***a***', '<em><strong>a</strong></em>' ),
+			'単語の中で閉じない _' => array( '_foo_bar_', '<em>foo_bar</em>' ),
+			'単語の中で開かない _' => array( 'a_b_ c', 'a_b_ c' ),
+			'閉じない _'      => array( '_private_name です', '_private_name です' ),
+			'コードの文字参照'    => array( '`&amp;`', '<code>&amp;amp;</code>' ),
+			'角括弧'         => array( '\\[a]', '&#91;a]' ),
 		);
 	}
 
@@ -137,6 +143,11 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 			'打ち消した記号'   => array( '\\*\\*太字にしない\\*\\*' ),
 			'文字の &'     => array( 'A & B' ),
 			'タスクリストは文字' => array( "- [ ] a\n- [x] b", "- \\[ \\] a\n- \\[x\\] b" ),
+			'太字の強調'     => array( '***a***' ),
+			'コードの文字参照'  => array( "```\n&lt;div&gt; &amp; x\n```" ),
+			'行の中の文字参照'  => array( '`&amp;` です' ),
+			'コードの中の画像'  => array( '`![a](b)` です' ),
+			'見出しだけの表'   => array( "| a | b |\n| --- | --- |" ),
 		);
 	}
 
@@ -166,6 +177,61 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 		$twice = Markdown_Converter::from_post_content( Markdown_Blocks::from_markdown( $once ) );
 
 		$this->assertSame( $once, $twice );
+	}
+
+	/**
+	 * リストの項目の中の引用と表の文字を失わない。
+	 */
+	public function test_list_item_keeps_nested_text() {
+		$sent = Markdown_Converter::from_post_content( Markdown_Blocks::from_markdown( "- a\n\n  > 引用\n\n  | x | y |\n  | --- | --- |\n  | 1 | 2 |\n- > 先頭" ) );
+
+		foreach ( array( '引用', 'x / y', '1 / 2', '先頭' ) as $text ) {
+			$this->assertStringContainsString( $text, $sent );
+		}
+	}
+
+	/**
+	 * 見出しだけの表に、本体が出さない空の区画を出さない。
+	 */
+	public function test_table_without_rows_has_no_body() {
+		$this->assertStringNotContainsString( '<tbody', Markdown_Blocks::from_markdown( "| a |\n| --- |" ) );
+	}
+
+	/**
+	 * 整形済みの br は改行。
+	 */
+	public function test_preformatted_br_is_newline() {
+		$this->assertSame( "```\na\nb\n```", Markdown_Converter::from_html( '<pre>a<br>b</pre>' ) );
+	}
+
+	/**
+	 * 表のセルの中のブロックが混ざらない。入れ子の表の行を外の行に数えない。
+	 */
+	public function test_table_cells_with_blocks() {
+		$this->assertSame(
+			"題\n\n| a b | x y |\n| --- | --- |\n| 1 | c |",
+			Markdown_Converter::from_html( '<table><caption>題</caption><tr><td><p>a</p><p>b</p></td><td><p>x</p><p>y</p></td></tr><tr><td>1</td><td>c</td></tr></table>' )
+		);
+		$this->assertStringStartsWith( '| ', Markdown_Converter::from_html( '<table><tr><td><table><tr><td>in</td></tr></table></td></tr></table>' ) );
+		$this->assertSame( 2, count( explode( "\n", Markdown_Converter::from_html( '<table><tr><td>a<table><tr><td>in</td></tr></table></td></tr></table>' ) ) ) );
+	}
+
+	/**
+	 * 説明に角括弧があっても画像として読む。
+	 */
+	public function test_image_alt_with_brackets() {
+		$url = 'https://cdn.example.com/a.jpg';
+		$this->assertSame( array( $url ), Markdown_Blocks::image_urls( "![説明 [x]]({$url})" ) );
+		$this->assertSame( array( $url ), Markdown_Blocks::image_urls( "前 ![説明 [x]]({$url})" ) );
+	}
+
+	/**
+	 * 山括弧が揃わない形は EventWatch では文字なので、画像として読まない。
+	 */
+	public function test_unpaired_angle_is_not_image() {
+		$this->assertSame( array(), Markdown_Blocks::image_urls( '前 ![a](<https://evil.example/a.jpg)' ) );
+		$this->assertSame( array(), Markdown_Blocks::image_urls( '![a](<https://evil.example/a.jpg)' ) );
+		$this->assertSame( array( 'https://cdn.example.com/a.jpg' ), Markdown_Blocks::image_urls( '前 ![a](<https://cdn.example.com/a.jpg>)' ) );
 	}
 
 	/**

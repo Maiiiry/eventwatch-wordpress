@@ -54,7 +54,8 @@ class Markdown_Blocks {
 
 		self::$images = array();
 
-		return implode( "\n\n", $blocks );
+		// 本文の文字をショートコードとして動かさない。書いた人はサイトの権限を持つとは限らない。ブロックの属性に [ は出さない。
+		return str_replace( '[', '&#91;', implode( "\n\n", $blocks ) );
 	}
 
 	/**
@@ -434,7 +435,7 @@ class Markdown_Blocks {
 			case 'separator':
 				return "<!-- wp:separator -->\n<hr class=\"wp-block-separator has-alpha-channel-opacity\"/>\n<!-- /wp:separator -->";
 			case 'code':
-				return "<!-- wp:code -->\n<pre class=\"wp-block-code\"><code>" . esc_html( $node['text'] ) . "</code></pre>\n<!-- /wp:code -->";
+				return "<!-- wp:code -->\n<pre class=\"wp-block-code\"><code>" . self::code_html( $node['text'] ) . "</code></pre>\n<!-- /wp:code -->";
 			case 'quote':
 				return "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\">" . implode( "\n\n", self::render( $node['children'] ) ) . "</blockquote>\n<!-- /wp:quote -->";
 			case 'list':
@@ -466,7 +467,7 @@ class Markdown_Blocks {
 	 * @return string
 	 */
 	private static function paragraph( $text ) {
-		if ( preg_match( '/^!\[([^\]]*)\]\(([^()\s]+)\)$/', trim( $text ), $image ) ) {
+		if ( preg_match( '/^!\[((?:[^\[\]]|\[[^\]]*\])*)\]\(([^()\s<>]+)\)$/', trim( $text ), $image ) ) {
 			self::$found[] = $image[2];
 			if ( isset( self::$images[ $image[2] ] ) ) {
 				$id = (int) self::$images[ $image[2] ];
@@ -475,6 +476,16 @@ class Markdown_Blocks {
 		}
 
 		return "<!-- wp:paragraph -->\n<p>" . self::inline( $text ) . "</p>\n<!-- /wp:paragraph -->";
+	}
+
+	/**
+	 * コードの文字。文字参照に見える形も文字のまま残す。
+	 *
+	 * @param string $code コード。
+	 * @return string
+	 */
+	private static function code_html( $code ) {
+		return htmlspecialchars( $code, ENT_QUOTES, 'UTF-8', true );
 	}
 
 	/**
@@ -516,12 +527,43 @@ class Markdown_Blocks {
 		foreach ( $children as $child ) {
 			if ( 'list' === $child['type'] ) {
 				$nested .= self::list_block( $child );
-			} elseif ( isset( $child['text'] ) ) {
-				$text[] = 'code' === $child['type'] ? '<code>' . esc_html( $child['text'] ) . '</code>' : self::inline( $child['text'] );
+			} else {
+				$text = array_merge( $text, self::flat_lines( $child ) );
 			}
 		}
 
 		return implode( '<br><br>', $text ) . $nested;
+	}
+
+	/**
+	 * ブロックを行の中の文字にする。
+	 *
+	 * @param array $node 節。
+	 * @return string[]
+	 */
+	private static function flat_lines( array $node ) {
+		switch ( $node['type'] ) {
+			case 'code':
+				return array( '<code>' . self::code_html( $node['text'] ) . '</code>' );
+			case 'quote':
+				return array_merge( array(), ...array_map( array( self::class, 'flat_lines' ), $node['children'] ) );
+			case 'list':
+				$lines = array( array() );
+				foreach ( $node['items'] as $children ) {
+					$lines[] = array_merge( array(), ...array_map( array( self::class, 'flat_lines' ), $children ) );
+				}
+				return array_merge( ...$lines );
+			case 'table':
+				$lines = array();
+				foreach ( array_merge( array( $node['head'] ), $node['rows'] ) as $row ) {
+					$lines[] = implode( ' / ', array_map( array( self::class, 'inline' ), $row ) );
+				}
+				return $lines;
+			case 'separator':
+				return array();
+		}
+
+		return array( self::inline( $node['text'] ) );
 	}
 
 	/**
@@ -545,7 +587,10 @@ class Markdown_Blocks {
 			$body .= '</tr>';
 		}
 
-		return "<!-- wp:table -->\n<figure class=\"wp-block-table\"><table class=\"has-fixed-layout\"><thead><tr>{$head}</tr></thead><tbody>{$body}</tbody></table></figure>\n<!-- /wp:table -->";
+		// 本体の表のブロックは、行の無い区画を出さない。
+		$body = '' === $body ? '' : "<tbody>{$body}</tbody>";
+
+		return "<!-- wp:table -->\n<figure class=\"wp-block-table\"><table class=\"has-fixed-layout\"><thead><tr>{$head}</tr></thead>{$body}</table></figure>\n<!-- /wp:table -->";
 	}
 
 	/**
@@ -616,13 +661,15 @@ class Markdown_Blocks {
 		$char = $rest[0];
 
 		if ( '`' === $char && preg_match( '/^(`+)(.+?)(?<!`)\1(?!`)/s', $rest, $code ) ) {
-			return array( '<code>' . esc_html( trim( str_replace( "\n", ' ', $code[2] ) ) ) . '</code>', $i + strlen( $code[0] ) );
+			return array( '<code>' . self::code_html( trim( str_replace( "\n", ' ', $code[2] ) ) ) . '</code>', $i + strlen( $code[0] ) );
 		}
 
-		if ( '!' === $char && preg_match( '/^!\[((?:[^\]\\\\]|\\\\.)*)\]\(\s*<?([^()\s>]+)>?(?:\s+"[^"]*")?\s*\)/', $rest, $image ) ) {
-			self::$found[] = $image[2];
+		if ( '!' === $char && preg_match( '/^!\[((?:[^\[\]\\\\]|\\\\.|\[[^\]]*\])*)\]\(\s*(?:<([^<>\s]+)>|([^()\s<>]+))(?:\s+"[^"]*")?\s*\)/', $rest, $image ) ) {
+			// 山括弧は揃ったときだけ宛先。揃わない形は EventWatch では文字で、投入記録と照らされていない。
+			$url           = '' !== $image[2] ? $image[2] : $image[3];
+			self::$found[] = $url;
 			$alt           = self::plain_alt( $image[1] );
-			$tag           = isset( self::$images[ $image[2] ] ) ? self::image_tag( (int) self::$images[ $image[2] ], $alt ) : esc_html( $alt );
+			$tag           = isset( self::$images[ $url ] ) ? self::image_tag( (int) self::$images[ $url ], $alt ) : esc_html( $alt );
 			return array( $tag, $i + strlen( $image[0] ) );
 		}
 
@@ -639,11 +686,12 @@ class Markdown_Blocks {
 		}
 
 		foreach ( array(
-			'**' => 'strong',
-			'__' => 'strong',
-			'~~' => 'del',
-			'*'  => 'em',
-			'_'  => 'em',
+			'***' => 'em><strong',
+			'**'  => 'strong',
+			'__'  => 'strong',
+			'~~'  => 'del',
+			'*'   => 'em',
+			'_'   => 'em',
 		) as $mark => $tag ) {
 			$matched = self::emphasis( $text, $i, $mark, $tag );
 			if ( null !== $matched ) {
@@ -681,11 +729,11 @@ class Markdown_Blocks {
 		while ( false !== ( $end = strpos( $text, $mark, $from ) ) ) { // phpcs:ignore WordPress.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition,Generic.CodeAnalysis.AssignmentInCondition.FoundInWhileCondition -- 次の閉じる記号を順に探す。
 			$escaped = '\\' === $text[ $end - 1 ];
 			$spaced  = ctype_space( $text[ $end - 1 ] );
-			$longer  = substr( $text, $end + $width, 1 ) === $mark[0] && 1 === $width;
-			$inword  = '_' === $mark[0] && ctype_alnum( substr( $text, $end + $width, 1 ) . ' ' );
+			$longer  = substr( $text, $end + $width, 1 ) === $mark[0] && $width < 3;
+			$inword  = '_' === $mark[0] && ctype_alnum( substr( $text, $end + $width, 1 ) );
 
 			if ( ! $escaped && ! $spaced && ! $longer && ! $inword ) {
-				return array( "<{$tag}>" . self::inline( substr( $text, $i + $width, $end - $i - $width ) ) . "</{$tag}>", $end + $width );
+				return array( "<{$tag}>" . self::inline( substr( $text, $i + $width, $end - $i - $width ) ) . '</' . implode( '></', array_reverse( explode( '><', $tag ) ) ) . '>', $end + $width );
 			}
 			$from = $end + $width;
 		}

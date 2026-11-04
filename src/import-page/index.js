@@ -281,9 +281,6 @@ function App( { unlinked, canImport } ) {
 		stopRef.current = false;
 		setStopping( false );
 		setStopReason( '' );
-		setFailed( ( rows ) =>
-			rows.filter( ( row ) => ! ids.includes( row.eventId ) )
-		);
 		if ( form() ) {
 			form().hidden = true;
 		}
@@ -349,13 +346,17 @@ function App( { unlinked, canImport } ) {
 							row.id === id ? { ...row, state } : row
 						) ?? rows
 				);
+				// 結果が出るまで前の失敗を消さない。止めた件と読めなかった件の「やり直す」を残すため。
 				if ( 'imported' === state ) {
 					setImported( ( rows ) => [ ...rows, result ] );
+					setFailed( ( rows ) =>
+						rows.filter( ( row ) => row.eventId !== id )
+					);
 					updateRow( result );
 				} else if ( 'failed' === state ) {
 					updateRow( result );
 					setFailed( ( rows ) => [
-						...rows,
+						...rows.filter( ( row ) => row.eventId !== id ),
 						{ ...result, title: result.title || titles[ id ] },
 					] );
 				}

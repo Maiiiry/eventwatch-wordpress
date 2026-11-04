@@ -36,7 +36,6 @@ class Event_Import {
 	const SNAPSHOT_TTL    = HOUR_IN_SECONDS;
 
 	const LOCK_PREFIX = 'eventwatch_import_lock_';
-	const LOCK_TTL    = 300;
 
 	/**
 	 * 同じ投稿を別の要求が進めているときに待つ秒数。
@@ -55,6 +54,15 @@ class Event_Import {
 	 * 手元にあると数える投稿の状態。ゴミ箱を含めない。
 	 */
 	const LIVE_STATUSES = array( 'publish', 'future', 'draft', 'pending', 'private' );
+
+	/**
+	 * 取り込む画像の形式。EventWatch が配る形式で、Sync_Image が送れる形式。
+	 */
+	const IMAGE_TYPES = array(
+		'jpg|jpeg|jpe' => 'image/jpeg',
+		'png'          => 'image/png',
+		'webp'         => 'image/webp',
+	);
 
 	/**
 	 * 一覧の 1 ページを読む。
@@ -131,14 +139,15 @@ class Event_Import {
 	 * @return array{status: string, eventId: string, title: string, postId: int, editUrl: string, postStatus: string, reason: string, retryAfter: int}
 	 */
 	public static function run( $event_id ) {
-		if ( ! self::take_lock( $event_id ) ) {
+		$lock = Sync_Queue::take_lock( self::lock_key( $event_id ) );
+		if ( '' === $lock ) {
 			return self::outcome( self::STATUS_WAIT, $event_id, array( 'retryAfter' => self::BUSY_WAIT ) );
 		}
 
 		try {
 			return self::import_one( $event_id );
 		} finally {
-			delete_option( self::lock_key( $event_id ) );
+			Sync_Queue::release_lock( $lock, self::lock_key( $event_id ) );
 		}
 	}
 
@@ -393,14 +402,25 @@ class Event_Import {
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
 
+		$name = sanitize_file_name( basename( (string) wp_parse_url( $url, PHP_URL_PATH ) ) );
+		if ( ! wp_check_filetype( $name, self::IMAGE_TYPES )['type'] ) {
+			return new WP_Error( 'eventwatch_import_not_image', 'The address is not an image.' );
+		}
+
 		$file = download_url( $url, self::IMAGE_TIMEOUT );
 		if ( is_wp_error( $file ) ) {
 			return $file;
 		}
 
+		// 管理者は HTML も上げられるので、中身と拡張子を確かめてからアップロードの場所へ移す。
+		if ( ! in_array( wp_get_image_mime( $file ), self::IMAGE_TYPES, true ) ) {
+			wp_delete_file( $file );
+			return new WP_Error( 'eventwatch_import_not_image', 'The file is not an image.' );
+		}
+
 		$attachment = media_handle_sideload(
 			array(
-				'name'     => sanitize_file_name( basename( (string) wp_parse_url( $url, PHP_URL_PATH ) ) ),
+				'name'     => $name,
 				'tmp_name' => $file,
 			),
 			0
@@ -409,12 +429,6 @@ class Event_Import {
 		if ( is_wp_error( $attachment ) ) {
 			wp_delete_file( $file );
 			return $attachment;
-		}
-
-		// Sync_Image は画像でない添付を送らない。
-		if ( ! wp_attachment_is_image( $attachment ) ) {
-			wp_delete_attachment( $attachment, true );
-			return new WP_Error( 'eventwatch_import_not_image', 'The file is not an image.' );
 		}
 
 		update_post_meta( $attachment, Sync_Queue::IMPORT_IMAGE_SOURCE, $url );
@@ -468,9 +482,22 @@ class Event_Import {
 					true
 				);
 
-				if ( ! is_wp_error( $post_id ) && $images['featured'] ) {
+				if ( is_wp_error( $post_id ) ) {
+					return $post_id;
+				}
+
+				if ( $images['featured'] ) {
 					set_post_thumbnail( $post_id, $images['featured'] );
 				}
+
+				update_post_meta(
+					$post_id,
+					Sync_Queue::IMPORT_ORIGINAL,
+					array(
+						'content'   => self::content_digest( $post_id ),
+						'thumbnail' => (int) $images['featured'],
+					)
+				);
 
 				return $post_id;
 			}
@@ -508,6 +535,14 @@ class Event_Import {
 			return self::imported( $event_id, $post_id );
 		}
 
+		$original  = get_post_meta( $post_id, Sync_Queue::IMPORT_ORIGINAL, true );
+		$original  = is_array( $original ) ? $original : array(
+			'content'   => '',
+			'thumbnail' => 0,
+		);
+		$touched   = 'draft' !== get_post_status( $post_id ) || self::content_digest( $post_id ) !== $original['content'];
+		$thumbnail = (int) get_post_thumbnail_id( $post_id );
+
 		Sync_Queue::without_marking(
 			static function () use ( $post_id, $event ) {
 				delete_post_meta( $post_id, Sync_Queue::NO_SEND );
@@ -522,11 +557,18 @@ class Event_Import {
 			}
 		);
 
-		$thumbnail = (int) get_post_thumbnail_id( $post_id );
-		if ( $thumbnail ) {
+		if ( $thumbnail && $thumbnail === (int) $original['thumbnail'] ) {
 			Sync_Image::record_imported( $post_id, $thumbnail, isset( $event['imageUploadId'] ) ? (string) $event['imageUploadId'] : '' );
 		}
 		Sync_Queue::record_linked( $post_id, $event );
+		delete_post_meta( $post_id, Sync_Queue::IMPORT_ORIGINAL );
+
+		// やり直しの前にオーナーが手を入れた内容は EventWatch に届いていない。公開中なら送る。下書きのままなら審査から外さない。
+		$post = get_post( $post_id );
+		if ( $touched && $post && Sync_Queue::ACTION_PUT === Sync_Queue::action_for( $post ) ) {
+			delete_post_meta( $post_id, Sync_Queue::HASH );
+			Sync_Queue::mark( $post_id );
+		}
 
 		return self::imported( $event_id, $post_id );
 	}
@@ -607,6 +649,19 @@ class Event_Import {
 		}
 
 		return __( 'EventWatch rejected this request. Try again later.', 'eventwatch' );
+	}
+
+	/**
+	 * 送る内容の控え。
+	 *
+	 * @param int $post_id 投稿の ID。
+	 * @return string
+	 */
+	private static function content_digest( $post_id ) {
+		$body = Sync_Payload::build( get_post( $post_id ) )['body'];
+		unset( $body['sourceUpdatedAt'] );
+
+		return md5( (string) wp_json_encode( $body ) );
 	}
 
 	/**
@@ -715,29 +770,5 @@ class Event_Import {
 	 */
 	private static function lock_key( $event_id ) {
 		return self::LOCK_PREFIX . md5( $event_id );
-	}
-
-	/**
-	 * 錠を取る。`add_option` は既にあれば失敗するので、確かめと作成が 1 回で済む。
-	 *
-	 * @param string $event_id 投稿の ID。
-	 * @return bool
-	 */
-	private static function take_lock( $event_id ) {
-		$key = self::lock_key( $event_id );
-
-		if ( add_option( $key, time(), '', false ) ) {
-			return true;
-		}
-
-		// 落ちた要求の錠を残さない。
-		wp_cache_delete( $key, 'options' );
-		if ( time() - (int) get_option( $key, 0 ) < self::LOCK_TTL ) {
-			return false;
-		}
-
-		delete_option( $key );
-
-		return add_option( $key, time(), '', false );
 	}
 }

@@ -239,7 +239,7 @@ class Markdown_Converter {
 	 * @return string[]
 	 */
 	private static function code_block( DOMNode $node ) {
-		$code = rtrim( (string) $node->textContent, "\r\n" ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+		$code = rtrim( self::preformatted_text( $node ), "\r\n" );
 		if ( '' === trim( $code ) ) {
 			return array();
 		}
@@ -252,30 +252,55 @@ class Markdown_Converter {
 	}
 
 	/**
+	 * 整形済みの文字。br は改行として読む。
+	 *
+	 * @param DOMNode $node 親。
+	 * @return string
+	 */
+	private static function preformatted_text( DOMNode $node ) {
+		$text = '';
+		foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			if ( 'br' === strtolower( $child->nodeName ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+				$text .= "\n";
+			} elseif ( $child->hasChildNodes() ) {
+				$text .= self::preformatted_text( $child );
+			} else {
+				$text .= (string) $child->nodeValue; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			}
+		}
+
+		return $text;
+	}
+
+	/**
 	 * 表を文字列にする。Markdown の表は見出しの行が要るので、最初の行を見出しにする。
+	 * 入れ子の表は行に数えない。セルの中のブロックは 1 行につなぐ。
 	 *
 	 * @param DOMNode $node table 要素。
 	 * @return string[]
 	 */
 	private static function table_block( DOMNode $node ) {
-		$rows = array();
-		if ( $node instanceof DOMElement ) {
-			foreach ( $node->getElementsByTagName( 'tr' ) as $row ) {
-				$cells = array();
-				foreach ( $row->childNodes as $cell ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
-					if ( in_array( strtolower( $cell->nodeName ), array( 'td', 'th' ), true ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
-						$text    = str_replace( "  \n", ' ', self::escape_inline_block( self::inline_children( $cell ) ) );
-						$cells[] = str_replace( '|', '\\|', $text );
+		$rows    = array();
+		$caption = array();
+
+		foreach ( $node->childNodes as $child ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			$tag = strtolower( $child->nodeName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			if ( 'caption' === $tag ) {
+				$caption = self::blocks( $child );
+			} elseif ( 'tr' === $tag ) {
+				$rows[] = self::table_cells( $child );
+			} elseif ( in_array( $tag, array( 'thead', 'tbody', 'tfoot' ), true ) ) {
+				foreach ( $child->childNodes as $row ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+					if ( 'tr' === strtolower( $row->nodeName ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+						$rows[] = self::table_cells( $row );
 					}
-				}
-				if ( $cells ) {
-					$rows[] = $cells;
 				}
 			}
 		}
 
+		$rows = array_values( array_filter( $rows ) );
 		if ( ! $rows ) {
-			return array();
+			return $caption;
 		}
 
 		$width = max( array_map( 'count', $rows ) );
@@ -287,7 +312,25 @@ class Markdown_Converter {
 			}
 		}
 
-		return array( implode( "\n", $lines ) );
+		return array_merge( $caption, array( implode( "\n", $lines ) ) );
+	}
+
+	/**
+	 * 表の 1 行のセル。
+	 *
+	 * @param DOMNode $row tr 要素。
+	 * @return string[]
+	 */
+	private static function table_cells( DOMNode $row ) {
+		$cells = array();
+		foreach ( $row->childNodes as $cell ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+			if ( in_array( strtolower( $cell->nodeName ), array( 'td', 'th' ), true ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+				$text    = trim( (string) preg_replace( '/ *\n */', ' ', implode( ' ', self::blocks( $cell ) ) ) );
+				$cells[] = str_replace( '|', '\\|', $text );
+			}
+		}
+
+		return $cells;
 	}
 
 	/**
@@ -496,7 +539,8 @@ class Markdown_Converter {
 		$fence = str_repeat( '`', ( $runs[0] ? max( array_map( 'strlen', $runs[0] ) ) : 0 ) + 1 );
 		$pad   = '`' === $code[0] || '`' === substr( $code, -1 ) ? ' ' : '';
 
-		return $fence . $pad . $code . $pad . $fence;
+		// 文字の ! の打ち消しをコードの中で効かせない。バッククォートの中では打ち消しが文字として出る。
+		return $fence . $pad . str_replace( '![', self::IMAGE_MARK . '[', $code ) . $pad . $fence;
 	}
 
 	/**

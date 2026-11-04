@@ -52,6 +52,13 @@ class Event_Import_Test extends WP_UnitTestCase {
 	private $api = array();
 
 	/**
+	 * 取得で返す画像の中身のファイル。空なら既定の画像。
+	 *
+	 * @var string
+	 */
+	private $image_content = '';
+
+	/**
 	 * 画像の取得の失敗。
 	 *
 	 * @var bool
@@ -79,6 +86,7 @@ class Event_Import_Test extends WP_UnitTestCase {
 		$this->link_answer   = null;
 		$this->api           = array();
 		$this->image_fails   = false;
+		$this->image_content = '';
 		$this->image_fetches = 0;
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'administrator' ) ) );
 		if ( is_multisite() ) {
@@ -116,7 +124,7 @@ class Event_Import_Test extends WP_UnitTestCase {
 				return new \WP_Error( 'http_request_failed', 'no' );
 			}
 			if ( ! empty( $args['filename'] ) ) {
-				copy( DIR_TESTDATA . '/images/canola.jpg', $args['filename'] );
+				copy( '' !== $this->image_content ? $this->image_content : DIR_TESTDATA . '/images/canola.jpg', $args['filename'] );
 			}
 			return array(
 				'headers'  => array(),
@@ -265,7 +273,7 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 欄の対応。決定 12 の逆。
+	 * 欄の対応。送るときの対応の逆。
 	 */
 	public function test_fields_are_mapped() {
 		$result = $this->import( $this->event() );
@@ -908,6 +916,136 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 画像でない宛先は取得しない。
+	 */
+	public function test_non_image_address_is_not_fetched() {
+		$result = $this->import(
+			$this->event(
+				array(
+					'thumbnails'  => array(),
+					'description' => '![a](https://cdn.example.com/x.html)',
+				)
+			)
+		);
+
+		$this->assertSame( 'failed', $result['status'] );
+		$this->assertSame( 0, $this->image_fetches );
+	}
+
+	/**
+	 * 画像でない中身はアップロードの場所へ置かない。
+	 */
+	public function test_non_image_content_is_not_stored() {
+		$this->image_content = DIR_TESTDATA . '/formatting/entities.txt';
+		$before              = count( get_posts( array( 'post_type' => 'attachment', 'post_status' => 'inherit', 'numberposts' => -1, 'fields' => 'ids' ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+
+		$result = $this->import( $this->event() );
+
+		$this->assertSame( 'failed', $result['status'] );
+		$this->assertSame( 0, Event_Import::find_local( self::ID ) );
+		$this->assertSame( $before, count( get_posts( array( 'post_type' => 'attachment', 'post_status' => 'inherit', 'numberposts' => -1, 'fields' => 'ids' ) ) ) ); // phpcs:ignore WordPress.Arrays.ArrayDeclarationSpacing.AssociativeArrayFound
+	}
+
+	/**
+	 * 本文の文字をショートコードとして動かさない。
+	 */
+	public function test_shortcodes_in_body_do_not_run() {
+		add_shortcode(
+			'c12_probe',
+			static function () {
+				return 'RAN';
+			}
+		);
+		$result = $this->import( $this->event( array( 'description' => "[c12_probe]\n\n`[c12_probe]`\n\n[c12_probe](https://example.com/)" ) ) );
+
+		$html = do_shortcode( get_post( $result['postId'] )->post_content );
+		remove_shortcode( 'c12_probe' );
+
+		$this->assertStringNotContainsString( 'RAN', $html );
+	}
+
+	/**
+	 * 結び付く前に手を入れて公開した下書きは、やり直しの後に送る。
+	 */
+	public function test_touched_draft_is_sent_after_retry() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import(
+			$this->event(
+				array(
+					'status'  => 'draft',
+					'visible' => false,
+				)
+			)
+		);
+		wp_update_post(
+			array(
+				'ID'           => $first['postId'],
+				'post_status'  => 'publish',
+				'post_content' => '<!-- wp:paragraph --><p>直した</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$this->link_answer = null;
+		$this->listed      = array(
+			$this->event(
+				array(
+					'status'  => 'draft',
+					'visible' => false,
+				)
+			),
+		);
+		$this->api         = array();
+		$this->assertSame( 'imported', Event_Import::run( self::ID )['status'] );
+		Sync_Queue::run();
+
+		$puts = array_values( array_filter( $this->api, static fn( $r ) => 'PUT' === $r[0] ) );
+		$this->assertCount( 1, $puts );
+		$this->assertSame( '直した', $puts[0][2]['description'] );
+		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Queue::NO_SEND, true ) );
+	}
+
+	/**
+	 * 結び付く前に手を入れた下書きは、下書きのままなら審査から外さない。
+	 */
+	public function test_touched_draft_stays_quiet_while_draft() {
+		$pending           = array(
+			'status'  => 'pendingReview',
+			'visible' => false,
+		);
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event( $pending ) );
+		wp_update_post(
+			array(
+				'ID'           => $first['postId'],
+				'post_content' => '<!-- wp:paragraph --><p>直した</p><!-- /wp:paragraph -->',
+			)
+		);
+
+		$this->link_answer = null;
+		$this->listed      = array( $this->event( $pending ) );
+		$this->api         = array();
+		$this->assertSame( 'imported', Event_Import::run( self::ID )['status'] );
+		Sync_Queue::run();
+
+		$this->assertSame( array(), array_values( array_filter( $this->api, static fn( $r ) => false === strpos( $r[1], '/link' ) ) ) );
+	}
+
+	/**
+	 * 結び付く前にアイキャッチ画像を替えたら、古い ID と組にしない。
+	 */
+	public function test_replaced_thumbnail_is_not_recorded() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		$other             = self::factory()->attachment->create_upload_object( DIR_TESTDATA . '/images/test-image.jpg' );
+		set_post_thumbnail( $first['postId'], $other );
+
+		$this->link_answer = null;
+		$this->assertSame( 'imported', Event_Import::run( self::ID )['status'] );
+
+		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Image::RECORD, true ) );
+	}
+
+	/**
 	 * 同じ投稿を同時に進めない。
 	 */
 	public function test_lock_makes_second_request_wait() {
@@ -924,10 +1062,12 @@ class Event_Import_Test extends WP_UnitTestCase {
 	 * 落ちた要求の錠は残らない。
 	 */
 	public function test_stale_lock_is_taken() {
-		add_option( Event_Import::LOCK_PREFIX . md5( self::ID ), time() - Event_Import::LOCK_TTL - 1, '', false );
+		add_option( Event_Import::LOCK_PREFIX . md5( self::ID ), time() - Sync_Queue::LOCK_TTL - 1, '', false );
 
 		$this->assertSame( 'imported', $this->import( $this->event() )['status'] );
-		$this->assertFalse( get_option( Event_Import::LOCK_PREFIX . md5( self::ID ) ) );
+		global $wpdb;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 覚えた値は使えないので、行を直接読む。
+		$this->assertSame( '0', $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->options} WHERE option_name = %s", Event_Import::LOCK_PREFIX . md5( self::ID ) ) ) );
 	}
 
 	/**

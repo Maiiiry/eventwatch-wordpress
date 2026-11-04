@@ -55,6 +55,11 @@ class Sync_Queue {
 	 */
 	const IMPORT_IMAGE_SOURCE = '_eventwatch_import_image_source';
 
+	/**
+	 * 作ったときの内容の控え。結び付く前にオーナーが手を入れたかを見分ける。
+	 */
+	const IMPORT_ORIGINAL = '_eventwatch_import_original';
+
 	const DELETE_PREFIX = 'eventwatch_sync_delete_';
 	const HOLD_OPTION   = 'eventwatch_sync_hold_until';
 	const LOCK_OPTION   = 'eventwatch_sync_lock';
@@ -125,7 +130,7 @@ class Sync_Queue {
 	 * @return string[]
 	 */
 	public static function meta_keys() {
-		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, self::IMPORT_SOURCE, self::IMPORT_IMAGES, self::IMPORT_IMAGE_SOURCE, Sync_Payload::PUBLISHED_AT_META, Sync_Image::RECORD, Sync_Image::ISSUE );
+		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, self::IMPORT_SOURCE, self::IMPORT_IMAGES, self::IMPORT_IMAGE_SOURCE, self::IMPORT_ORIGINAL, Sync_Payload::PUBLISHED_AT_META, Sync_Image::RECORD, Sync_Image::ISSUE );
 	}
 
 	/**
@@ -1022,22 +1027,23 @@ class Sync_Queue {
 	/**
 	 * 錠を取る。add_option は ON DUPLICATE KEY UPDATE で書くので、同時に呼ぶと両方が成功する。
 	 *
+	 * @param string $name 錠の option の名前。
 	 * @return string 取れたら錠の値。取れなければ空。
 	 */
-	private static function take_lock() {
+	public static function take_lock( $name = self::LOCK_OPTION ) {
 		global $wpdb;
 
 		$value = time() . '|' . wp_generate_password( 12, false );
 
 		for ( $try = 0; $try < 2; $try++ ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 行の有無を排他の判定に使う。
-			$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'off')", self::LOCK_OPTION, $value ) );
+			$wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->options} (option_name, option_value, autoload) VALUES (%s, %s, 'off')", $name, $value ) );
 			if ( 1 === (int) $wpdb->rows_affected ) {
 				return $value;
 			}
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 書いたばかりの行を読む。覚えた値は使えない。
-			$current = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", self::LOCK_OPTION ) );
+			$current = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
 
 			if ( '' !== $current && time() - (int) $current < self::LOCK_TTL ) {
 				return '';
@@ -1045,7 +1051,7 @@ class Sync_Queue {
 
 			// 落ちた実行の錠。読んだ値のときだけ消し、ほかが取り直した錠を消さない。
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 値を条件にして消す API が無い。
-			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", self::LOCK_OPTION, $current ) );
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", $name, $current ) );
 		}
 
 		return '';
@@ -1055,12 +1061,13 @@ class Sync_Queue {
 	 * 錠を返す。
 	 *
 	 * @param string $value 錠の値。
+	 * @param string $name  錠の option の名前。
 	 * @return void
 	 */
-	private static function release_lock( $value ) {
+	public static function release_lock( $value, $name = self::LOCK_OPTION ) {
 		global $wpdb;
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 値を条件にして消す API が無い。
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", self::LOCK_OPTION, $value ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->options} WHERE option_name = %s AND option_value = %s", $name, $value ) );
 	}
 }

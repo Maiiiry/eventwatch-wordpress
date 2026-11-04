@@ -139,11 +139,21 @@ class Import_Admin {
 	 * @return string
 	 */
 	private static function list_error_text( WP_Error $error ) {
-		if ( in_array( $error->get_error_code(), array( Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED, Api_Client::FORBIDDEN ), true ) ) {
+		if ( self::is_key_error( $error ) ) {
 			return Event_Import::stop_reason( $error->get_error_code() );
 		}
 
 		return __( 'The list couldn’t be loaded from EventWatch. Wait a moment, then reload this page.', 'eventwatch' );
+	}
+
+	/**
+	 * キーか団体の問題で断られたか。
+	 *
+	 * @param WP_Error $error 失敗。
+	 * @return bool
+	 */
+	private static function is_key_error( WP_Error $error ) {
+		return in_array( $error->get_error_code(), array( Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED, Api_Client::FORBIDDEN ), true );
 	}
 
 	/**
@@ -210,10 +220,12 @@ class Import_Admin {
 		$items = Event_Import::prepare( array_values( array_unique( $request->get_param( 'eventIds' ) ) ) );
 
 		if ( is_wp_error( $items ) ) {
+			$stops = self::is_key_error( $items );
+
 			return new WP_REST_Response(
 				array(
-					'status' => Api_Client::is_temporary( $items ) ? 'failed' : 'stop',
-					'reason' => Api_Client::is_temporary( $items ) ? __( 'The list couldn’t be loaded from EventWatch. Wait a moment, then try again.', 'eventwatch' ) : Event_Import::stop_reason( $items->get_error_code() ),
+					'status' => $stops ? 'stop' : 'failed',
+					'reason' => $stops ? Event_Import::stop_reason( $items->get_error_code() ) : __( 'The list couldn’t be loaded from EventWatch. Wait a moment, then try again.', 'eventwatch' ),
 					'items'  => array(),
 				)
 			);

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-04T00:48:03+00:00\n"
+"POT-Creation-Date: 2026-11-04T03:01:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -325,51 +325,51 @@ msgstr ""
 msgid "Visit official page"
 msgstr ""
 
-#: includes/class-event-import.php:296
+#: includes/class-event-import.php:305
 msgid "This post can’t be imported any more. It may have been deleted or imported from another site."
 msgstr ""
 
-#: includes/class-event-import.php:306
+#: includes/class-event-import.php:315
 msgid "The images couldn’t be loaded from EventWatch. Wait a moment, then try again."
 msgstr ""
 
-#: includes/class-event-import.php:311
+#: includes/class-event-import.php:320
 msgid "The post couldn’t be created on this site. Try again."
 msgstr ""
 
-#: includes/class-event-import.php:576
+#: includes/class-event-import.php:618
 msgid "Your EventWatch organization is suspended. Contact EventWatch support."
 msgstr ""
 
-#: includes/class-event-import.php:578
+#: includes/class-event-import.php:620
 msgid "This API key can’t import posts. Issue a new key with EventWatch, then set it in Settings › EventWatch."
 msgstr ""
 
-#: includes/class-event-import.php:580
+#: includes/class-event-import.php:622
 msgid "The site URL has changed. Confirm whether this is a copy in Settings › EventWatch, then try again."
 msgstr ""
 
-#: includes/class-event-import.php:583
+#: includes/class-event-import.php:625
 msgid "The API key was rejected. Check it in Settings › EventWatch, then try again."
 msgstr ""
 
-#: includes/class-event-import.php:597
+#: includes/class-event-import.php:639
 msgid "Another site has already imported this post. Delete this draft if you don’t need it."
 msgstr ""
 
-#: includes/class-event-import.php:600
+#: includes/class-event-import.php:642
 msgid "This draft was already sent to EventWatch as a separate post. Delete one of the two posts on EventWatch, then try again."
 msgstr ""
 
-#: includes/class-event-import.php:603
+#: includes/class-event-import.php:645
 msgid "This post is no longer on EventWatch. Delete this draft if you don’t need it."
 msgstr ""
 
-#: includes/class-event-import.php:606
+#: includes/class-event-import.php:648
 msgid "EventWatch didn’t respond. Wait a moment, then try again."
 msgstr ""
 
-#: includes/class-event-import.php:609
+#: includes/class-event-import.php:651
 msgid "EventWatch rejected this request. Try again later."
 msgstr ""
 
@@ -749,7 +749,7 @@ msgstr ""
 msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then reload this page."
 msgstr ""
 
-#: includes/class-import-admin.php:216
+#: includes/class-import-admin.php:228
 #: build/import-page.js:5
 msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then try again."
 msgstr ""
