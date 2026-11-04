@@ -366,7 +366,7 @@ class Markdown_Converter {
 	private static function escape_inline_block( $inline ) {
 		// 文字の ! の直後にリンクが続くと画像の記法になる。文字の [ は打ち消してあるので、ここで作るのはリンクだけ。
 		$inline = (string) preg_replace( '/(?<!\\\\)((?:\\\\\\\\)*)!\[/', '$1\\\\![', $inline );
-		// 残す画像は打ち消さない。文字の中の印は escape_text が消すので紛れない。
+		// 残す画像は打ち消さない。文字の中の印は、DOM に読むときに libxml が落とすので紛れない。
 		$inline = str_replace( self::IMAGE_MARK, '!', $inline );
 		$lines  = array_map( 'trim', explode( "\n", $inline ) );
 		$lines  = array_values( array_filter( $lines, 'strlen' ) );
@@ -601,7 +601,6 @@ class Markdown_Converter {
 	 * @return string
 	 */
 	private static function escape_text( $text ) {
-		$text = str_replace( self::IMAGE_MARK, '', $text );
 		$text = (string) preg_replace( '/([\\\\`*_\[\]<~])/', '\\\\$1', $text );
 		$text = (string) preg_replace( '/!(?=\\\\\[)/', '\\\\!', $text );
 

@@ -645,15 +645,171 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 2 つの 409 は文が違う。
+	 * 2 つの 409 は文が違い、どちらも code の無い 409 とも違う。
 	 */
 	public function test_conflicts_have_different_reasons() {
-		$this->link_answer = $this->http( 409, array( 'code' => 'eventAlreadyLinked' ) );
-		$first             = $this->import( $this->event() );
-		$this->link_answer = $this->http( 409, array( 'code' => 'externalIdentifierInUse' ) );
-		$second            = $this->import( $this->event() );
+		$reasons = array();
+		foreach ( array( array( 'code' => 'eventAlreadyLinked' ), array( 'code' => 'externalIdentifierInUse' ), array() ) as $body ) {
+			$this->link_answer = $this->http( 409, $body );
+			$reasons[]         = $this->import( $this->event() )['reason'];
+		}
 
-		$this->assertNotSame( $first['reason'], $second['reason'] );
+		$this->assertCount( 3, array_unique( $reasons ) );
+	}
+
+	/**
+	 * 取り込む前の状態の語。
+	 *
+	 * @return array<string, array{0: array, 1: string, 2: string}>
+	 */
+	public function event_status_cases() {
+		return array(
+			'下書き'       => array( array( 'status' => 'draft' ), 'withdrawn', 'Draft' ),
+			'非公開'       => array( array( 'status' => 'private' ), 'withdrawn', 'Private' ),
+			'審査待ち'      => array( array( 'status' => 'pendingReview' ), 'review', 'Under review' ),
+			'掲載中'       => array(
+				array(
+					'status'  => 'published',
+					'visible' => true,
+				),
+				'live',
+				'Listed',
+			),
+			'差し戻し'      => array( array( 'status' => 'rejected' ), 'fix', 'Changes requested' ),
+			'運営の停止'     => array(
+				array(
+					'status'              => 'published',
+					'suspendedByOperator' => true,
+				),
+				'stopped',
+				'Listing paused',
+			),
+			'運営の停止の下書き' => array(
+				array(
+					'status'              => 'draft',
+					'suspendedByOperator' => true,
+				),
+				'stopped',
+				'Listing paused',
+			),
+		);
+	}
+
+	/**
+	 * 状態の語。一覧の列の語を使い、下書きと非公開だけ別の語にする。
+	 *
+	 * @dataProvider event_status_cases
+	 *
+	 * @param array  $event 投稿の欄。
+	 * @param string $state 状態の種類。
+	 * @param string $label 語。
+	 */
+	public function test_event_status( array $event, $state, $label ) {
+		$status = \EventWatch\Sync_Rest::event_status( $event );
+
+		$this->assertSame( $state, $status['state'] );
+		$this->assertSame( $label, $status['label'] );
+	}
+
+	/**
+	 * 差し戻しの理由は差し戻しのときだけ出す。
+	 */
+	public function test_event_status_reason() {
+		$this->assertSame(
+			'日付',
+			\EventWatch\Sync_Rest::event_status(
+				array(
+					'status'          => 'rejected',
+					'rejectionReason' => '日付',
+				)
+			)['reason']
+		);
+		$this->assertSame(
+			'',
+			\EventWatch\Sync_Rest::event_status(
+				array(
+					'status'          => 'draft',
+					'rejectionReason' => '日付',
+				)
+			)['reason']
+		);
+	}
+
+	/**
+	 * ゴミ箱にあるこのサイトの投稿へは結び直さず、新しく作る。
+	 */
+	public function test_trashed_own_post_creates_new() {
+		$post_id = self::factory()->post->create( array( 'post_type' => Post_Type::POST_TYPE ) );
+		wp_trash_post( $post_id );
+
+		$result = $this->import(
+			$this->event(
+				array(
+					'externalSiteId' => Site_Identity::id(),
+					'externalId'     => (string) $post_id,
+				)
+			)
+		);
+
+		$this->assertNotSame( $post_id, $result['postId'] );
+		$this->assertSame( 'trash', get_post_status( $post_id ) );
+	}
+
+	/**
+	 * 複製の選択と削除で、取り込みの記録も消える。
+	 */
+	public function test_forget_all_clears_import_records() {
+		$remote     = 'https://cdn.example.com/v4/owned-description/a.jpg';
+		$result     = $this->import( $this->event( array( 'description' => "![a]({$remote})" ) ) );
+		$attachment = (int) get_post_thumbnail_id( $result['postId'] );
+
+		Sync_Queue::forget_all();
+
+		$this->assertSame( '', get_post_meta( $result['postId'], Sync_Queue::IMPORT_SOURCE, true ) );
+		$this->assertSame( '', get_post_meta( $result['postId'], Sync_Queue::IMPORT_IMAGES, true ) );
+		$this->assertSame( '', get_post_meta( $attachment, Sync_Queue::IMPORT_IMAGE_SOURCE, true ) );
+	}
+
+	/**
+	 * 印を止める区間は入れ子にでき、例外でも元に戻る。
+	 */
+	public function test_without_marking_restores() {
+		$post_id = self::factory()->post->create(
+			array(
+				'post_type'   => Post_Type::POST_TYPE,
+				'post_status' => 'draft',
+			)
+		);
+		$publish = static function ( $title ) use ( $post_id ) {
+			wp_update_post(
+				array(
+					'ID'          => $post_id,
+					'post_status' => 'publish',
+					'post_title'  => $title,
+				)
+			);
+		};
+
+		Sync_Queue::without_marking(
+			static function () use ( $publish ) {
+				Sync_Queue::without_marking( '__return_null' );
+				$publish( 'a' );
+			}
+		);
+		$this->assertSame( '', get_post_meta( $post_id, Sync_Queue::PENDING, true ) );
+
+		try {
+			Sync_Queue::without_marking(
+				static function () {
+					throw new \RuntimeException( 'x' );
+				}
+			);
+		} catch ( \RuntimeException $e ) {
+			$this->assertSame( 'x', $e->getMessage() );
+		}
+
+		$publish( 'b' );
+		$this->assertNotSame( '', get_post_meta( $post_id, Sync_Queue::PENDING, true ) );
 	}
 
 	/**
