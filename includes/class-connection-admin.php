@@ -21,6 +21,7 @@ class Connection_Admin {
 	const ACTION_MOVED      = 'eventwatch_site_moved';
 	const ACTION_COPY       = 'eventwatch_site_copied';
 	const ACTION_HIDE       = 'eventwatch_hide_no_key_notice';
+	const ACTION_SEND_ALL   = 'eventwatch_send_all';
 
 	/**
 	 * キーなしの通知を閉じた印。
@@ -38,6 +39,7 @@ class Connection_Admin {
 		add_action( 'admin_post_' . self::ACTION_MOVED, array( self::class, 'handle_moved' ) );
 		add_action( 'admin_post_' . self::ACTION_COPY, array( self::class, 'handle_copy' ) );
 		add_action( 'admin_post_' . self::ACTION_HIDE, array( self::class, 'handle_hide_notice' ) );
+		add_action( 'admin_post_' . self::ACTION_SEND_ALL, array( self::class, 'handle_send_all' ) );
 		add_action( 'admin_notices', array( self::class, 'render_notices' ) );
 	}
 
@@ -118,6 +120,38 @@ class Connection_Admin {
 	}
 
 	/**
+	 * 公開中でまだ送っていないイベントを待ち行列に積む。この要求の中では送らない。
+	 *
+	 * @return void
+	 */
+	public static function handle_send_all() {
+		self::authorize( self::ACTION_SEND_ALL );
+
+		// 画面を開いた後に接続が切れた、古いタブからの押し直しを受ける。
+		if ( ! Sync_Queue::can_send_unsent() ) {
+			self::report( __( 'Events can’t be sent right now. Check the connection status on this page.', 'eventwatch' ), 'warning' );
+			self::back_to_settings();
+			return;
+		}
+
+		$count = Sync_Queue::mark_unsent_published();
+		if ( $count > 0 ) {
+			self::report(
+				sprintf(
+					/* translators: %d: number of events. */
+					_n( '%d event is waiting to be sent to EventWatch.', '%d events are waiting to be sent to EventWatch.', $count, 'eventwatch' ),
+					$count
+				),
+				'success'
+			);
+		} else {
+			self::report( __( 'There are no events to send.', 'eventwatch' ), 'info' );
+		}
+
+		self::back_to_settings();
+	}
+
+	/**
 	 * キーなしの通知を、このユーザーには出さない。
 	 *
 	 * @return void
@@ -176,7 +210,7 @@ class Connection_Admin {
 	 * @return void
 	 */
 	public static function render_forms() {
-		foreach ( array( self::ACTION_CHECK, self::ACTION_REMOVE_KEY, self::ACTION_MOVED, self::ACTION_COPY ) as $action ) {
+		foreach ( array( self::ACTION_CHECK, self::ACTION_REMOVE_KEY, self::ACTION_MOVED, self::ACTION_COPY, self::ACTION_SEND_ALL ) as $action ) {
 			printf(
 				'<form id="%1$s" action="%2$s" method="post"><input type="hidden" name="action" value="%1$s">',
 				esc_attr( $action ),
