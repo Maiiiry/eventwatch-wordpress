@@ -16,9 +16,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * 見出し・段落・リスト・引用・リンク・強調を残し、画像と埋め込みを落とす。
+ * 見出し・段落・リスト・引用・リンク・強調・打ち消し・コード・表を残し、画像と埋め込みを落とす。
  *
- * EventWatch は本文の画像記法と許可外のリンクを 400 にするので、ここで作らない。
+ * EventWatch は投入記録に無い画像と許可外のリンクを 400 にする。残す画像は、EventWatch から取り込んだもの
+ * （投稿が既に参照している）だけで、呼び出し側が渡す。
  * ブロックは描画せず、保存された HTML だけを読む。cron の中でほかのプラグインの描画を動かさないため。
  */
 class Markdown_Converter {
@@ -39,6 +40,11 @@ class Markdown_Converter {
 	const SCHEMES = array( 'http', 'https', 'mailto' );
 
 	/**
+	 * 残す画像の `!` の代わりに置く印。文字の `!` と続くリンクを打ち消す処理を通すため。
+	 */
+	const IMAGE_MARK = "\x01";
+
+	/**
 	 * 強調の記号を出さずに描いている間か。
 	 *
 	 * @var bool
@@ -53,15 +59,27 @@ class Markdown_Converter {
 	private static $open_marks = array();
 
 	/**
+	 * 残す画像。添付の ID と EventWatch の宛先。
+	 *
+	 * @var array<int, string>
+	 */
+	private static $kept_images = array();
+
+	/**
 	 * 投稿の本文を変換する。
 	 *
-	 * @param string $content 投稿の本文。
+	 * @param string             $content 投稿の本文。
+	 * @param array<int, string> $images  残す画像。添付の ID と EventWatch の宛先。
 	 * @return string
 	 */
-	public static function from_post_content( $content ) {
+	public static function from_post_content( $content, array $images = array() ) {
 		$html = has_blocks( $content ) ? self::static_html( parse_blocks( $content ) ) : wpautop( self::without_embed_lines( $content ) );
 
-		return self::from_html( strip_shortcodes( $html ) );
+		self::$kept_images = $images;
+		$markdown          = self::from_html( strip_shortcodes( $html ) );
+		self::$kept_images = array();
+
+		return $markdown;
 	}
 
 	/**
@@ -205,9 +223,71 @@ class Markdown_Converter {
 			case 'blockquote':
 				$inner = self::blocks( $node );
 				return $inner ? array( self::prefix_lines( implode( "\n\n", $inner ), '> ', '> ' ) ) : array();
+			case 'pre':
+				return self::code_block( $node );
+			case 'table':
+				return self::table_block( $node );
 		}
 
 		return self::blocks( $node );
+	}
+
+	/**
+	 * コードブロックを文字列にする。中身に同じ長さの囲みがあっても閉じないよう、囲みを長くする。
+	 *
+	 * @param DOMNode $node pre 要素。
+	 * @return string[]
+	 */
+	private static function code_block( DOMNode $node ) {
+		$code = rtrim( (string) $node->textContent, "\r\n" ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+		if ( '' === trim( $code ) ) {
+			return array();
+		}
+
+		preg_match_all( '/`+/', $code, $runs );
+		$longest = $runs[0] ? max( array_map( 'strlen', $runs[0] ) ) : 0;
+		$fence   = str_repeat( '`', max( 3, $longest + 1 ) );
+
+		return array( $fence . "\n" . $code . "\n" . $fence );
+	}
+
+	/**
+	 * 表を文字列にする。Markdown の表は見出しの行が要るので、最初の行を見出しにする。
+	 *
+	 * @param DOMNode $node table 要素。
+	 * @return string[]
+	 */
+	private static function table_block( DOMNode $node ) {
+		$rows = array();
+		if ( $node instanceof DOMElement ) {
+			foreach ( $node->getElementsByTagName( 'tr' ) as $row ) {
+				$cells = array();
+				foreach ( $row->childNodes as $cell ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+					if ( in_array( strtolower( $cell->nodeName ), array( 'td', 'th' ), true ) ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+						$text    = str_replace( "  \n", ' ', self::escape_inline_block( self::inline_children( $cell ) ) );
+						$cells[] = str_replace( '|', '\\|', $text );
+					}
+				}
+				if ( $cells ) {
+					$rows[] = $cells;
+				}
+			}
+		}
+
+		if ( ! $rows ) {
+			return array();
+		}
+
+		$width = max( array_map( 'count', $rows ) );
+		$lines = array();
+		foreach ( $rows as $index => $cells ) {
+			$lines[] = '| ' . implode( ' | ', array_pad( $cells, $width, '' ) ) . ' |';
+			if ( 0 === $index ) {
+				$lines[] = '|' . str_repeat( ' --- |', $width );
+			}
+		}
+
+		return array( implode( "\n", $lines ) );
 	}
 
 	/**
@@ -286,6 +366,8 @@ class Markdown_Converter {
 	private static function escape_inline_block( $inline ) {
 		// 文字の ! の直後にリンクが続くと画像の記法になる。文字の [ は打ち消してあるので、ここで作るのはリンクだけ。
 		$inline = (string) preg_replace( '/(?<!\\\\)((?:\\\\\\\\)*)!\[/', '$1\\\\![', $inline );
+		// 残す画像は打ち消さない。文字の中の印は escape_text が消すので紛れない。
+		$inline = str_replace( self::IMAGE_MARK, '!', $inline );
 		$lines  = array_map( 'trim', explode( "\n", $inline ) );
 		$lines  = array_values( array_filter( $lines, 'strlen' ) );
 
@@ -350,6 +432,10 @@ class Markdown_Converter {
 
 		$tag = strtolower( $node->tagName ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
 
+		if ( 'img' === $tag ) {
+			return self::kept_image( $node );
+		}
+
 		if ( in_array( $tag, self::DROPPED, true ) ) {
 			return '';
 		}
@@ -363,11 +449,54 @@ class Markdown_Converter {
 			case 'em':
 			case 'i':
 				return self::emphasis( $node, '*' );
+			case 'del':
+			case 's':
+			case 'strike':
+				return self::emphasis( $node, '~~' );
+			case 'code':
+			case 'kbd':
+			case 'samp':
+				return self::code_span( $node );
 			case 'a':
 				return self::link( $node );
 		}
 
 		return self::inline_children( $node );
+	}
+
+	/**
+	 * 残す画像を描く。それ以外の画像は落とす。
+	 *
+	 * @param DOMElement $node img 要素。
+	 * @return string
+	 */
+	private static function kept_image( DOMElement $node ) {
+		if ( ! preg_match( '/(?:^|\s)wp-image-(\d+)(?:\s|$)/', $node->getAttribute( 'class' ), $match ) || ! isset( self::$kept_images[ (int) $match[1] ] ) ) {
+			return '';
+		}
+
+		$alt = self::escape_text( (string) preg_replace( '/\s+/', ' ', $node->getAttribute( 'alt' ) ) );
+
+		return self::IMAGE_MARK . '[' . trim( $alt ) . '](' . self::$kept_images[ (int) $match[1] ] . ')';
+	}
+
+	/**
+	 * 行の中のコードを描く。中身のバッククォートより長い記号で囲む。
+	 *
+	 * @param DOMElement $node 要素。
+	 * @return string
+	 */
+	private static function code_span( DOMElement $node ) {
+		$code = trim( (string) preg_replace( '/\s+/', ' ', $node->textContent ) ); // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase -- DOM の名前。
+		if ( '' === $code ) {
+			return '';
+		}
+
+		preg_match_all( '/`+/', $code, $runs );
+		$fence = str_repeat( '`', ( $runs[0] ? max( array_map( 'strlen', $runs[0] ) ) : 0 ) + 1 );
+		$pad   = '`' === $code[0] || '`' === substr( $code, -1 ) ? ' ' : '';
+
+		return $fence . $pad . $code . $pad . $fence;
 	}
 
 	/**
@@ -472,6 +601,7 @@ class Markdown_Converter {
 	 * @return string
 	 */
 	private static function escape_text( $text ) {
+		$text = str_replace( self::IMAGE_MARK, '', $text );
 		$text = (string) preg_replace( '/([\\\\`*_\[\]<~])/', '\\\\$1', $text );
 		$text = (string) preg_replace( '/!(?=\\\\\[)/', '\\\\!', $text );
 

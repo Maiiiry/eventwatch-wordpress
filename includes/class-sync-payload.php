@@ -45,7 +45,8 @@ class Sync_Payload {
 	 */
 	public static function build( WP_Post $post ) {
 		$title       = self::plain_title( $post );
-		$description = Markdown_Converter::from_post_content( $post->post_content );
+		$images      = get_post_meta( $post->ID, Sync_Queue::IMPORT_IMAGES, true );
+		$description = Markdown_Converter::from_post_content( $post->post_content, is_array( $images ) ? $images : array() );
 		$occurrences = get_post_meta( $post->ID, Event_Meta::OCCURRENCES, true );
 		$occurrences = is_array( $occurrences ) ? $occurrences : array();
 		$category    = (int) get_post_meta( $post->ID, Event_Meta::CATEGORY, true );

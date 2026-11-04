@@ -40,6 +40,21 @@ class Sync_Queue {
 
 	const PULLED_AT = '_eventwatch_sync_pulled_at';
 
+	/**
+	 * 取り込み元の EventWatch の投稿 ID。やり直しで 2 件目を作らないために持つ。
+	 */
+	const IMPORT_SOURCE = '_eventwatch_import_source';
+
+	/**
+	 * 本文に写した画像。添付の ID と EventWatch の宛先。送るときに宛先へ戻す。
+	 */
+	const IMPORT_IMAGES = '_eventwatch_import_images';
+
+	/**
+	 * 添付に持つ、元の画像の URL。やり直しで入れ直さないため。
+	 */
+	const IMPORT_IMAGE_SOURCE = '_eventwatch_import_image_source';
+
 	const DELETE_PREFIX = 'eventwatch_sync_delete_';
 	const HOLD_OPTION   = 'eventwatch_sync_hold_until';
 	const LOCK_OPTION   = 'eventwatch_sync_lock';
@@ -98,12 +113,19 @@ class Sync_Queue {
 	private static $extra_requests = 0;
 
 	/**
+	 * 保存で印を積まない間か。
+	 *
+	 * @var bool
+	 */
+	private static $marking_paused = false;
+
+	/**
 	 * 同期のメタのキー。「送らない」は利用者の選択なので含めない。
 	 *
 	 * @return string[]
 	 */
 	public static function meta_keys() {
-		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, Sync_Payload::PUBLISHED_AT_META, Sync_Image::RECORD, Sync_Image::ISSUE );
+		return array( self::PENDING, self::ATTEMPTS, self::NEXT_AT, self::ERROR, self::BLOCKS, self::HASH, self::EXISTS, self::REMOTE, self::SENT_AT, self::PULLED_AT, self::IMPORT_SOURCE, self::IMPORT_IMAGES, self::IMPORT_IMAGE_SOURCE, Sync_Payload::PUBLISHED_AT_META, Sync_Image::RECORD, Sync_Image::ISSUE );
 	}
 
 	/**
@@ -135,7 +157,7 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public static function on_after_insert( $post_id, $post, $update, $post_before ) {
-		if ( Post_Type::POST_TYPE !== $post->post_type ) {
+		if ( Post_Type::POST_TYPE !== $post->post_type || self::$marking_paused ) {
 			return;
 		}
 
@@ -149,6 +171,23 @@ class Sync_Queue {
 		$keep_retry = $post_before instanceof WP_Post && 'publish' !== $post_before->post_status;
 
 		self::mark( (int) $post_id, true, $keep_retry );
+	}
+
+	/**
+	 * 保存で印を積まずに処理を動かす。取り込んだ内容をそのまま送り返さないため。
+	 *
+	 * @param callable $callback 処理。
+	 * @return mixed 処理の戻り。
+	 */
+	public static function without_marking( callable $callback ) {
+		$outer                = self::$marking_paused;
+		self::$marking_paused = true;
+
+		try {
+			return $callback();
+		} finally {
+			self::$marking_paused = $outer;
+		}
 	}
 
 	/**
@@ -814,6 +853,38 @@ class Sync_Queue {
 	}
 
 	/**
+	 * 結び付けの応答を手元に書き、いまの内容を送ったものとして覚える。
+	 *
+	 * 下書きの覚えは取り下げの内容にする。下書きのまま保存しただけで、審査待ちの投稿を審査から外さないため。
+	 * 応答を受けた後に公開して内容が同じなら、次の洗い直しでも送らない。
+	 *
+	 * @param int   $post_id 投稿の ID。
+	 * @param array $event   応答の投稿。
+	 * @return void
+	 */
+	public static function record_linked( $post_id, array $event ) {
+		update_post_meta( $post_id, self::EXISTS, 1 );
+		update_post_meta( $post_id, self::SENT_AT, time() );
+		delete_post_meta( $post_id, self::PULLED_AT );
+		self::store_remote( $post_id, $event );
+
+		$post   = get_post( $post_id );
+		$action = $post ? self::action_for( $post ) : self::ACTION_NONE;
+		$body   = array();
+
+		if ( self::ACTION_PUT === $action ) {
+			$built = Sync_Payload::build( $post );
+			if ( $built['blocks'] ) {
+				delete_post_meta( $post_id, self::HASH );
+				return;
+			}
+			$body = Sync_Payload::with_image( $built['body'], isset( $event['imageUploadId'] ) ? (string) $event['imageUploadId'] : '' );
+		}
+
+		update_post_meta( $post_id, self::HASH, self::content_hash( $action, $body ) );
+	}
+
+	/**
 	 * EventWatch に無いと分かった投稿の記録を消す。次に公開したら作り直しに行く。
 	 *
 	 * @param int $post_id 投稿の ID。
@@ -822,6 +893,9 @@ class Sync_Queue {
 	public static function forget_remote( $post_id ) {
 		delete_post_meta( $post_id, self::EXISTS );
 		delete_post_meta( $post_id, self::PULLED_AT );
+		// 作り直す投稿は本文の画像を参照していないので、宛先を送ると断られる。取り込みのやり直しの対象でもなくなる。
+		delete_post_meta( $post_id, self::IMPORT_SOURCE );
+		delete_post_meta( $post_id, self::IMPORT_IMAGES );
 		// 取り下げる先が無いので、投入画像も回収される。取り込みの 404 は別の団体のキーでも起きるので、ここだけで消す。
 		Sync_Image::forget( $post_id );
 		self::clear_remote( $post_id );
@@ -845,7 +919,7 @@ class Sync_Queue {
 	 * @param array $event 応答の投稿。
 	 * @return array
 	 */
-	private static function remote_from_event( array $event ) {
+	public static function remote_from_event( array $event ) {
 		return array(
 			'status'          => isset( $event['status'] ) ? sanitize_text_field( (string) $event['status'] ) : '',
 			'visible'         => ! empty( $event['visible'] ),

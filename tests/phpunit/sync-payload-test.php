@@ -85,7 +85,11 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 			'行頭のリストの形'       => array( '<p>- 項目ではない</p><p>1. 項目ではない</p>', "\\- 項目ではない\n\n1\\. 項目ではない" ),
 			'行頭の引用の形'        => array( '<p>&gt; 引用ではない</p>', '\\> 引用ではない' ),
 			'囲みの中の文字を段落に'    => array( '<div>文字<p>段落</p>続き</div>', "文字\n\n段落\n\n続き" ),
-			'表はセルごとに段落'      => array( '<table><tr><td>あ</td><td>い</td></tr></table>', "あ\n\nい" ),
+			'表は最初の行を見出しに'    => array( '<table><tr><td>あ</td><td>い</td></tr><tr><td>う</td></tr></table>', "| あ | い |\n| --- | --- |\n| う |  |" ),
+			'コードブロックの囲み'     => array( "<pre>a\n```\nb</pre>", "````\na\n```\nb\n````" ),
+			'行の中のコード'        => array( '<p><code>a*b</code></p>', '`a*b`' ),
+			'バッククォートのコード'    => array( '<p><code>a`b</code></p>', '``a`b``' ),
+			'打ち消し'           => array( '<p><del>a</del> <s>b</s></p>', '~~a~~ ~~b~~' ),
 			'全角の空白は残す'       => array( '<p>あ　い</p>', 'あ　い' ),
 			'空'              => array( '', '' ),
 		);
