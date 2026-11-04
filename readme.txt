@@ -81,7 +81,7 @@ Once a key is set, events are sent when you publish them, including scheduled ev
 * Deleting an event permanently deletes it on EventWatch.
 * Turn off "Send this post to EventWatch" to keep an event on your site only. If the event was already sent, it is withdrawn from EventWatch.
 
-Events you published before entering a key are not sent automatically. They are sent the next time you update them.
+Events you published before entering a key are not sent automatically. They are sent the next time you update them. To send them together, use "Send all to EventWatch" in Settings > EventWatch. Each event goes to review. This doesn't include events set not to send, events that have ended, or events missing required details. Events are sent a few dozen at a time with WP-Cron. EventWatch limits how many images can be uploaded in a day, so on a site with more than 100 events with images, the event details arrive first and some images follow over the next days.
 
 The featured image is uploaded to EventWatch as a file, shortly after you save, and only when the file has changed. EventWatch accepts JPEG, PNG, and WebP images up to 10 MB. If the file is too large, a smaller size that WordPress generated is sent instead. If no size fits, or the upload fails, the rest of the event is still sent, any image EventWatch already has stays, and the panel shows the reason. Failed uploads caused by a connection problem or the daily limit are retried about once an hour. Removing the featured image removes it on EventWatch too. Files that aren't stored on this server can't be uploaded.
 

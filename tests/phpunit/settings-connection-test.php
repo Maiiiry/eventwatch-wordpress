@@ -833,11 +833,11 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 
 		$html = $this->output_of( array( Connection_Admin::class, 'render_forms' ) );
 
-		foreach ( array( Connection_Admin::ACTION_CHECK, Connection_Admin::ACTION_REMOVE_KEY, Connection_Admin::ACTION_MOVED, Connection_Admin::ACTION_COPY ) as $action ) {
+		foreach ( array( Connection_Admin::ACTION_CHECK, Connection_Admin::ACTION_REMOVE_KEY, Connection_Admin::ACTION_MOVED, Connection_Admin::ACTION_COPY, Connection_Admin::ACTION_SEND_ALL ) as $action ) {
 			$this->assertStringContainsString( 'id="' . $action . '"', $html );
 			$this->assertStringContainsString( wp_create_nonce( $action ), $html );
 		}
-		$this->assertSame( 4, substr_count( $html, 'admin-post.php' ) );
+		$this->assertSame( 5, substr_count( $html, 'admin-post.php' ) );
 	}
 
 	/**

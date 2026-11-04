@@ -490,6 +490,7 @@ class Settings {
 				)
 			)
 		);
+		self::render_send_all();
 		printf(
 			'<p class="description">%1$s <a href="%2$s" target="_blank" rel="noopener noreferrer">%3$s</a></p>',
 			esc_html(
@@ -499,6 +500,44 @@ class Settings {
 			),
 			esc_url( self::CRON_HELP_URL ),
 			esc_html__( 'How to run WP-Cron from your server', 'eventwatch' )
+		);
+	}
+
+	/**
+	 * 公開中でまだ送っていないイベントの件数と、まとめて送る操作。対象が無ければ出さない。
+	 * キーの保存では送らないので、後からキーを入れたサイトはここから送る。
+	 *
+	 * @return void
+	 */
+	private static function render_send_all() {
+		if ( '' === Connection::api_key() ) {
+			return;
+		}
+
+		$count = count( Sync_Queue::unsent_published_ids() );
+		if ( 0 === $count ) {
+			return;
+		}
+
+		printf(
+			'<p>%s</p>',
+			esc_html(
+				sprintf(
+					/* translators: %d: number of events. */
+					_n( 'Published but not sent yet: %d event', 'Published but not sent yet: %d events', $count, 'eventwatch' ),
+					$count
+				)
+			)
+		);
+		printf(
+			'<p><button type="submit" class="button" form="%1$s"%2$s>%3$s</button></p>',
+			esc_attr( Connection_Admin::ACTION_SEND_ALL ),
+			disabled( Sync_Queue::can_send_unsent(), false, false ),
+			esc_html__( 'Send all to EventWatch', 'eventwatch' )
+		);
+		printf(
+			'<p class="description">%s</p>',
+			esc_html__( 'Each event goes to review on EventWatch. Events are sent a few dozen at a time with WP-Cron, so this can take a while. Events set not to send, events that have ended, and events missing required details aren’t included.', 'eventwatch' )
 		);
 	}
 

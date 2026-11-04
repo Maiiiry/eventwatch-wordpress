@@ -382,6 +382,89 @@ class Sync_Queue {
 	}
 
 	/**
+	 * まとめて送る操作の対象。公開中で、まだ送っていない、これから開催するイベント。
+	 *
+	 * 「送らない」と、結び付く前の下書きを公開したものは外す。後者を送ると EventWatch に別の投稿ができて、
+	 * 結び付けのやり直しが断られる。キーの無い間に公開した投稿には送れない理由の記録が無いので、内容から確かめる。
+	 *
+	 * @return int[]
+	 */
+	public static function unsent_published_ids() {
+		$posts = get_posts(
+			array(
+				'post_type'        => Post_Type::POST_TYPE,
+				'post_status'      => 'publish',
+				'numberposts'      => -1,
+				'has_password'     => false,
+				'suppress_filters' => true,
+				// phpcs:ignore WordPress.DB.SlowDBQuery -- 設定画面と、まとめて送る操作でだけ引く。
+				'meta_query'       => array(
+					'relation' => 'AND',
+					array(
+						'key'     => self::NO_SEND,
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'     => self::EXISTS,
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'     => self::PENDING,
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'     => self::IMPORT_ORIGINAL,
+						'compare' => 'NOT EXISTS',
+					),
+					array(
+						'key'     => Event_Meta::LAST_END,
+						'value'   => Event_Dates::upcoming_boundary(),
+						'compare' => '>=',
+						'type'    => 'NUMERIC',
+					),
+				),
+			)
+		);
+
+		$post_ids = array();
+		foreach ( $posts as $post ) {
+			$built = Sync_Payload::build( $post );
+			if ( ! $built['blocks'] ) {
+				$post_ids[] = (int) $post->ID;
+			}
+		}
+
+		return $post_ids;
+	}
+
+	/**
+	 * まとめて送る操作を受けられるか。接続を直すまで送れない間は受けない。
+	 *
+	 * @return bool
+	 */
+	public static function can_send_unsent() {
+		if ( '' === Connection::api_key() || Site_Identity::has_changed() ) {
+			return false;
+		}
+
+		$state = Connection::state();
+
+		return ! in_array( $state['status'], array( Connection::UNAUTHORIZED, Connection::SUSPENDED, Connection::FORBIDDEN ), true );
+	}
+
+	/**
+	 * まとめて送る対象に印を付ける。
+	 *
+	 * @return int 印を付けた件数。
+	 */
+	public static function mark_unsent_published() {
+		$post_ids = self::unsent_published_ids();
+		self::mark_many( $post_ids );
+
+		return count( $post_ids );
+	}
+
+	/**
 	 * 止めていた送信を再開する。キーの保存・接続の確認の成功・移転の選択から呼ぶ。
 	 *
 	 * @return void
