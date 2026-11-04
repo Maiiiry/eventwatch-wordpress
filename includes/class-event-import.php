@@ -437,17 +437,22 @@ class Event_Import {
 		}
 
 		$meta = array(
-			Event_Meta::OCCURRENCES   => self::occurrence_rows( $event ),
-			Event_Meta::ZONE          => isset( $event['zoneId'] ) ? (string) $event['zoneId'] : '',
-			Event_Meta::SCHEDULE_NOTE => isset( $event['holdingPeriodNote'] ) ? (string) $event['holdingPeriodNote'] : '',
-			Event_Meta::CATEGORY      => isset( $event['category'] ) ? (int) $event['category'] : 0,
-			Event_Meta::PREFECTURE    => isset( $event['prefectureCode'] ) ? (int) $event['prefectureCode'] : 0,
-			Event_Meta::ONLINE        => ! empty( $event['online'] ),
-			Event_Meta::VENUE_NAME    => isset( $event['venueName'] ) ? (string) $event['venueName'] : '',
-			Event_Meta::VENUE_ADDRESS => isset( $event['venueAddress'] ) ? (string) $event['venueAddress'] : '',
-			Event_Meta::URL           => isset( $event['publisherEventPageUrl'] ) ? (string) $event['publisherEventPageUrl'] : '',
-			Sync_Queue::NO_SEND       => 1,
-			Sync_Queue::IMPORT_SOURCE => (string) $event['id'],
+			Event_Meta::OCCURRENCES     => self::occurrence_rows( $event ),
+			Event_Meta::ZONE            => isset( $event['zoneId'] ) ? (string) $event['zoneId'] : '',
+			Event_Meta::SCHEDULE_NOTE   => isset( $event['holdingPeriodNote'] ) ? (string) $event['holdingPeriodNote'] : '',
+			Event_Meta::CATEGORY        => isset( $event['category'] ) ? (int) $event['category'] : 0,
+			Event_Meta::PREFECTURE      => isset( $event['prefectureCode'] ) ? (int) $event['prefectureCode'] : 0,
+			Event_Meta::ONLINE          => ! empty( $event['online'] ),
+			Event_Meta::VENUE_NAME      => isset( $event['venueName'] ) ? (string) $event['venueName'] : '',
+			Event_Meta::VENUE_ADDRESS   => isset( $event['venueAddress'] ) ? (string) $event['venueAddress'] : '',
+			Event_Meta::URL             => isset( $event['publisherEventPageUrl'] ) ? (string) $event['publisherEventPageUrl'] : '',
+			Sync_Queue::NO_SEND         => 1,
+			Sync_Queue::IMPORT_SOURCE   => (string) $event['id'],
+			// 途中で落ちても、結び付いていないと分かるよう作るときに入れる。中身は作った後に入れ直す。
+			Sync_Queue::IMPORT_ORIGINAL => array(
+				'content'   => '',
+				'thumbnail' => 0,
+			),
 		);
 		if ( $kept ) {
 			$meta[ Sync_Queue::IMPORT_IMAGES ] = $kept;
@@ -552,9 +557,8 @@ class Event_Import {
 		Sync_Queue::record_linked( $post_id, $event );
 		delete_post_meta( $post_id, Sync_Queue::IMPORT_ORIGINAL );
 
-		// やり直しの前にオーナーが手を入れた内容は EventWatch に届いていない。公開中なら送る。下書きのままなら審査から外さない。
-		$post = get_post( $post_id );
-		if ( $touched && $post && Sync_Queue::ACTION_PUT === Sync_Queue::action_for( $post ) ) {
+		// やり直しの前にオーナーが手を入れた内容は EventWatch に届いていない。公開と非公開の選択は送る。下書きのままなら審査から外さない。
+		if ( $touched && ( ! $is_draft || ! empty( $event['visible'] ) ) ) {
 			delete_post_meta( $post_id, Sync_Queue::HASH );
 			Sync_Queue::mark( $post_id );
 		}

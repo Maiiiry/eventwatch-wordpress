@@ -1662,51 +1662,51 @@ msgstr "アイキャッチ画像を送れませんでした"
 msgid "The other details aren’t affected. If EventWatch already has an image for this event, it stays."
 msgstr "ほかの内容には影響しません。EventWatch にこのイベントの画像があれば、そのまま残ります。"
 
-#: includes/class-event-import.php:305
+#: includes/class-event-import.php:297
 msgid "This post can’t be imported any more. It may have been deleted or imported from another site."
 msgstr "この投稿はもう取り込めません。削除されたか、別のサイトに取り込まれた可能性があります。"
 
-#: includes/class-event-import.php:315
+#: includes/class-event-import.php:307
 msgid "The images couldn’t be loaded from EventWatch. Wait a moment, then try again."
 msgstr "画像を EventWatch から読み込めませんでした。少し待ってから、やり直してください。"
 
-#: includes/class-event-import.php:320
+#: includes/class-event-import.php:312
 msgid "The post couldn’t be created on this site. Try again."
 msgstr "このサイトに投稿を作れませんでした。やり直してください。"
 
-#: includes/class-event-import.php:618
+#: includes/class-event-import.php:612
 msgid "Your EventWatch organization is suspended. Contact EventWatch support."
 msgstr "EventWatch の団体が停止されています。EventWatch にお問い合わせください。"
 
-#: includes/class-event-import.php:620
+#: includes/class-event-import.php:614
 msgid "This API key can’t import posts. Issue a new key with EventWatch, then set it in Settings › EventWatch."
 msgstr "この API キーでは投稿を取り込めません。EventWatch で新しいキーを発行し、「設定 › EventWatch」で設定してください。"
 
-#: includes/class-event-import.php:622
+#: includes/class-event-import.php:616
 msgid "The site URL has changed. Confirm whether this is a copy in Settings › EventWatch, then try again."
 msgstr "サイトの URL が変わっています。「設定 › EventWatch」で複製かどうかを確かめてから、やり直してください。"
 
-#: includes/class-event-import.php:625
+#: includes/class-event-import.php:619
 msgid "The API key was rejected. Check it in Settings › EventWatch, then try again."
 msgstr "API キーが受け付けられませんでした。「設定 › EventWatch」で確かめてから、やり直してください。"
 
-#: includes/class-event-import.php:639
+#: includes/class-event-import.php:633
 msgid "Another site has already imported this post. Delete this draft if you don’t need it."
 msgstr "この投稿は別のサイトに取り込まれています。この下書きが要らなければ削除してください。"
 
-#: includes/class-event-import.php:642
+#: includes/class-event-import.php:636
 msgid "This draft was already sent to EventWatch as a separate post. Delete one of the two posts on EventWatch, then try again."
 msgstr "この下書きは、別の投稿として EventWatch に送られています。EventWatch でどちらかの投稿を削除してから、やり直してください。"
 
-#: includes/class-event-import.php:645
+#: includes/class-event-import.php:639
 msgid "This post is no longer on EventWatch. Delete this draft if you don’t need it."
 msgstr "この投稿は EventWatch にもうありません。この下書きが要らなければ削除してください。"
 
-#: includes/class-event-import.php:648
+#: includes/class-event-import.php:642
 msgid "EventWatch didn’t respond. Wait a moment, then try again."
 msgstr "EventWatch から応答がありませんでした。少し待ってから、やり直してください。"
 
-#: includes/class-event-import.php:651
+#: includes/class-event-import.php:645
 msgid "EventWatch rejected this request. Try again later."
 msgstr "EventWatch に断られました。時間をおいて、やり直してください。"
 
@@ -1715,19 +1715,19 @@ msgstr "EventWatch に断られました。時間をおいて、やり直して�
 msgid "Import from EventWatch"
 msgstr "EventWatch から取り込む"
 
-#: includes/class-import-admin.php:116
+#: includes/class-import-admin.php:115
 msgid "Import posts your organization created on EventWatch as WordPress posts. Posts listed on EventWatch are imported as published; all others as drafts."
 msgstr "EventWatch の Web で作った、この団体の投稿を WordPress の投稿として取り込みます。EventWatch で掲載中の投稿は公開、それ以外は下書きとして取り込みます。"
 
-#: includes/class-import-admin.php:130
+#: includes/class-import-admin.php:129
 msgid "Importing needs JavaScript. Turn it on, then reload this page."
 msgstr "取り込みには JavaScript が必要です。有効にしてから、このページを読み直してください。"
 
-#: includes/class-import-admin.php:146
+#: includes/class-import-admin.php:161
 msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then reload this page."
 msgstr "EventWatch から一覧を読み込めませんでした。少し待ってから、このページを読み直してください。"
 
-#: includes/class-import-admin.php:228
+#: includes/class-import-admin.php:243
 #: build/import-page.js:5
 msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then try again."
 msgstr "EventWatch から一覧を読み込めませんでした。少し待ってから、やり直してください。"

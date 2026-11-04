@@ -256,6 +256,31 @@ class Markdown_Blocks_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * リンクの形。
+	 *
+	 * @return array<string, array{0: string, 1: string}>
+	 */
+	public function link_cases() {
+		return array(
+			'文字の中の角括弧' => array( '[[PDF] 資料](https://example.com/a)', '<a href="https://example.com/a">&#91;PDF] 資料</a>' ),
+			'山括弧の中の空白' => array( '[a](<https://example.com/b c>)', '<a href="https://example.com/b%20c">a</a>' ),
+			'一重引用符の題'  => array( "[a](https://example.com/ 't')", '<a href="https://example.com/">a</a>' ),
+		);
+	}
+
+	/**
+	 * EventWatch で書かれるリンクの形を読む。
+	 *
+	 * @dataProvider link_cases
+	 *
+	 * @param string $markdown Markdown。
+	 * @param string $expected 段落の中の HTML。
+	 */
+	public function test_link_forms( $markdown, $expected ) {
+		$this->assertStringContainsString( $expected, Markdown_Blocks::from_markdown( $markdown ) );
+	}
+
+	/**
 	 * 山括弧が揃わないリンクの宛先もリンクにしない。
 	 */
 	public function test_unpaired_angle_is_not_link() {

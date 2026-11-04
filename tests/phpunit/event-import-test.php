@@ -1256,6 +1256,81 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 掲載中の投稿の下書きを非公開にしていたら、やり直しの後に取り下げを送る。
+	 */
+	public function test_private_choice_is_sent_after_retry() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		wp_update_post(
+			array(
+				'ID'          => $first['postId'],
+				'post_status' => 'private',
+			)
+		);
+
+		$this->link_answer = null;
+		$this->api         = array();
+		Event_Import::run( self::ID );
+		Sync_Queue::run();
+
+		$this->assertSame( 1, $this->sent( '/unpublish' ) );
+	}
+
+	/**
+	 * 投稿を作った時点で控えの枠がある。ここより後で落ちても、結び付いていないと読める。
+	 */
+	public function test_original_exists_when_post_is_created() {
+		$seen  = null;
+		$watch = static function ( $post_id ) use ( &$seen ) {
+			if ( null === $seen ) {
+				$seen = get_post_meta( $post_id, Sync_Queue::IMPORT_ORIGINAL, true );
+			}
+		};
+		add_action( 'wp_after_insert_post', $watch );
+
+		$this->import( $this->event() );
+		remove_action( 'wp_after_insert_post', $watch );
+
+		$this->assertIsArray( $seen );
+	}
+
+	/**
+	 * 控えを書く前に落ちても、結び付いていないと読む。
+	 */
+	public function test_placeholder_original_links_on_retry() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		update_post_meta(
+			$first['postId'],
+			Sync_Queue::IMPORT_ORIGINAL,
+			array(
+				'content'   => '',
+				'thumbnail' => 0,
+			)
+		);
+
+		$this->link_answer = null;
+		$this->api         = array();
+		Event_Import::run( self::ID );
+
+		$this->assertSame( 1, $this->sent( '/link' ) );
+		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Queue::NO_SEND, true ) );
+	}
+
+	/**
+	 * ゴミ箱の結び付く前の下書きの「送らない」も消す。
+	 */
+	public function test_forget_all_clears_trashed_import_no_send() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+		wp_trash_post( $first['postId'] );
+
+		Sync_Queue::forget_all();
+
+		$this->assertSame( '', get_post_meta( $first['postId'], Sync_Queue::NO_SEND, true ) );
+	}
+
+	/**
 	 * キーを断られて止まった件にも、残した下書きへのリンクを返す。
 	 */
 	public function test_stop_returns_edit_link() {

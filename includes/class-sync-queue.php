@@ -396,20 +396,7 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public static function forget_all() {
-		// 結び付く前の下書きの「送らない」は、取り込みが立てた印で利用者の選択ではない。
-		$unlinked = get_posts(
-			array(
-				'post_type'      => Post_Type::POST_TYPE,
-				'post_status'    => 'any',
-				'posts_per_page' => -1,
-				'fields'         => 'ids',
-				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- 複製の選択でだけ引く。
-				'meta_key'       => self::IMPORT_ORIGINAL,
-			)
-		);
-		foreach ( $unlinked as $post_id ) {
-			delete_post_meta( $post_id, self::NO_SEND );
-		}
+		self::forget_import_no_send();
 
 		foreach ( self::meta_keys() as $key ) {
 			delete_post_meta_by_key( $key );
@@ -427,6 +414,27 @@ class Sync_Queue {
 		wp_clear_scheduled_hook( Sync_Pull::RUN_HOOK );
 		self::$marked  = array();
 		self::$deleted = array();
+	}
+
+	/**
+	 * 結び付く前の下書きの「送らない」を消す。取り込みが立てた印で、利用者の選択ではない。取り込みの記録を消す前に呼ぶ。
+	 *
+	 * @return void
+	 */
+	public static function forget_import_no_send() {
+		$unlinked = get_posts(
+			array(
+				'post_type'      => Post_Type::POST_TYPE,
+				'post_status'    => get_post_stati(),
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- 複製の選択と削除でだけ引く。
+				'meta_key'       => self::IMPORT_ORIGINAL,
+			)
+		);
+		foreach ( $unlinked as $post_id ) {
+			delete_post_meta( $post_id, self::NO_SEND );
+		}
 	}
 
 	/**

@@ -297,4 +297,22 @@ class Uninstall_Test extends WP_UnitTestCase {
 		$this->assertFalse( $option );
 		$this->assertFalse( get_network_option( $other_network, 'eventwatch_network_settings' ) );
 	}
+
+	/**
+	 * 取り込みが立てた「送らない」だけ消し、利用者が選んだものは残す。
+	 */
+	public function test_clears_only_the_no_send_set_by_import() {
+		$type     = \EventWatch\Post_Type::POST_TYPE;
+		$unlinked = self::factory()->post->create( array( 'post_type' => $type ) );
+		$chosen   = self::factory()->post->create( array( 'post_type' => $type ) );
+		update_post_meta( $unlinked, \EventWatch\Sync_Queue::NO_SEND, 1 );
+		update_post_meta( $unlinked, \EventWatch\Sync_Queue::IMPORT_ORIGINAL, array( 'content' => '' ) );
+		update_post_meta( $chosen, \EventWatch\Sync_Queue::NO_SEND, 1 );
+
+		$this->run_uninstall();
+
+		$this->assertSame( '', get_post_meta( $unlinked, \EventWatch\Sync_Queue::NO_SEND, true ) );
+		$this->assertSame( '', get_post_meta( $unlinked, \EventWatch\Sync_Queue::IMPORT_ORIGINAL, true ) );
+		$this->assertSame( '1', get_post_meta( $chosen, \EventWatch\Sync_Queue::NO_SEND, true ) );
+	}
 }

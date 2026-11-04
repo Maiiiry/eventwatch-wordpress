@@ -15,7 +15,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * EventWatch の本文に書ける記法を読む。生の HTML は要素にせず文字として出す。
  *
  * 1 つの改行は `<br>` にする。EventWatch の表示は改行を行の分かれ目として描くので、つなぐと見た目が変わる。
- * 文字参照で書いた画像（`![a][ref]`）は読まない。
+ * 文字参照で書いた画像（`![a][ref]`）と、宛先の 2 段以上の括弧は読まない。
  */
 class Markdown_Blocks {
 
@@ -796,7 +796,7 @@ class Markdown_Blocks {
 			return array( '<code>' . self::code_html( trim( str_replace( "\n", ' ', $code[2] ) ) ) . '</code>', $i + strlen( $code[0] ) );
 		}
 
-		if ( '!' === $char && preg_match( '/^!\[((?:[^\[\]\\\\]|\\\\.|\[[^\]]*\])*)\]\(\s*(?:<([^<>\s]+)>|([^()\s<>]+))(?:\s+"[^"]*")?\s*\)/', $rest, $image ) ) {
+		if ( '!' === $char && preg_match( '/^!\[((?:[^\[\]\\\\]|\\\\.|\[[^\]]*\])*)\]\(\s*(?:<([^<>\s]+)>|([^()\s<>]+))(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)/', $rest, $image ) ) {
 			// 山括弧は揃ったときだけ宛先。揃わない形は EventWatch では文字で、投入記録と照らされていない。
 			$url           = '' !== $image[2] ? $image[2] : $image[3];
 			self::$found[] = $url;
@@ -805,7 +805,7 @@ class Markdown_Blocks {
 			return array( $tag, $i + strlen( $image[0] ) );
 		}
 
-		if ( '[' === $char && preg_match( '/^\[((?:[^\[\]\\\\]|\\\\.|!\[[^\]]*\]\([^)]*\))*)\]\(\s*(?:<([^<>\s]*)>|((?:[^()\s<>]|\([^()\s]*\))*))(?:\s+"[^"]*")?\s*\)/', $rest, $link ) ) {
+		if ( '[' === $char && preg_match( '/^\[((?:[^\[\]\\\\]|\\\\.|!\[[^\]]*\]\([^)]*\)|\[[^\[\]]*\])*)\]\(\s*(?:<([^<>\n]*)>|((?:[^()\s<>]|\([^()\s]*\))*))(?:\s+(?:"[^"]*"|\'[^\']*\'))?\s*\)/', $rest, $link ) ) {
 			$url = '' !== $link[2] ? $link[2] : ( isset( $link[3] ) ? $link[3] : '' );
 			return array( '<a href="' . esc_url( $url ) . '">' . self::inline( $link[1] ) . '</a>', $i + strlen( $link[0] ) );
 		}
