@@ -33,6 +33,7 @@ PHP と Composer は wp-env のコンテナの中で動かす。先に `npm run 
 - イベントの送信は `Sync_Queue` を通す。フックでは印だけを積み、送るときに投稿を読み直す。送る欄を足すときは `Sync_Payload::build()` に足す（送った内容のハッシュにも入る）。同期のメタは `Sync_Queue::meta_keys()` に足す（複製の選択と削除で消すため）
 - アイキャッチ画像は `Sync_Image` を通す。送る ID を決めるのは `resolve()` の 1 か所で、上げられなくても本文の同期は止めない。投入は保存の時点では行わず、cron で行う。`imageUploadId` だけは、止める理由を見た後で上げるので `build()` の外の `Sync_Payload::with_image()` で足す
 - 状態の取り込みは `Sync_Pull` を通す。応答の投稿を手元に書くのは `Sync_Queue::store_remote()` の 1 か所で、状態の語と文は `Sync_Rest::status()` の 1 か所（編集画面と一覧の列が読む）
+- 取り込みは `Event_Import` を通す。保存で印を積ませないときは `Sync_Queue::without_marking()` の中で書き、送った内容の覚えは `Sync_Queue::record_linked()` の 1 か所で入れる。本文を送る変換（`Markdown_Converter`）に記法を足すときは、取り込む変換（`Markdown_Blocks`）と往復のテストも足す
 - 開発では定数 `EVENTWATCH_API_URL` で API の URL を変えられる。wp-env では `WP_HOME` が固定なので、URL の変化は `eventwatch_site_url` を書き換えて確かめる
 - コードのコメントは日本語、画面の文言は英語を原文にする
 - wp-env のポートは 8885 / 8886。8888 は EventWatch の API サーバーが使う

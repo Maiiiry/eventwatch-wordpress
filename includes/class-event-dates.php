@@ -48,8 +48,19 @@ class Event_Dates {
 			return null;
 		}
 
+		return self::summary_of_rows( $rows, self::zone( $post_id ), $from );
+	}
+
+	/**
+	 * 日程の組から、一覧に出す日時を作る。投稿になる前のイベントにも使う。
+	 *
+	 * @param array        $rows 組。
+	 * @param DateTimeZone $zone イベントのタイムゾーン。
+	 * @param int|null     $from 期間で絞っているときの始まり。これより前に終わる組を飛ばす。
+	 * @return array{text: string, datetime: string, more: int}|null 読めなければ null。
+	 */
+	public static function summary_of_rows( array $rows, DateTimeZone $zone, $from = null ) {
 		$rows     = array_values( $rows );
-		$zone     = self::zone( $post_id );
 		$boundary = max( self::upcoming_boundary(), (int) $from );
 		$index    = count( $rows ) - 1;
 

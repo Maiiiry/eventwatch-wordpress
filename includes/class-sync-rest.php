@@ -361,9 +361,17 @@ class Sync_Rest {
 		}
 
 		$remote = get_post_meta( $post_id, Sync_Queue::REMOTE, true );
-		if ( ! is_array( $remote ) ) {
-			return 'unsent';
-		}
+
+		return is_array( $remote ) ? self::remote_state( $remote ) : 'unsent';
+	}
+
+	/**
+	 * EventWatch の状態を、状態の種類にする。
+	 *
+	 * @param array $remote Sync_Queue::remote_from_event の戻り。
+	 * @return string
+	 */
+	private static function remote_state( array $remote ) {
 		if ( $remote['suspended'] ) {
 			return 'stopped';
 		}
@@ -381,6 +389,30 @@ class Sync_Rest {
 		}
 
 		return 'unsent';
+	}
+
+	/**
+	 * 取り込む前の投稿の状態。下書き・非公開は、サイトで取り下げたのではないので別の語にする。
+	 *
+	 * @param array $event 一覧の投稿。
+	 * @return array{state: string, label: string, reason: string}
+	 */
+	public static function event_status( array $event ) {
+		$remote = Sync_Queue::remote_from_event( $event );
+		$state  = self::remote_state( $remote );
+		$label  = self::state_text()[ $state ][0];
+
+		if ( ! $remote['suspended'] && 'draft' === $remote['status'] ) {
+			$label = __( 'Draft', 'eventwatch' );
+		} elseif ( ! $remote['suspended'] && 'private' === $remote['status'] ) {
+			$label = __( 'Private', 'eventwatch' );
+		}
+
+		return array(
+			'state'  => $state,
+			'label'  => $label,
+			'reason' => 'rejected' === $remote['status'] ? $remote['rejectionReason'] : '',
+		);
 	}
 
 	/**

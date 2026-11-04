@@ -136,6 +136,35 @@ class Sync_Image {
 	}
 
 	/**
+	 * 取り込んだ画像を、結び付いている投入画像として記録する。次の更新で上げ直さない。
+	 *
+	 * 比べるのは送るときに選ぶファイルなので、同じ選び方をする。
+	 *
+	 * @param int    $post_id       投稿の ID。
+	 * @param int    $attachment_id 添付の ID。
+	 * @param string $upload_id     EventWatch の投入画像の ID。
+	 * @return void
+	 */
+	public static function record_imported( $post_id, $attachment_id, $upload_id ) {
+		$file = self::choose_file( $attachment_id );
+		if ( is_string( $file ) || '' === $upload_id ) {
+			return;
+		}
+
+		update_post_meta(
+			$post_id,
+			self::RECORD,
+			array(
+				'hash'       => (string) hash_file( 'sha256', $file['path'] ),
+				'id'         => $upload_id,
+				'at'         => time(),
+				'attached'   => true,
+				'attachedId' => $upload_id,
+			)
+		);
+	}
+
+	/**
 	 * 持っている ID が使えないと分かったので忘れる。次の送信で上げ直す。
 	 *
 	 * @param int $post_id 投稿の ID。

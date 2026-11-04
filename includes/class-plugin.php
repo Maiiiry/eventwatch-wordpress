@@ -54,6 +54,7 @@ class Plugin {
 		Sync_Rest::boot();
 		Admin_Columns::boot();
 		Editor_Assets::boot();
+		Import_Admin::boot();
 	}
 
 	/**

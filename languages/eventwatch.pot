@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-03T03:57:50+00:00\n"
+"POT-Creation-Date: 2026-11-04T04:37:53+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventwatch\n"
@@ -40,6 +40,7 @@ msgid "Event actions"
 msgstr ""
 
 #: includes/class-admin-columns.php:82
+#: includes/class-import-list-table.php:62
 msgid "Event date"
 msgstr ""
 
@@ -51,14 +52,14 @@ msgid "Prefecture"
 msgstr ""
 
 #. translators: 1: the first date of the event, 2: the number of other dates.
-#: includes/class-admin-columns.php:237
+#: includes/class-admin-columns.php:255
 #, php-format
 msgid "%1$s (+%2$d more date)"
 msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/class-admin-columns.php:251
+#: includes/class-admin-columns.php:269
 #: includes/class-event-ical.php:166
 #: includes/class-event-list.php:594
 msgid "Online"
@@ -157,32 +158,32 @@ msgid "Open EventWatch settings"
 msgstr ""
 
 #. translators: 1: when the event starts, 2: the day the event ends.
-#: includes/class-event-dates.php:174
+#: includes/class-event-dates.php:185
 #, php-format
 msgctxt "event date range"
 msgid "%1$s – %2$s"
 msgstr ""
 
 #. translators: PHP date format for the start of an event in the current year.
-#: includes/class-event-dates.php:190
+#: includes/class-event-dates.php:201
 msgctxt "event start this year"
 msgid "D, M j, Y, g:i A"
 msgstr ""
 
 #. translators: PHP date format for the start of an event in another year.
-#: includes/class-event-dates.php:193
+#: includes/class-event-dates.php:204
 msgctxt "event start in another year"
 msgid "D, M j, Y, g:i A"
 msgstr ""
 
 #. translators: PHP date format for the last day of an event in the current year.
-#: includes/class-event-dates.php:206
+#: includes/class-event-dates.php:217
 msgctxt "event end this year"
 msgid "D, M j, Y"
 msgstr ""
 
 #. translators: PHP date format for the last day of an event in another year.
-#: includes/class-event-dates.php:209
+#: includes/class-event-dates.php:220
 msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr ""
@@ -322,6 +323,54 @@ msgstr ""
 #: includes/class-event-detail.php:699
 #: build/blocks/event-field/index.js:1
 msgid "Visit official page"
+msgstr ""
+
+#: includes/class-event-import.php:297
+msgid "This post can’t be imported any more. It may have been deleted or imported from another site."
+msgstr ""
+
+#: includes/class-event-import.php:307
+msgid "The images couldn’t be loaded from EventWatch. Wait a moment, then try again."
+msgstr ""
+
+#: includes/class-event-import.php:312
+msgid "The post couldn’t be created on this site. Try again."
+msgstr ""
+
+#: includes/class-event-import.php:612
+msgid "Your EventWatch organization is suspended. Contact EventWatch support."
+msgstr ""
+
+#: includes/class-event-import.php:614
+msgid "This API key can’t import posts. Issue a new key with EventWatch, then set it in Settings › EventWatch."
+msgstr ""
+
+#: includes/class-event-import.php:616
+msgid "The site URL has changed. Confirm whether this is a copy in Settings › EventWatch, then try again."
+msgstr ""
+
+#: includes/class-event-import.php:619
+msgid "The API key was rejected. Check it in Settings › EventWatch, then try again."
+msgstr ""
+
+#: includes/class-event-import.php:633
+msgid "Another site has already imported this post. Delete this draft if you don’t need it."
+msgstr ""
+
+#: includes/class-event-import.php:636
+msgid "This draft was already sent to EventWatch as a separate post. Delete one of the two posts on EventWatch, then try again."
+msgstr ""
+
+#: includes/class-event-import.php:639
+msgid "This post is no longer on EventWatch. Delete this draft if you don’t need it."
+msgstr ""
+
+#: includes/class-event-import.php:642
+msgid "EventWatch didn’t respond. Wait a moment, then try again."
+msgstr ""
+
+#: includes/class-event-import.php:645
+msgid "EventWatch rejected this request. Try again later."
 msgstr ""
 
 #: includes/class-event-list.php:109
@@ -683,6 +732,73 @@ msgstr ""
 msgid "Clear filters"
 msgstr ""
 
+#: includes/class-import-admin.php:58
+#: includes/class-import-admin.php:59
+msgid "Import from EventWatch"
+msgstr ""
+
+#: includes/class-import-admin.php:115
+msgid "Import posts your organization created on EventWatch as WordPress posts. Posts listed on EventWatch are imported as published; all others as drafts."
+msgstr ""
+
+#: includes/class-import-admin.php:129
+msgid "Importing needs JavaScript. Turn it on, then reload this page."
+msgstr ""
+
+#: includes/class-import-admin.php:161
+msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then reload this page."
+msgstr ""
+
+#: includes/class-import-admin.php:243
+#: build/import-page.js:5
+msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then try again."
+msgstr ""
+
+#: includes/class-import-list-table.php:61
+msgid "Event name"
+msgstr ""
+
+#: includes/class-import-list-table.php:63
+msgid "Timing"
+msgstr ""
+
+#: includes/class-import-list-table.php:64
+msgid "EventWatch status"
+msgstr ""
+
+#: includes/class-import-list-table.php:75
+msgid "There are no posts to import. Posts your organization creates on EventWatch will appear here."
+msgstr ""
+
+#. translators: %s: the event name.
+#: includes/class-import-list-table.php:101
+#, php-format
+msgid "Select “%s”"
+msgstr ""
+
+#: includes/class-import-list-table.php:134
+msgid "Ended"
+msgstr ""
+
+#: includes/class-import-list-table.php:134
+msgid "Upcoming"
+msgstr ""
+
+#: includes/class-import-list-table.php:173
+#: build/import-page.js:2
+#: build/import-page.js:4
+msgid "Edit post"
+msgstr ""
+
+#: includes/class-import-list-table.php:188
+msgid "Import selected"
+msgstr ""
+
+#: includes/class-import-list-table.php:189
+#: build/import-page.js:2
+msgid "Select posts to import"
+msgstr ""
+
 #: includes/class-post-type.php:58
 #: includes/class-settings.php:249
 msgid "Events"
@@ -1013,7 +1129,7 @@ msgid "EventWatch didn’t accept the notes on dates. Check them and update the 
 msgstr ""
 
 #: includes/class-sync-rest.php:273
-#: includes/class-sync-rest.php:469
+#: includes/class-sync-rest.php:501
 msgid "Edit the notes"
 msgstr ""
 
@@ -1023,8 +1139,8 @@ msgstr ""
 
 #: includes/class-sync-rest.php:274
 #: includes/class-sync-rest.php:275
-#: includes/class-sync-rest.php:474
-#: includes/class-sync-rest.php:479
+#: includes/class-sync-rest.php:506
+#: includes/class-sync-rest.php:511
 msgid "Edit the venue"
 msgstr ""
 
@@ -1037,158 +1153,166 @@ msgid "EventWatch didn’t accept the official page URL. Check it and update the
 msgstr ""
 
 #: includes/class-sync-rest.php:276
-#: includes/class-sync-rest.php:488
+#: includes/class-sync-rest.php:520
 msgid "Edit the official page"
 msgstr ""
 
-#: includes/class-sync-rest.php:393
-msgid "Not sent"
+#: includes/class-sync-rest.php:406
+msgid "Draft"
 msgstr ""
 
-#: includes/class-sync-rest.php:393
-msgid "This post hasn’t been sent to EventWatch yet. It will be sent automatically when you publish."
-msgstr ""
-
-#: includes/class-sync-rest.php:394
-msgid "Waiting to send"
-msgstr ""
-
-#: includes/class-sync-rest.php:394
-msgid "This post will be sent to EventWatch shortly, usually within a few minutes."
-msgstr ""
-
-#: includes/class-sync-rest.php:395
-msgid "Under review"
-msgstr ""
-
-#: includes/class-sync-rest.php:395
-msgid "EventWatch is checking the details. Once it’s listed, you’ll see it here."
-msgstr ""
-
-#: includes/class-sync-rest.php:396
-msgid "Listed"
-msgstr ""
-
-#: includes/class-sync-rest.php:396
-msgid "This post is listed on EventWatch. Updates to the post are reflected there too."
-msgstr ""
-
-#: includes/class-sync-rest.php:397
-msgid "Changes requested"
-msgstr ""
-
-#: includes/class-sync-rest.php:397
-msgid "EventWatch has asked for changes. Fix the post and update it to send it again."
-msgstr ""
-
-#: includes/class-sync-rest.php:398
-msgid "Listing paused"
-msgstr ""
-
-#: includes/class-sync-rest.php:398
-msgid "EventWatch has paused this listing. It stays published on your site."
-msgstr ""
-
-#: includes/class-sync-rest.php:399
-msgid "Withdrawn from EventWatch"
-msgstr ""
-
-#: includes/class-sync-rest.php:399
-msgid "This post isn’t public on EventWatch because it isn’t published on your site. Publish it to list it again."
-msgstr ""
-
-#: includes/class-sync-rest.php:400
-msgid "Couldn’t send"
-msgstr ""
-
-#: includes/class-sync-rest.php:400
-msgid "This post couldn’t be sent to EventWatch."
-msgstr ""
-
-#: includes/class-sync-rest.php:401
-msgid "Not sending to EventWatch"
-msgstr ""
-
-#: includes/class-sync-rest.php:401
-msgid "This post won’t be sent to EventWatch. Turn sending on, and it will be sent the next time you update the post."
-msgstr ""
-
-#: includes/class-sync-rest.php:420
-msgid "No EventWatch API key is set. Enter a key in Settings › EventWatch, and sending resumes."
-msgstr ""
-
-#: includes/class-sync-rest.php:422
-msgid "This site’s URL has changed, so sending is stopped. Choose whether this site is a copy or has moved in Settings › EventWatch."
+#: includes/class-sync-rest.php:408
+msgid "Private"
 msgstr ""
 
 #: includes/class-sync-rest.php:425
-msgid "Couldn’t reach EventWatch. Your site isn’t affected. Sending is retried automatically."
+msgid "Not sent"
+msgstr ""
+
+#: includes/class-sync-rest.php:425
+msgid "This post hasn’t been sent to EventWatch yet. It will be sent automatically when you publish."
+msgstr ""
+
+#: includes/class-sync-rest.php:426
+msgid "Waiting to send"
+msgstr ""
+
+#: includes/class-sync-rest.php:426
+msgid "This post will be sent to EventWatch shortly, usually within a few minutes."
+msgstr ""
+
+#: includes/class-sync-rest.php:427
+msgid "Under review"
+msgstr ""
+
+#: includes/class-sync-rest.php:427
+msgid "EventWatch is checking the details. Once it’s listed, you’ll see it here."
+msgstr ""
+
+#: includes/class-sync-rest.php:428
+msgid "Listed"
+msgstr ""
+
+#: includes/class-sync-rest.php:428
+msgid "This post is listed on EventWatch. Updates to the post are reflected there too."
 msgstr ""
 
 #: includes/class-sync-rest.php:429
-msgid "This event was deleted on EventWatch, so it can’t be sent again. Contact EventWatch if you think this is a mistake."
+msgid "Changes requested"
+msgstr ""
+
+#: includes/class-sync-rest.php:429
+msgid "EventWatch has asked for changes. Fix the post and update it to send it again."
+msgstr ""
+
+#: includes/class-sync-rest.php:430
+msgid "Listing paused"
+msgstr ""
+
+#: includes/class-sync-rest.php:430
+msgid "EventWatch has paused this listing. It stays published on your site."
+msgstr ""
+
+#: includes/class-sync-rest.php:431
+msgid "Withdrawn from EventWatch"
+msgstr ""
+
+#: includes/class-sync-rest.php:431
+msgid "This post isn’t public on EventWatch because it isn’t published on your site. Publish it to list it again."
+msgstr ""
+
+#: includes/class-sync-rest.php:432
+msgid "Couldn’t send"
+msgstr ""
+
+#: includes/class-sync-rest.php:432
+msgid "This post couldn’t be sent to EventWatch."
 msgstr ""
 
 #: includes/class-sync-rest.php:433
-msgid "EventWatch already has another listing with this official page. If it’s the same event, contact EventWatch. Otherwise, enter a separate official page and update the post."
+msgid "Not sending to EventWatch"
 msgstr ""
 
-#: includes/class-sync-rest.php:436
-msgid "EventWatch didn’t accept the details of this event. Check the event details and update the post."
-msgstr ""
-
-#: includes/class-sync-rest.php:451
-msgid "No EventWatch category is selected."
+#: includes/class-sync-rest.php:433
+msgid "This post won’t be sent to EventWatch. Turn sending on, and it will be sent the next time you update the post."
 msgstr ""
 
 #: includes/class-sync-rest.php:452
-msgid "Choose a category"
+msgid "No EventWatch API key is set. Enter a key in Settings › EventWatch, and sending resumes."
 msgstr ""
 
-#: includes/class-sync-rest.php:456
-msgid "No prefecture is selected. EventWatch needs one unless the event is held online."
+#: includes/class-sync-rest.php:454
+msgid "This site’s URL has changed, so sending is stopped. Choose whether this site is a copy or has moved in Settings › EventWatch."
 msgstr ""
 
 #: includes/class-sync-rest.php:457
-msgid "Choose a prefecture"
+msgid "Couldn’t reach EventWatch. Your site isn’t affected. Sending is retried automatically."
 msgstr ""
 
 #: includes/class-sync-rest.php:461
+msgid "This event was deleted on EventWatch, so it can’t be sent again. Contact EventWatch if you think this is a mistake."
+msgstr ""
+
+#: includes/class-sync-rest.php:465
+msgid "EventWatch already has another listing with this official page. If it’s the same event, contact EventWatch. Otherwise, enter a separate official page and update the post."
+msgstr ""
+
+#: includes/class-sync-rest.php:468
+msgid "EventWatch didn’t accept the details of this event. Check the event details and update the post."
+msgstr ""
+
+#: includes/class-sync-rest.php:483
+msgid "No EventWatch category is selected."
+msgstr ""
+
+#: includes/class-sync-rest.php:484
+msgid "Choose a category"
+msgstr ""
+
+#: includes/class-sync-rest.php:488
+msgid "No prefecture is selected. EventWatch needs one unless the event is held online."
+msgstr ""
+
+#: includes/class-sync-rest.php:489
+msgid "Choose a prefecture"
+msgstr ""
+
+#: includes/class-sync-rest.php:493
 msgid "This event has no dates. Add at least one date."
 msgstr ""
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:466
+#: includes/class-sync-rest.php:498
 #, php-format
 msgid "The notes on dates are too long. EventWatch accepts up to %s characters, and counts emoji as two. Shorten the notes."
 msgstr ""
 
-#: includes/class-sync-rest.php:473
+#: includes/class-sync-rest.php:505
 msgid "Only one of the venue name and address is entered. Enter both, or leave both empty."
 msgstr ""
 
-#: includes/class-sync-rest.php:478
+#: includes/class-sync-rest.php:510
 msgid "The venue name or address is too long for EventWatch, which counts emoji as two characters. Shorten it."
 msgstr ""
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:485
+#: includes/class-sync-rest.php:517
 #, php-format
 msgid "The official page URL is too long. EventWatch accepts up to %s characters. Enter a shorter separate official page."
 msgstr ""
 
-#: includes/class-sync-rest.php:492
+#: includes/class-sync-rest.php:524
 msgid "This event has no title. Add a title."
 msgstr ""
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:497
+#: includes/class-sync-rest.php:529
 #, php-format
 msgid "The title is too long. EventWatch accepts up to %s characters. Shorten the title."
 msgstr ""
 
 #. translators: 1: the length of the content, 2: the character limit.
-#: includes/class-sync-rest.php:504
+#: includes/class-sync-rest.php:536
 #, php-format
 msgid "The content has %1$s characters. EventWatch accepts up to %2$s characters. Shorten the content."
 msgstr ""
@@ -1366,6 +1490,89 @@ msgstr ""
 
 #: build/blocks/past-events/index.js:1
 msgid "All past events"
+msgstr ""
+
+#. translators: %d: the number of posts selected.
+#: build/import-page.js:2
+#, js-format
+msgid "%d selected"
+msgid_plural "%d selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: build/import-page.js:2
+msgid "Imported"
+msgstr ""
+
+#: build/import-page.js:2
+msgid "Import finished"
+msgstr ""
+
+#: build/import-page.js:2
+msgid "Importing"
+msgstr ""
+
+#: build/import-page.js:2
+#: build/import-page.js:3
+msgid "Waiting"
+msgstr ""
+
+#: build/import-page.js:2
+msgid "Couldn’t import"
+msgstr ""
+
+#: build/import-page.js:2
+msgid "Stopped"
+msgstr ""
+
+#: build/import-page.js:2
+msgid "Importing events"
+msgstr ""
+
+#. translators: 1: posts finished, 2: posts selected.
+#: build/import-page.js:3
+#, js-format
+msgid "%1$d of %2$d done. Keep this page open until it finishes."
+msgstr ""
+
+#: build/import-page.js:3
+msgid "Stop"
+msgstr ""
+
+#. translators: %d: the number of posts imported.
+#: build/import-page.js:4
+#, js-format
+msgid "%d post imported."
+msgid_plural "%d posts imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: build/import-page.js:4
+msgid "Posts listed on EventWatch were published; others were saved as drafts. Check them over."
+msgstr ""
+
+#. translators: %d: the number of posts not imported.
+#: build/import-page.js:5
+#, js-format
+msgid "%d post couldn’t be imported."
+msgid_plural "%d posts couldn’t be imported."
+msgstr[0] ""
+msgstr[1] ""
+
+#: build/import-page.js:5
+msgid "The import didn’t finish. Wait a moment, then try again."
+msgstr ""
+
+#: build/import-page.js:5
+msgid "Edit draft"
+msgstr ""
+
+#: build/import-page.js:5
+msgid "Try again"
+msgstr ""
+
+#: build/import-page.js:5
+msgid "This draft isn’t connected to EventWatch yet."
 msgstr ""
 
 #. translators: %d: the position of the date in the list.

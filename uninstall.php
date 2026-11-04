@@ -71,7 +71,8 @@ $eventwatch_clean_site = static function () use ( $eventwatch_delete_site_option
 	}
 
 	// サイト ID が消えるので、入れ直すと別のサイトになる。送信の記録は残しても効かない。
-	// 「送らない」は利用者の選択なので残す。消すと、入れ直した後の更新で送られる。
+	// 「送らない」は利用者の選択なので残す。消すと、入れ直した後の更新で送られる。取り込みが立てた印だけ消す。
+	EventWatch\Sync_Queue::forget_import_no_send();
 	foreach ( array_merge( EventWatch\Sync_Queue::meta_keys(), array( EventWatch\Event_Detail::LISTING_SLUG ) ) as $eventwatch_meta_key ) {
 		delete_post_meta_by_key( $eventwatch_meta_key );
 	}
