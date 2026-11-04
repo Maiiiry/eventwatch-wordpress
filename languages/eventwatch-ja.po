@@ -36,6 +36,7 @@ msgid "EventWatch"
 msgstr "EventWatch"
 
 #: includes/class-admin-columns.php:82
+#: includes/class-import-list-table.php:62
 msgid "Event date"
 msgstr "開催日"
 
@@ -47,45 +48,45 @@ msgid "Prefecture"
 msgstr "都道府県"
 
 #. translators: 1: the first date of the event, 2: the number of other dates.
-#: includes/class-admin-columns.php:237
+#: includes/class-admin-columns.php:255
 #, php-format
 msgid "%1$s (+%2$d more date)"
 msgid_plural "%1$s (+%2$d more dates)"
 msgstr[0] "%1$s（ほか %2$d 日程）"
 
-#: includes/class-admin-columns.php:251
+#: includes/class-admin-columns.php:269
 #: includes/class-event-ical.php:166
 #: includes/class-event-list.php:594
 msgid "Online"
 msgstr "オンライン"
 
 #. translators: 1: when the event starts, 2: the day the event ends.
-#: includes/class-event-dates.php:174
+#: includes/class-event-dates.php:185
 #, php-format
 msgctxt "event date range"
 msgid "%1$s – %2$s"
 msgstr "%1$s〜%2$s"
 
 #. translators: PHP date format for the start of an event in the current year.
-#: includes/class-event-dates.php:190
+#: includes/class-event-dates.php:201
 msgctxt "event start this year"
 msgid "D, M j, Y, g:i A"
 msgstr "n月j日(D) G:i"
 
 #. translators: PHP date format for the start of an event in another year.
-#: includes/class-event-dates.php:193
+#: includes/class-event-dates.php:204
 msgctxt "event start in another year"
 msgid "D, M j, Y, g:i A"
 msgstr "Y年n月j日(D) G:i"
 
 #. translators: PHP date format for the last day of an event in the current year.
-#: includes/class-event-dates.php:206
+#: includes/class-event-dates.php:217
 msgctxt "event end this year"
 msgid "D, M j, Y"
 msgstr "n月j日(D)"
 
 #. translators: PHP date format for the last day of an event in another year.
-#: includes/class-event-dates.php:209
+#: includes/class-event-dates.php:220
 msgctxt "event end in another year"
 msgid "D, M j, Y"
 msgstr "Y年n月j日(D)"
@@ -1388,134 +1389,134 @@ msgstr "EventWatch からの理由"
 msgid "Last sent"
 msgstr "最後に送った日時"
 
-#: includes/class-sync-rest.php:393
+#: includes/class-sync-rest.php:425
 msgid "Not sent"
 msgstr "未送信"
 
-#: includes/class-sync-rest.php:393
+#: includes/class-sync-rest.php:425
 msgid "This post hasn’t been sent to EventWatch yet. It will be sent automatically when you publish."
 msgstr "まだ EventWatch に送っていません。投稿を公開すると、自動で送ります。"
 
-#: includes/class-sync-rest.php:394
+#: includes/class-sync-rest.php:426
 msgid "Waiting to send"
 msgstr "送信待ち"
 
-#: includes/class-sync-rest.php:394
+#: includes/class-sync-rest.php:426
 msgid "This post will be sent to EventWatch shortly, usually within a few minutes."
 msgstr "まもなく EventWatch に送ります。ふつうは数分で終わります。"
 
-#: includes/class-sync-rest.php:395
+#: includes/class-sync-rest.php:427
 msgid "Under review"
 msgstr "掲載の確認中"
 
-#: includes/class-sync-rest.php:395
+#: includes/class-sync-rest.php:427
 msgid "EventWatch is checking the details. Once it’s listed, you’ll see it here."
 msgstr "EventWatch で内容を確かめています。掲載されると、ここに表示します。"
 
-#: includes/class-sync-rest.php:396
+#: includes/class-sync-rest.php:428
 msgid "Listed"
 msgstr "掲載中"
 
-#: includes/class-sync-rest.php:396
+#: includes/class-sync-rest.php:428
 msgid "This post is listed on EventWatch. Updates to the post are reflected there too."
 msgstr "EventWatch に掲載されています。投稿を更新すると、EventWatch にも反映します。"
 
-#: includes/class-sync-rest.php:397
+#: includes/class-sync-rest.php:429
 msgid "Changes requested"
 msgstr "修正のお願いがあります"
 
-#: includes/class-sync-rest.php:397
+#: includes/class-sync-rest.php:429
 msgid "EventWatch has asked for changes. Fix the post and update it to send it again."
 msgstr "EventWatch から修正のお願いが届いています。直して投稿を更新すると、もう一度送ります。"
 
-#: includes/class-sync-rest.php:398
+#: includes/class-sync-rest.php:430
 msgid "Listing paused"
 msgstr "掲載を止めています"
 
-#: includes/class-sync-rest.php:398
+#: includes/class-sync-rest.php:430
 msgid "EventWatch has paused this listing. It stays published on your site."
 msgstr "EventWatch での掲載を止めています。サイトでの公開はそのまま続きます。"
 
-#: includes/class-sync-rest.php:399
+#: includes/class-sync-rest.php:431
 msgid "Withdrawn from EventWatch"
 msgstr "公開を取り下げています"
 
-#: includes/class-sync-rest.php:399
+#: includes/class-sync-rest.php:431
 msgid "This post isn’t public on EventWatch because it isn’t published on your site. Publish it to list it again."
 msgstr "サイトで公開していないので、EventWatch でも公開していません。公開すると、もう一度掲載します。"
 
-#: includes/class-sync-rest.php:400
+#: includes/class-sync-rest.php:432
 msgid "Couldn’t send"
 msgstr "送信に失敗"
 
-#: includes/class-sync-rest.php:400
+#: includes/class-sync-rest.php:432
 msgid "This post couldn’t be sent to EventWatch."
 msgstr "EventWatch に送れませんでした。"
 
-#: includes/class-sync-rest.php:401
+#: includes/class-sync-rest.php:433
 msgid "Not sending to EventWatch"
 msgstr "EventWatch に送らない"
 
-#: includes/class-sync-rest.php:401
+#: includes/class-sync-rest.php:433
 msgid "This post won’t be sent to EventWatch. Turn sending on, and it will be sent the next time you update the post."
 msgstr "この投稿は EventWatch に送りません。送るように切り替えると、次に投稿を更新したときに送ります。"
 
-#: includes/class-sync-rest.php:420
+#: includes/class-sync-rest.php:452
 msgid "No EventWatch API key is set. Enter a key in Settings › EventWatch, and sending resumes."
 msgstr "EventWatch の API キーがありません。設定 › EventWatch でキーを入れると、送信を再開します。"
 
-#: includes/class-sync-rest.php:422
+#: includes/class-sync-rest.php:454
 msgid "This site’s URL has changed, so sending is stopped. Choose whether this site is a copy or has moved in Settings › EventWatch."
 msgstr "サイトの URL が変わったので、送信を止めています。設定 › EventWatch で、複製か移転かを選んでください。"
 
-#: includes/class-sync-rest.php:425
+#: includes/class-sync-rest.php:457
 msgid "Couldn’t reach EventWatch. Your site isn’t affected. Sending is retried automatically."
 msgstr "EventWatch とつながりませんでした。サイトに影響はありません。自動で送り直します。"
 
-#: includes/class-sync-rest.php:429
+#: includes/class-sync-rest.php:461
 msgid "This event was deleted on EventWatch, so it can’t be sent again. Contact EventWatch if you think this is a mistake."
 msgstr "このイベントは EventWatch で削除されているので、もう一度送ることはできません。誤りだと思うときは EventWatch に問い合わせてください。"
 
-#: includes/class-sync-rest.php:433
+#: includes/class-sync-rest.php:465
 msgid "EventWatch already has another listing with this official page. If it’s the same event, contact EventWatch. Otherwise, enter a separate official page and update the post."
 msgstr "同じ公式ページの掲載が EventWatch に既にあります。同じイベントなら EventWatch に問い合わせてください。別のイベントなら、別の公式ページを入れて投稿を更新してください。"
 
-#: includes/class-sync-rest.php:436
+#: includes/class-sync-rest.php:468
 msgid "EventWatch didn’t accept the details of this event. Check the event details and update the post."
 msgstr "EventWatch がこのイベントの内容を受け付けませんでした。イベントの情報を確かめて、投稿を更新してください。"
 
-#: includes/class-sync-rest.php:451
+#: includes/class-sync-rest.php:483
 msgid "No EventWatch category is selected."
 msgstr "EventWatch のカテゴリが選ばれていません。"
 
-#: includes/class-sync-rest.php:452
+#: includes/class-sync-rest.php:484
 msgid "Choose a category"
 msgstr "カテゴリを選ぶ"
 
-#: includes/class-sync-rest.php:456
+#: includes/class-sync-rest.php:488
 msgid "No prefecture is selected. EventWatch needs one unless the event is held online."
 msgstr "都道府県が選ばれていません。オンライン開催でなければ、EventWatch に送るときに必要です。"
 
-#: includes/class-sync-rest.php:457
+#: includes/class-sync-rest.php:489
 msgid "Choose a prefecture"
 msgstr "都道府県を選ぶ"
 
-#: includes/class-sync-rest.php:461
+#: includes/class-sync-rest.php:493
 msgid "This event has no dates. Add at least one date."
 msgstr "日程がありません。日程を 1 つ以上足してください。"
 
-#: includes/class-sync-rest.php:492
+#: includes/class-sync-rest.php:524
 msgid "This event has no title. Add a title."
 msgstr "タイトルがありません。タイトルを入れてください。"
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:497
+#: includes/class-sync-rest.php:529
 #, php-format
 msgid "The title is too long. EventWatch accepts up to %s characters. Shorten the title."
 msgstr "タイトルが長すぎます。EventWatch に送れるのは %s 字までです。タイトルを短くしてください。"
 
 #. translators: 1: the length of the content, 2: the character limit.
-#: includes/class-sync-rest.php:504
+#: includes/class-sync-rest.php:536
 #, php-format
 msgid "The content has %1$s characters. EventWatch accepts up to %2$s characters. Shorten the content."
 msgstr "本文が %1$s 字あります。EventWatch に送れるのは %2$s 字までです。本文を短くしてください。"
@@ -1549,39 +1550,39 @@ msgid "This post wasn’t sent to EventWatch. Open the EventWatch panel to see w
 msgstr "この投稿は EventWatch に送られていません。理由は EventWatch のパネルで確かめてください。"
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:466
+#: includes/class-sync-rest.php:498
 #, php-format
 msgid "The notes on dates are too long. EventWatch accepts up to %s characters, and counts emoji as two. Shorten the notes."
 msgstr "日程の補足が長すぎます。EventWatch に送れるのは %s 字までで、絵文字は 2 字と数えます。補足を短くしてください。"
 
 #: includes/class-sync-rest.php:273
-#: includes/class-sync-rest.php:469
+#: includes/class-sync-rest.php:501
 msgid "Edit the notes"
 msgstr "補足を直す"
 
-#: includes/class-sync-rest.php:473
+#: includes/class-sync-rest.php:505
 msgid "Only one of the venue name and address is entered. Enter both, or leave both empty."
 msgstr "会場名と住所の片方だけが入っています。両方を入れるか、両方を空にしてください。"
 
 #: includes/class-sync-rest.php:274
 #: includes/class-sync-rest.php:275
-#: includes/class-sync-rest.php:474
-#: includes/class-sync-rest.php:479
+#: includes/class-sync-rest.php:506
+#: includes/class-sync-rest.php:511
 msgid "Edit the venue"
 msgstr "会場を直す"
 
-#: includes/class-sync-rest.php:478
+#: includes/class-sync-rest.php:510
 msgid "The venue name or address is too long for EventWatch, which counts emoji as two characters. Shorten it."
 msgstr "会場名か住所が、EventWatch に送れる長さを超えています。絵文字は 2 字と数えます。短くしてください。"
 
 #. translators: %s: the character limit.
-#: includes/class-sync-rest.php:485
+#: includes/class-sync-rest.php:517
 #, php-format
 msgid "The official page URL is too long. EventWatch accepts up to %s characters. Enter a shorter separate official page."
 msgstr "公式ページの URL が長すぎます。EventWatch に送れるのは %s 字までです。短い URL を別の公式ページに入れてください。"
 
 #: includes/class-sync-rest.php:276
-#: includes/class-sync-rest.php:488
+#: includes/class-sync-rest.php:520
 msgid "Edit the official page"
 msgstr "公式ページを直す"
 
@@ -1660,3 +1661,206 @@ msgstr "アイキャッチ画像を送れませんでした"
 #: build/index.js:8
 msgid "The other details aren’t affected. If EventWatch already has an image for this event, it stays."
 msgstr "ほかの内容には影響しません。EventWatch にこのイベントの画像があれば、そのまま残ります。"
+
+#: includes/class-event-import.php:296
+msgid "This post can’t be imported any more. It may have been deleted or imported from another site."
+msgstr "この投稿はもう取り込めません。削除されたか、別のサイトに取り込まれた可能性があります。"
+
+#: includes/class-event-import.php:306
+msgid "The images couldn’t be loaded from EventWatch. Wait a moment, then try again."
+msgstr "画像を EventWatch から読み込めませんでした。少し待ってから、やり直してください。"
+
+#: includes/class-event-import.php:311
+msgid "The post couldn’t be created on this site. Try again."
+msgstr "このサイトに投稿を作れませんでした。やり直してください。"
+
+#: includes/class-event-import.php:576
+msgid "Your EventWatch organization is suspended. Contact EventWatch support."
+msgstr "EventWatch の団体が停止されています。EventWatch にお問い合わせください。"
+
+#: includes/class-event-import.php:578
+msgid "This API key can’t import posts. Issue a new key with EventWatch, then set it in Settings › EventWatch."
+msgstr "この API キーでは投稿を取り込めません。EventWatch で新しいキーを発行し、「設定 › EventWatch」で設定してください。"
+
+#: includes/class-event-import.php:580
+msgid "The site URL has changed. Confirm whether this is a copy in Settings › EventWatch, then try again."
+msgstr "サイトの URL が変わっています。「設定 › EventWatch」で複製かどうかを確かめてから、やり直してください。"
+
+#: includes/class-event-import.php:583
+msgid "The API key was rejected. Check it in Settings › EventWatch, then try again."
+msgstr "API キーが受け付けられませんでした。「設定 › EventWatch」で確かめてから、やり直してください。"
+
+#: includes/class-event-import.php:597
+msgid "Another site has already imported this post. Delete this draft if you don’t need it."
+msgstr "この投稿は別のサイトに取り込まれています。この下書きが要らなければ削除してください。"
+
+#: includes/class-event-import.php:600
+msgid "This draft was already sent to EventWatch as a separate post. Delete one of the two posts on EventWatch, then try again."
+msgstr "この下書きは、別の投稿として EventWatch に送られています。EventWatch でどちらかの投稿を削除してから、やり直してください。"
+
+#: includes/class-event-import.php:603
+msgid "This post is no longer on EventWatch. Delete this draft if you don’t need it."
+msgstr "この投稿は EventWatch にもうありません。この下書きが要らなければ削除してください。"
+
+#: includes/class-event-import.php:606
+msgid "EventWatch didn’t respond. Wait a moment, then try again."
+msgstr "EventWatch から応答がありませんでした。少し待ってから、やり直してください。"
+
+#: includes/class-event-import.php:609
+msgid "EventWatch rejected this request. Try again later."
+msgstr "EventWatch に断られました。時間をおいて、やり直してください。"
+
+#: includes/class-import-admin.php:58
+#: includes/class-import-admin.php:59
+msgid "Import from EventWatch"
+msgstr "EventWatch から取り込む"
+
+#: includes/class-import-admin.php:116
+msgid "Import posts your organization created on EventWatch as WordPress posts. Posts listed on EventWatch are imported as published; all others as drafts."
+msgstr "EventWatch の Web で作った、この団体の投稿を WordPress の投稿として取り込みます。EventWatch で掲載中の投稿は公開、それ以外は下書きとして取り込みます。"
+
+#: includes/class-import-admin.php:130
+msgid "Importing needs JavaScript. Turn it on, then reload this page."
+msgstr "取り込みには JavaScript が必要です。有効にしてから、このページを読み直してください。"
+
+#: includes/class-import-admin.php:146
+msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then reload this page."
+msgstr "EventWatch から一覧を読み込めませんでした。少し待ってから、このページを読み直してください。"
+
+#: includes/class-import-admin.php:216
+#: build/import-page.js:5
+msgid "The list couldn’t be loaded from EventWatch. Wait a moment, then try again."
+msgstr "EventWatch から一覧を読み込めませんでした。少し待ってから、やり直してください。"
+
+#: includes/class-import-list-table.php:61
+msgid "Event name"
+msgstr "イベント名"
+
+#: includes/class-import-list-table.php:63
+msgid "Timing"
+msgstr "開催"
+
+#: includes/class-import-list-table.php:64
+msgid "EventWatch status"
+msgstr "EventWatch の状態"
+
+#: includes/class-import-list-table.php:75
+msgid "There are no posts to import. Posts your organization creates on EventWatch will appear here."
+msgstr "取り込める投稿はありません。EventWatch でこの団体が作った投稿が、ここに出ます。"
+
+#. translators: %s: the event name.
+#: includes/class-import-list-table.php:101
+#, php-format
+msgid "Select “%s”"
+msgstr "「%s」を選ぶ"
+
+#: includes/class-import-list-table.php:134
+msgid "Ended"
+msgstr "終了"
+
+#: includes/class-import-list-table.php:134
+msgid "Upcoming"
+msgstr "開催予定"
+
+#: includes/class-import-list-table.php:173
+#: build/import-page.js:2
+#: build/import-page.js:4
+msgid "Edit post"
+msgstr "投稿を編集"
+
+#: includes/class-import-list-table.php:188
+msgid "Import selected"
+msgstr "選んだ投稿を取り込む"
+
+#: includes/class-import-list-table.php:189
+#: build/import-page.js:2
+msgid "Select posts to import"
+msgstr "取り込む投稿を選んでください"
+
+#: includes/class-sync-rest.php:406
+msgid "Draft"
+msgstr "下書き"
+
+#: includes/class-sync-rest.php:408
+msgid "Private"
+msgstr "非公開"
+
+#. translators: %d: the number of posts selected.
+#: build/import-page.js:2
+#, js-format
+msgid "%d selected"
+msgid_plural "%d selected"
+msgstr[0] "%d 件を選んでいます"
+
+#: build/import-page.js:2
+msgid "Imported"
+msgstr "取り込み済み"
+
+#: build/import-page.js:2
+msgid "Importing"
+msgstr "取り込んでいます"
+
+#: build/import-page.js:2
+#: build/import-page.js:3
+msgid "Waiting"
+msgstr "待っています"
+
+#: build/import-page.js:2
+msgid "Couldn’t import"
+msgstr "取り込めませんでした"
+
+#: build/import-page.js:2
+msgid "Stopped"
+msgstr "止めました"
+
+#: build/import-page.js:2
+msgid "Importing events"
+msgstr "イベントを取り込んでいます"
+
+#. translators: 1: posts finished, 2: posts selected.
+#: build/import-page.js:3
+#, js-format
+msgid "%1$d of %2$d done. Keep this page open until it finishes."
+msgstr "%2$d 件のうち %1$d 件が終わりました。終わるまで、このページを開いたままにしてください。"
+
+#: build/import-page.js:3
+msgid "Stop"
+msgstr "止める"
+
+#. translators: %d: the number of posts imported.
+#: build/import-page.js:4
+#, js-format
+msgid "%d post imported."
+msgid_plural "%d posts imported."
+msgstr[0] "%d 件を取り込みました。"
+
+#: build/import-page.js:4
+msgid "Posts listed on EventWatch were published; others were saved as drafts. Check them over."
+msgstr "EventWatch で掲載中だった投稿は公開、それ以外は下書きにしました。内容を確かめてください。"
+
+#. translators: %d: the number of posts not imported.
+#: build/import-page.js:5
+#, js-format
+msgid "%d post couldn’t be imported."
+msgid_plural "%d posts couldn’t be imported."
+msgstr[0] "%d 件は取り込めませんでした。"
+
+#: build/import-page.js:5
+msgid "The import didn’t finish. Wait a moment, then try again."
+msgstr "取り込みが終わりませんでした。少し待ってから、やり直してください。"
+
+#: build/import-page.js:5
+msgid "Edit draft"
+msgstr "下書きを編集"
+
+#: build/import-page.js:5
+msgid "Try again"
+msgstr "やり直す"
+
+#: build/import-page.js:5
+msgid "This draft isn’t connected to EventWatch yet."
+msgstr "この下書きは、まだ EventWatch に結び付いていません。"
+
+#: build/import-page.js:2
+msgid "Import finished"
+msgstr "取り込みました"

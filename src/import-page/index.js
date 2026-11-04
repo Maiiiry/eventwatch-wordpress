@@ -17,7 +17,7 @@ const selectedBoxes = () =>
 	);
 
 const stateLabels = () => ( {
-	imported: __( 'Imported', 'eventwatch' ),
+	imported: __( 'Import finished', 'eventwatch' ),
 	doing: __( 'Importing', 'eventwatch' ),
 	waiting: __( 'Waiting', 'eventwatch' ),
 	failed: __( 'Couldn’t import', 'eventwatch' ),
@@ -57,11 +57,12 @@ function syncSelection( canImport ) {
 }
 
 /**
- * 取り込んだ行を、結果を出している間だけ「取り込み済み」にして選べなくする。
+ * 結果に合わせて行を書き換える。取り込んだ行は、結果を出している間だけ「取り込み済み」にして選べなくする。
+ * 読み直すとサーバーが返さないので消える。
  *
  * @param {Object} result Event_Import::run の戻り。
  */
-function markRowImported( result ) {
+function updateRow( result ) {
 	const row = form()?.querySelector(
 		`tr[data-eventwatch-event="${ window.CSS.escape( result.eventId ) }"]`
 	);
@@ -69,16 +70,18 @@ function markRowImported( result ) {
 		return;
 	}
 
+	const imported = 'imported' === result.status;
 	const box = row.querySelector( 'input[type="checkbox"]' );
 	if ( box ) {
 		box.checked = false;
-		box.disabled = true;
+		box.disabled = imported;
 	}
 
 	const cell = row.querySelector( 'td.column-wordpress' );
-	if ( cell ) {
-		cell.textContent = '';
-		cell.append( `${ __( 'Imported', 'eventwatch' ) } ` );
+	if ( cell && result.editUrl ) {
+		cell.textContent = imported
+			? `${ __( 'Imported', 'eventwatch' ) } `
+			: '';
 		const link = document.createElement( 'a' );
 		link.href = result.editUrl;
 		link.textContent = __( 'Edit post', 'eventwatch' );
@@ -348,8 +351,9 @@ function App( { unlinked, canImport } ) {
 				);
 				if ( 'imported' === state ) {
 					setImported( ( rows ) => [ ...rows, result ] );
-					markRowImported( result );
+					updateRow( result );
 				} else if ( 'failed' === state ) {
+					updateRow( result );
 					setFailed( ( rows ) => [
 						...rows,
 						{ ...result, title: result.title || titles[ id ] },
