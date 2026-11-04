@@ -119,17 +119,23 @@ class Admin_Columns {
 			return;
 		}
 
-		wp_add_inline_style(
-			'wp-admin',
-			'.eventwatch-sync-cell{display:inline-flex;align-items:flex-start;gap:4px;font-weight:500}'
+		wp_add_inline_style( 'wp-admin', self::cell_style() );
+	}
+
+	/**
+	 * 状態の列の見た目。
+	 *
+	 * @return string
+	 */
+	public static function cell_style() {
+		return '.eventwatch-sync-cell{display:inline-flex;align-items:flex-start;gap:4px;font-weight:500}'
 			. '.eventwatch-sync-cell svg{flex:none}'
 			. '.eventwatch-sync-cell--muted{color:#50575e}'
 			. '.eventwatch-sync-cell--info{color:#2271b1}'
 			. '.eventwatch-sync-cell--success{color:#007017}'
 			. '.eventwatch-sync-cell--warning{color:#996800}'
 			. '.eventwatch-sync-cell--error{color:#cc1818}'
-			. '.eventwatch-sync-reason{display:block;margin-top:2px;color:#50575e}'
-		);
+			. '.eventwatch-sync-reason{display:block;margin-top:2px;color:#50575e}';
 	}
 
 	/**
@@ -140,14 +146,8 @@ class Admin_Columns {
 	 */
 	private static function render_sync( $post_id ) {
 		$status = Sync_Rest::status( $post_id );
-		$look   = self::LOOKS[ $status['state'] ];
 
-		printf(
-			'<span class="eventwatch-sync-cell eventwatch-sync-cell--%1$s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="%2$s"></path></svg>%3$s</span>',
-			esc_attr( $look[1] ),
-			esc_attr( self::ICONS[ $look[0] ] ),
-			esc_html( $status['label'] )
-		);
+		self::print_state( $status['state'], $status['label'] );
 
 		// 一覧には編集できない投稿も並ぶ。差し戻しの理由は編集できる人にだけ見せる。
 		$reason = $status['reason']['text'];
@@ -158,6 +158,24 @@ class Admin_Columns {
 				esc_html( wp_html_excerpt( $reason, self::REASON_LENGTH, '…' ) )
 			);
 		}
+	}
+
+	/**
+	 * 状態のアイコンと語を出す。
+	 *
+	 * @param string $state 状態の種類。
+	 * @param string $label 語。
+	 * @return void
+	 */
+	public static function print_state( $state, $label ) {
+		$look = self::LOOKS[ $state ];
+
+		printf(
+			'<span class="eventwatch-sync-cell eventwatch-sync-cell--%1$s"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="%2$s"></path></svg>%3$s</span>',
+			esc_attr( $look[1] ),
+			esc_attr( self::ICONS[ $look[0] ] ),
+			esc_html( $label )
+		);
 	}
 
 	/**

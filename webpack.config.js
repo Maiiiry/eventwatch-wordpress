@@ -10,6 +10,7 @@ module.exports = [
 		entry: () => ( {
 			...scriptConfig.entry(),
 			index: './src/index.js',
+			'import-page': './src/import-page/index.js',
 		} ),
 	},
 	...moduleConfigs,
