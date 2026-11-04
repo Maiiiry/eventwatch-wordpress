@@ -1256,6 +1256,30 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * キーを断られて止まった件にも、残した下書きへのリンクを返す。
+	 */
+	public function test_stop_returns_edit_link() {
+		$this->link_answer = $this->http( 401 );
+		$result            = $this->import( $this->event() );
+
+		$this->assertSame( 'stop', $result['status'] );
+		$this->assertStringContainsString( 'post=' . $result['postId'], $result['editUrl'] );
+	}
+
+	/**
+	 * EventWatch から消えた投稿は、結び付く前でもやり直しの案内に出さない。
+	 */
+	public function test_forget_remote_clears_unlinked_draft() {
+		$this->link_answer = $this->http( 503 );
+		$result            = $this->import( $this->event() );
+		$this->assertCount( 1, Event_Import::unlinked_drafts() );
+
+		Sync_Queue::forget_remote( $result['postId'] );
+
+		$this->assertSame( array(), Event_Import::unlinked_drafts() );
+	}
+
+	/**
 	 * 同じ投稿を同時に進めない。
 	 */
 	public function test_lock_makes_second_request_wait() {
