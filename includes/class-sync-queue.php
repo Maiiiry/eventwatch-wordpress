@@ -458,10 +458,6 @@ class Sync_Queue {
 	 * @return int 印を付けた件数。
 	 */
 	public static function mark_unsent_published() {
-		if ( ! self::can_send_unsent() ) {
-			return 0;
-		}
-
 		$post_ids = self::unsent_published_ids();
 		self::mark_many( $post_ids );
 

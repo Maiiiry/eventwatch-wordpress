@@ -369,6 +369,19 @@ class Bulk_Send_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * キーを消した後の古いタブから押しても、積んだと伝えない。
+	 */
+	public function test_press_without_a_key_reports_a_warning() {
+		$this->published_event();
+		$this->log_in_as_admin();
+
+		$this->press();
+
+		$this->assertSame( 'warning', $this->reported()[0]['type'] );
+		$this->assertFalse( wp_next_scheduled( Sync_Queue::RUN_HOOK ) );
+	}
+
+	/**
 	 * 対象が無いのに押された（古いタブ）ときは、送るものが無いと伝える。
 	 */
 	public function test_press_with_no_targets() {
