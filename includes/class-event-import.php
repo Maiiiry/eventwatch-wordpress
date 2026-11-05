@@ -509,7 +509,7 @@ class Event_Import {
 			'POST',
 			Sync_Queue::post_path( $post_id ) . '/link',
 			array(
-				'body'    => array( 'eventId' => $event_id ),
+				'body'    => array( 'eventId' => $event_id ) + Site_Identity::urls(),
 				'timeout' => self::TIMEOUT,
 			)
 		);
@@ -653,7 +653,8 @@ class Event_Import {
 	 */
 	private static function content_digest( $post_id ) {
 		$body = Sync_Payload::build( get_post( $post_id ) )['body'];
-		unset( $body['sourceUpdatedAt'] );
+		// サイトの URL は投稿の内容ではない。下書きの後に移転しても、手元で変えたと読まない。
+		unset( $body['sourceUpdatedAt'], $body['siteUrl'], $body['adminUrl'] );
 
 		return md5( (string) wp_json_encode( $body ) );
 	}

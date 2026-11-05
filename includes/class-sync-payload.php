@@ -76,7 +76,7 @@ class Sync_Payload {
 			'venueAddress'          => (string) get_post_meta( $post->ID, Event_Meta::VENUE_ADDRESS, true ),
 			'publisherEventPageUrl' => '' !== $url ? $url : (string) get_permalink( $post ),
 			'sourceUpdatedAt'       => self::source_updated_at( $post ),
-		);
+		) + Site_Identity::urls();
 
 		return array(
 			'body'   => $body,

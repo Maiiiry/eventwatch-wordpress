@@ -77,6 +77,37 @@ class Site_Identity {
 	}
 
 	/**
+	 * EventWatch へ送るサイトの URL。送れない値の項目は持たない。
+	 *
+	 * EventWatch は形の違う値と 1024 を超える値を 400 で断り、投稿も送れなくなる。サイトの URL は投稿者が直せる値ではないので、
+	 * 投稿を止めない。送る内容のハッシュに入るので、同じサイトでは要求の経路によらず同じ値を返す。
+	 *
+	 * @return array{siteUrl?: string, adminUrl?: string}
+	 */
+	public static function urls() {
+		return array_filter(
+			array(
+				'siteUrl'  => self::current_url(),
+				'adminUrl' => self::admin_url(),
+			),
+			static function ( $url ) {
+				return preg_match( '#^https?://\S+$#D', $url ) && Sync_Payload::server_length( $url ) <= Event_Meta::MAX_URL;
+			}
+		);
+	}
+
+	/**
+	 * 管理画面の URL。既定のスキームは is_ssl() で変わり、cron と管理画面で値が割れるので、option のものに固定する。
+	 *
+	 * @return string
+	 */
+	private static function admin_url() {
+		$scheme = force_ssl_admin() ? 'https' : (string) wp_parse_url( (string) get_option( 'siteurl' ), PHP_URL_SCHEME );
+
+		return admin_url( '', $scheme );
+	}
+
+	/**
 	 * 移転として続ける。サイト ID はそのまま。
 	 *
 	 * @return void

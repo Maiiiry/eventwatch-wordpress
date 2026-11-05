@@ -402,7 +402,14 @@ class Event_Import_Test extends WP_UnitTestCase {
 		$this->assertCount( 1, $this->api );
 		$this->assertSame( 'POST', $this->api[0][0] );
 		$this->assertStringEndsWith( Sync_Queue::post_path( $result['postId'] ) . '/link', $this->api[0][1] );
-		$this->assertSame( array( 'eventId' => self::ID ), $this->api[0][2] );
+		$this->assertSame(
+			array(
+				'eventId'  => self::ID,
+				'siteUrl'  => get_option( 'home' ),
+				'adminUrl' => get_option( 'siteurl' ) . '/wp-admin/',
+			),
+			$this->api[0][2]
+		);
 	}
 
 	/**
@@ -1183,6 +1190,31 @@ class Event_Import_Test extends WP_UnitTestCase {
 
 		$this->assertCount( 1, $this->api );
 		$this->assertStringEndsWith( '/link', $this->api[0][1] );
+		$this->assertSame( 'publish', get_post_status( $first['postId'] ) );
+	}
+
+	/**
+	 * 下書きの後にサイトの URL が変わっても、手元で変えたと読まず、結び付けの後に送らない。
+	 */
+	public function test_site_url_change_before_retry_is_not_a_touch() {
+		$this->link_answer = $this->http( 503 );
+		$first             = $this->import( $this->event() );
+
+		// 手元の環境は WP_SITEURL を定義していて、option の更新では値が変わらない。
+		$moved = static function () {
+			return 'http://example.org/wp';
+		};
+		add_filter( 'option_siteurl', $moved, 20 );
+
+		$this->link_answer = null;
+		$this->api         = array();
+		Event_Import::run( self::ID );
+		Sync_Queue::run();
+		remove_filter( 'option_siteurl', $moved, 20 );
+
+		$this->assertCount( 1, $this->api );
+		$this->assertStringEndsWith( '/link', $this->api[0][1] );
+		$this->assertSame( 'http://example.org/wp/wp-admin/', $this->api[0][2]['adminUrl'] );
 		$this->assertSame( 'publish', get_post_status( $first['postId'] ) );
 	}
 

@@ -1184,6 +1184,93 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 公式ページを上書きした投稿だけのサイトでも、移転の確認の後に新しい URL が届く。確認の前は送らない。
+	 */
+	public function test_new_site_urls_arrive_after_move_is_confirmed() {
+		$id = $this->sent_event();
+		update_post_meta( $id, Event_Meta::URL, 'https://example.com/official' );
+		wp_update_post( array( 'ID' => $id ) );
+		Sync_Queue::send_marked();
+		$this->requests = array();
+
+		$moved = static function () {
+			return 'https://moved.example.com';
+		};
+		add_filter( 'option_home', $moved, 20 );
+
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->assertSame( array(), $this->requests );
+
+		Site_Identity::use_as_moved();
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		remove_filter( 'option_home', $moved, 20 );
+
+		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
+		$this->assertSame( 'https://moved.example.com', $this->requests[0]['body']['siteUrl'] );
+		$this->assertSame( 'https://example.com/official', $this->requests[0]['body']['publisherEventPageUrl'] );
+	}
+
+	/**
+	 * 管理画面の URL だけが変わると、移転の確認を通らずに洗い直して送り直す。
+	 */
+	public function test_siteurl_change_resends_with_new_admin_url() {
+		$id = $this->sent_event();
+
+		update_option( 'siteurl', 'http://example.org/wp' );
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		// 手元の環境は WP_SITEURL を定義していて、option の更新では値が変わらない。
+		$moved = static function () {
+			return 'http://example.org/wp';
+		};
+		add_filter( 'option_siteurl', $moved, 20 );
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		remove_filter( 'option_siteurl', $moved, 20 );
+
+		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
+		$this->assertSame( 'http://example.org/wp/wp-admin/', $this->requests[0]['body']['adminUrl'] );
+	}
+
+	/**
+	 * 要求の経路が変わっても、同じ内容の投稿は送らない。
+	 */
+	public function test_request_scheme_does_not_resend() {
+		$id = $this->sent_event();
+		// 既定の公式ページのパーマリンクは is_ssl() で変わるので、別の公式ページで管理画面の URL だけを見る。
+		update_post_meta( $id, Event_Meta::URL, 'https://example.com/official' );
+		wp_update_post( array( 'ID' => $id ) );
+		Sync_Queue::send_marked();
+		$this->requests = array();
+
+		$_SERVER['HTTPS'] = 'on';
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		unset( $_SERVER['HTTPS'] );
+
+		$this->assertSame( array(), $this->requests );
+	}
+
+	/**
+	 * 取り下げにはサイトの URL を載せない。サーバーの受け口が持たない。
+	 */
+	public function test_unpublish_has_no_site_urls() {
+		$id = $this->sent_event();
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'draft',
+			)
+		);
+		Sync_Queue::send_marked();
+
+		$this->assertSame( array( "POST /events/$id/unpublish" ), $this->sent() );
+		$this->assertSame( array( 'sourceUpdatedAt' ), array_keys( $this->requests[0]['body'] ) );
+	}
+
+	/**
 	 * 下書きの自動保存は、まだ送っていない投稿でも、取り下げ済みの投稿でも送らない。
 	 */
 	public function test_autosave_of_draft_sends_nothing() {
