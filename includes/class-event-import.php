@@ -653,7 +653,7 @@ class Event_Import {
 	 */
 	private static function content_digest( $post_id ) {
 		$body = Sync_Payload::build( get_post( $post_id ) )['body'];
-		// サイトの URL は投稿の内容ではない。下書きの後に移転しても、手元で変えたと読まない。
+		// 送るサイトの URL は投稿の内容ではないので、手元で変えたと読まない。既定の公式ページはパーマリンクなので、移転で変わる。
 		unset( $body['sourceUpdatedAt'], $body['siteUrl'], $body['adminUrl'] );
 
 		return md5( (string) wp_json_encode( $body ) );

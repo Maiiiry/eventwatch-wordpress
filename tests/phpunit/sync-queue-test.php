@@ -1218,12 +1218,12 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	public function test_siteurl_change_resends_with_new_admin_url() {
 		$id = $this->sent_event();
 
-		update_option( 'siteurl', 'http://example.org/wp' );
+		update_option( 'siteurl', get_option( 'home' ) . '/changed' );
 		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 
 		// 手元の環境は WP_SITEURL を定義していて、option の更新では値が変わらない。
-		$moved = static function () {
-			return 'http://example.org/wp';
+		$moved = static function ( $url ) {
+			return $url . '/wp';
 		};
 		add_filter( 'option_siteurl', $moved, 20 );
 		Sync_Queue::rescan();
@@ -1231,7 +1231,16 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		remove_filter( 'option_siteurl', $moved, 20 );
 
 		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
-		$this->assertSame( 'http://example.org/wp/wp-admin/', $this->requests[0]['body']['adminUrl'] );
+		$this->assertStringEndsWith( '/wp/wp-admin/', $this->requests[0]['body']['adminUrl'] );
+	}
+
+	/**
+	 * 公開 URL のスキームだけの変更は移転の確認を通らないので、更新で洗い直す。
+	 */
+	public function test_home_update_requests_rescan() {
+		update_option( 'home', 'https://example.org/changed' );
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 	}
 
 	/**

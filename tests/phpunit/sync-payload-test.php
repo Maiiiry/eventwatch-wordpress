@@ -493,7 +493,69 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 
 		$this->assertSame( array(), $built['blocks'] );
 		$this->assertSame( $sent ? $url : null, $built['body']['siteUrl'] ?? null );
-		$this->assertArrayHasKey( 'adminUrl', $built['body'] );
+	}
+
+	/**
+	 * 公開 URL だけを送れないときも、管理画面の URL は送る。
+	 */
+	public function test_admin_url_is_sent_when_only_site_url_is_left_out() {
+		$long = static function ( $url ) {
+			return $url . '/' . str_repeat( 'a', 1024 );
+		};
+		add_filter( 'option_home', $long, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_home', $long, 20 );
+
+		$this->assertSame( array( 'adminUrl' ), array_keys( $urls ) );
+	}
+
+	/**
+	 * 公開 URL と別のホストの管理画面の URL は送らない。Host ヘッダーから作る WP_SITEURL で、偽の管理画面を記録させない。
+	 */
+	public function test_admin_url_on_another_host_is_left_out() {
+		$evil = static function () {
+			return 'https://evil.example';
+		};
+		add_filter( 'option_siteurl', $evil, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_siteurl', $evil, 20 );
+
+		$this->assertSame( array( 'siteUrl' ), array_keys( $urls ) );
+	}
+
+	/**
+	 * Www の有無と大文字小文字の違いは同じサイトとして扱う。
+	 */
+	public function test_admin_url_on_www_host_is_sent() {
+		$home = static function () {
+			return 'https://www.Example.com';
+		};
+		$site = static function () {
+			return 'https://example.com/wp';
+		};
+		add_filter( 'option_home', $home, 20 );
+		add_filter( 'option_siteurl', $site, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_home', $home, 20 );
+		remove_filter( 'option_siteurl', $site, 20 );
+
+		$this->assertSame( 'https://example.com/wp/wp-admin/', $urls['adminUrl'] );
+	}
+
+	/**
+	 * フィルターの返す管理画面の URL は送らない。管理画面を隠すプラグインの秘密のパスを団体のメンバーに見せない。
+	 */
+	public function test_admin_url_filter_is_not_sent() {
+		$secret = static function () {
+			return 'http://localhost/secret-path/';
+		};
+		add_filter( 'admin_url', $secret );
+		add_filter( 'site_url', $secret );
+		$urls = Site_Identity::urls();
+		remove_filter( 'admin_url', $secret );
+		remove_filter( 'site_url', $secret );
+
+		$this->assertSame( get_option( 'siteurl' ) . '/wp-admin/', $urls['adminUrl'] );
 	}
 
 	/**
@@ -514,6 +576,10 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 			'space'          => array( 'https://example.com/a b', false ),
 			'trailing line'  => array( "https://example.com\n", false ),
 			'scheme only'    => array( 'https://', false ),
+			'credentials'    => array( 'https://user:pass@example.com', false ),
+			'query'          => array( 'https://example.com/?token=a', false ),
+			'fragment'       => array( 'https://example.com/#a', false ),
+			'at in path'     => array( 'https://example.com/@a', true ),
 			'just at limit'  => array( $host . str_repeat( 'a', 1009 ) . "\u{1F600}", true ),
 			'over the limit' => array( $host . str_repeat( 'a', 1010 ) . "\u{1F600}", false ),
 		);

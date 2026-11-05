@@ -150,7 +150,8 @@ class Sync_Queue {
 		add_action( 'add_option_' . Post_Type::SLUG_OPTION, array( self::class, 'request_rescan' ), 10, 0 );
 		add_action( 'update_option_' . Post_Type::SLUG_OPTION, array( self::class, 'request_rescan' ), 10, 0 );
 		add_action( 'update_option_permalink_structure', array( self::class, 'request_rescan' ), 10, 0 );
-		// home が同じなら移転の確認を通らないので、管理画面の URL はここで送り直す。
+		// 管理画面の URL とスキームだけの変更は移転の確認を通らないので、送るサイトの URL をここで送り直す。
+		add_action( 'update_option_home', array( self::class, 'request_rescan' ), 10, 0 );
 		add_action( 'update_option_siteurl', array( self::class, 'request_rescan' ), 10, 0 );
 	}
 

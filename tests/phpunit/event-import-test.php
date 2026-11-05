@@ -1194,27 +1194,34 @@ class Event_Import_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 下書きの後にサイトの URL が変わっても、手元で変えたと読まず、結び付けの後に送らない。
+	 * 下書きの後に送るサイトの URL が変わっても、手元で変えたと読まず、結び付けの後に送らない。
 	 */
 	public function test_site_url_change_before_retry_is_not_a_touch() {
 		$this->link_answer = $this->http( 503 );
 		$first             = $this->import( $this->event() );
 
 		// 手元の環境は WP_SITEURL を定義していて、option の更新では値が変わらない。
-		$moved = static function () {
-			return 'http://example.org/wp';
+		$admin = static function ( $url ) {
+			return $url . '/wp';
 		};
-		add_filter( 'option_siteurl', $moved, 20 );
+		// スキームだけの変更は移転の確認を通らない。パーマリンクを使わない投稿なので、公式ページは変わらない。
+		$home = static function ( $url ) {
+			return set_url_scheme( $url, 'https' );
+		};
+		add_filter( 'option_siteurl', $admin, 20 );
+		add_filter( 'option_home', $home, 20 );
 
 		$this->link_answer = null;
 		$this->api         = array();
 		Event_Import::run( self::ID );
 		Sync_Queue::run();
-		remove_filter( 'option_siteurl', $moved, 20 );
+		remove_filter( 'option_siteurl', $admin, 20 );
+		remove_filter( 'option_home', $home, 20 );
 
 		$this->assertCount( 1, $this->api );
 		$this->assertStringEndsWith( '/link', $this->api[0][1] );
-		$this->assertSame( 'http://example.org/wp/wp-admin/', $this->api[0][2]['adminUrl'] );
+		$this->assertStringEndsWith( '/wp/wp-admin/', $this->api[0][2]['adminUrl'] );
+		$this->assertStringStartsWith( 'https://', $this->api[0][2]['siteUrl'] );
 		$this->assertSame( 'publish', get_post_status( $first['postId'] ) );
 	}
 
