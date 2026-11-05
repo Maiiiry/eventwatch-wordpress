@@ -543,6 +543,25 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 同じホストならポートが違っても送る。
+	 */
+	public function test_admin_url_on_another_port_is_sent() {
+		$home = static function () {
+			return 'https://example.com';
+		};
+		$site = static function () {
+			return 'https://example.com:8443/wp';
+		};
+		add_filter( 'option_home', $home, 20 );
+		add_filter( 'option_siteurl', $site, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_home', $home, 20 );
+		remove_filter( 'option_siteurl', $site, 20 );
+
+		$this->assertSame( 'https://example.com:8443/wp/wp-admin/', $urls['adminUrl'] );
+	}
+
+	/**
 	 * フィルターの返す管理画面の URL は送らない。管理画面を隠すプラグインの秘密のパスを団体のメンバーに見せない。
 	 */
 	public function test_admin_url_filter_is_not_sent() {
@@ -580,6 +599,9 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 			'query'          => array( 'https://example.com/?token=a', false ),
 			'fragment'       => array( 'https://example.com/#a', false ),
 			'at in path'     => array( 'https://example.com/@a', true ),
+			'port'           => array( 'https://example.com:8443', true ),
+			'multibyte'      => array( 'https://例え.jp/イベント', true ),
+			'subdomain'      => array( 'https://sub.example.com', true ),
 			'just at limit'  => array( $host . str_repeat( 'a', 1009 ) . "\u{1F600}", true ),
 			'over the limit' => array( $host . str_repeat( 'a', 1010 ) . "\u{1F600}", false ),
 		);
