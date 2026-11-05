@@ -77,6 +77,55 @@ class Site_Identity {
 	}
 
 	/**
+	 * EventWatch へ送るサイトの URL。送れない値の項目は持たない。
+	 *
+	 * EventWatch は 1024 を超える値などを 400 で断り、投稿も送れなくなる。サイトの URL は投稿者が直せる値ではないので、
+	 * 投稿を止めない。ID・パスワードとクエリを持つ値は、団体のメンバーの画面に出すものではないので送らない。
+	 *
+	 * @return array{siteUrl?: string, adminUrl?: string}
+	 */
+	public static function urls() {
+		$urls = array(
+			'siteUrl'  => self::current_url(),
+			'adminUrl' => self::admin_url(),
+		);
+
+		// WP_SITEURL を Host ヘッダーから作るサイトでは、要求ひとつで別のホストになる。移転の確認は home しか見ない。
+		if ( self::host( $urls['siteUrl'] ) !== self::host( $urls['adminUrl'] ) ) {
+			unset( $urls['adminUrl'] );
+		}
+
+		return array_filter(
+			$urls,
+			static function ( $url ) {
+				return preg_match( '~^https?://[^\s/?#@]+(?:/[^\s?#]*)?$~D', $url ) && Sync_Payload::server_length( $url ) <= Event_Meta::MAX_URL;
+			}
+		);
+	}
+
+	/**
+	 * 管理画面の URL。送る内容のハッシュに入るので、要求の経路で値を変えない。admin_url() のスキームは is_ssl() で変わり、
+	 * フィルターは管理画面を隠すプラグインの秘密のパスを返すことがあるので、option から作る。
+	 *
+	 * @return string
+	 */
+	private static function admin_url() {
+		$url = trailingslashit( (string) get_option( 'siteurl' ) ) . 'wp-admin/';
+
+		return force_ssl_admin() ? set_url_scheme( $url, 'https' ) : $url;
+	}
+
+	/**
+	 * 比べるホスト。www の有無は同じサイトとして扱う。
+	 *
+	 * @param string $url URL。
+	 * @return string
+	 */
+	private static function host( $url ) {
+		return (string) preg_replace( '/^www\./', '', strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) ) );
+	}
+
+	/**
 	 * 移転として続ける。サイト ID はそのまま。
 	 *
 	 * @return void

@@ -10,6 +10,7 @@ namespace EventWatch\Tests;
 use EventWatch\Event_Meta;
 use EventWatch\Markdown_Converter;
 use EventWatch\Post_Type;
+use EventWatch\Site_Identity;
 use EventWatch\Sync_Payload;
 use WP_UnitTestCase;
 
@@ -243,6 +244,8 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 				'venueAddress'          => '住所',
 				'publisherEventPageUrl' => get_permalink( $post ),
 				'sourceUpdatedAt'       => gmdate( 'Y-m-d\TH:i:s', strtotime( $post->post_modified_gmt . ' UTC' ) ) . '+00:00',
+				'siteUrl'               => get_option( 'home' ),
+				'adminUrl'              => get_option( 'siteurl' ) . '/wp-admin/',
 			),
 			$built['body']
 		);
@@ -417,5 +420,216 @@ class Sync_Payload_Test extends WP_UnitTestCase {
 	 */
 	public function test_plain_text_is_escaped() {
 		$this->assertSame( '\\!\\[a\\](https://example.com/a.png) A & B', Markdown_Converter::plain_text( '<p>![a](https://example.com/a.png) A &amp; B</p>' ) );
+	}
+
+	/**
+	 * 本文にサイトの公開 URL と管理画面の URL が入る。
+	 */
+	public function test_body_has_site_urls() {
+		$body = Sync_Payload::build( $this->event() )['body'];
+
+		$this->assertSame( get_option( 'home' ), $body['siteUrl'] );
+		$this->assertSame( get_option( 'siteurl' ) . '/wp-admin/', $body['adminUrl'] );
+	}
+
+	/**
+	 * 管理画面の URL は要求の経路で変わらない。is_ssl() で変わると、管理画面と cron でハッシュが割れる。
+	 */
+	public function test_admin_url_scheme_does_not_follow_the_request() {
+		$before = Site_Identity::urls();
+
+		$_SERVER['HTTPS'] = 'on';
+		$during           = Site_Identity::urls();
+		unset( $_SERVER['HTTPS'] );
+
+		$this->assertStringStartsWith( 'http://', $before['adminUrl'] );
+		$this->assertSame( $before, $during );
+	}
+
+	/**
+	 * 管理画面を https に固定したサイトでは https で送る。
+	 */
+	public function test_admin_url_follows_force_ssl_admin() {
+		force_ssl_admin( true );
+		try {
+			$urls = Site_Identity::urls();
+		} finally {
+			force_ssl_admin( false );
+		}
+
+		$this->assertStringStartsWith( 'https://', $urls['adminUrl'] );
+	}
+
+	/**
+	 * 管理画面の URL は siteurl の option のスキームで送る。
+	 */
+	public function test_admin_url_uses_scheme_of_siteurl() {
+		$https = static function ( $url ) {
+			return set_url_scheme( $url, 'https' );
+		};
+		add_filter( 'option_siteurl', $https );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_siteurl', $https );
+
+		$this->assertStringStartsWith( 'https://', $urls['adminUrl'] );
+	}
+
+	/**
+	 * EventWatch が断る値の項目だけを外し、投稿は送る。長さは絵文字を 2 と数える。
+	 *
+	 * @dataProvider data_site_url_values
+	 *
+	 * @param string $url  公開 URL。
+	 * @param bool   $sent 送るか。
+	 */
+	public function test_site_url_that_would_be_rejected_is_left_out( $url, $sent ) {
+		$value = static function () use ( $url ) {
+			return $url;
+		};
+		add_filter( 'option_home', $value, 20 );
+		// 公式ページを別に持つ。既定の公式ページは公開 URL から作るので、長さの理由が先に出る。
+		$built = Sync_Payload::build( $this->event( array( Event_Meta::URL => 'https://example.com/official' ) ) );
+		remove_filter( 'option_home', $value, 20 );
+
+		$this->assertSame( array(), $built['blocks'] );
+		$this->assertSame( $sent ? $url : null, $built['body']['siteUrl'] ?? null );
+	}
+
+	/**
+	 * 公開 URL だけを送れないときも、管理画面の URL は送る。
+	 */
+	public function test_admin_url_is_sent_when_only_site_url_is_left_out() {
+		$long = static function ( $url ) {
+			return $url . '/' . str_repeat( 'a', 1024 );
+		};
+		add_filter( 'option_home', $long, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_home', $long, 20 );
+
+		$this->assertSame( array( 'adminUrl' ), array_keys( $urls ) );
+	}
+
+	/**
+	 * 公開 URL と別のホストの管理画面の URL は送らない。Host ヘッダーから作る WP_SITEURL で、偽の管理画面を記録させない。
+	 */
+	public function test_admin_url_on_another_host_is_left_out() {
+		$evil = static function () {
+			return 'https://evil.example';
+		};
+		add_filter( 'option_siteurl', $evil, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_siteurl', $evil, 20 );
+
+		$this->assertSame( array( 'siteUrl' ), array_keys( $urls ) );
+	}
+
+	/**
+	 * Www の有無と大文字小文字の違いは同じサイトとして扱う。
+	 */
+	public function test_admin_url_on_www_host_is_sent() {
+		$home = static function () {
+			return 'https://www.Example.com';
+		};
+		$site = static function () {
+			return 'https://example.com/wp';
+		};
+		add_filter( 'option_home', $home, 20 );
+		add_filter( 'option_siteurl', $site, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_home', $home, 20 );
+		remove_filter( 'option_siteurl', $site, 20 );
+
+		$this->assertSame( 'https://example.com/wp/wp-admin/', $urls['adminUrl'] );
+	}
+
+	/**
+	 * 同じホストならポートが違っても送る。
+	 */
+	public function test_admin_url_on_another_port_is_sent() {
+		$home = static function () {
+			return 'https://example.com';
+		};
+		$site = static function () {
+			return 'https://example.com:8443/wp';
+		};
+		add_filter( 'option_home', $home, 20 );
+		add_filter( 'option_siteurl', $site, 20 );
+		$urls = Site_Identity::urls();
+		remove_filter( 'option_home', $home, 20 );
+		remove_filter( 'option_siteurl', $site, 20 );
+
+		$this->assertSame( 'https://example.com:8443/wp/wp-admin/', $urls['adminUrl'] );
+	}
+
+	/**
+	 * フィルターの返す管理画面の URL は送らない。管理画面を隠すプラグインの秘密のパスを団体のメンバーに見せない。
+	 */
+	public function test_admin_url_filter_is_not_sent() {
+		$secret = static function () {
+			return 'http://localhost/secret-path/';
+		};
+		add_filter( 'admin_url', $secret );
+		add_filter( 'site_url', $secret );
+		$urls = Site_Identity::urls();
+		remove_filter( 'admin_url', $secret );
+		remove_filter( 'site_url', $secret );
+
+		$this->assertSame( get_option( 'siteurl' ) . '/wp-admin/', $urls['adminUrl'] );
+	}
+
+	/**
+	 * 公開 URL の値。
+	 *
+	 * @return array<string, array{0: string, 1: bool}>
+	 */
+	public function data_site_url_values() {
+		$host = 'https://e.jp/';
+
+		return array(
+			'https'          => array( 'https://example.com', true ),
+			'http'           => array( 'http://example.com/sub', true ),
+			'empty'          => array( '', false ),
+			'other scheme'   => array( 'ftp://example.com', false ),
+			'script'         => array( 'javascript:alert(1)', false ),
+			'upper scheme'   => array( 'HTTP://example.com', false ),
+			'space'          => array( 'https://example.com/a b', false ),
+			'trailing line'  => array( "https://example.com\n", false ),
+			'scheme only'    => array( 'https://', false ),
+			'credentials'    => array( 'https://user:pass@example.com', false ),
+			'query'          => array( 'https://example.com/?token=a', false ),
+			'fragment'       => array( 'https://example.com/#a', false ),
+			'at in path'     => array( 'https://example.com/@a', true ),
+			'port'           => array( 'https://example.com:8443', true ),
+			'multibyte'      => array( 'https://例え.jp/イベント', true ),
+			'subdomain'      => array( 'https://sub.example.com', true ),
+			'just at limit'  => array( $host . str_repeat( 'a', 1009 ) . "\u{1F600}", true ),
+			'over the limit' => array( $host . str_repeat( 'a', 1010 ) . "\u{1F600}", false ),
+		);
+	}
+
+	/**
+	 * マルチサイトでは、そのサイトの URL を送る。
+	 *
+	 * @group ms-required
+	 */
+	public function test_multisite_sends_urls_of_the_current_site() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'マルチサイトでだけ確かめる。' );
+		}
+
+		$main  = Site_Identity::urls();
+		$other = self::factory()->blog->create( array( 'path' => '/other-site/' ) );
+
+		switch_to_blog( $other );
+		$urls = Site_Identity::urls();
+		$home = get_home_url();
+		$site = get_site_url();
+		restore_current_blog();
+
+		$this->assertSame( $home, $urls['siteUrl'] );
+		$this->assertSame( $site . '/wp-admin/', $urls['adminUrl'] );
+		$this->assertStringContainsString( '/other-site', $urls['siteUrl'] );
+		$this->assertStringContainsString( '/other-site/wp-admin/', $urls['adminUrl'] );
+		$this->assertNotSame( $main['siteUrl'], $urls['siteUrl'] );
 	}
 }

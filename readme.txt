@@ -70,7 +70,7 @@ A key saved in the settings is also included in database backups and copies of y
 
 On a multisite network the constant applies to every site. To use a different key for each site, save the key on each site's settings page.
 
-If your site's URL changes, for example when you copy it to a staging site, nothing is sent to EventWatch until an administrator confirms in Settings > EventWatch whether the site is a copy or has moved. A copy becomes a separate site, and its saved key is removed. A key set in `wp-config.php` can't be removed this way, so remove it from the copy's `wp-config.php` first if the copy shouldn't send events.
+If your site's URL changes, for example when you copy it to a staging site, nothing is sent to EventWatch until an administrator confirms in Settings > EventWatch whether the site is a copy or has moved. A copy becomes a separate site, and its saved key is removed. A key set in `wp-config.php` can't be removed this way, so remove it from the copy's `wp-config.php` first if the copy shouldn't send events. When you confirm a move, published events already sent to EventWatch are sent again, so EventWatch gets the new addresses.
 
 = What is sent to EventWatch =
 
@@ -103,13 +103,13 @@ The plugin reads the status of events it has sent from EventWatch when you open 
 
 Administrators can bring posts your organization created on EventWatch into your site from Events › Import from EventWatch. The menu appears only when a key is set. Choose the posts to import. Each one becomes an event with its details, content, and images, which are copied to your Media Library. From then on you edit it on your site, and it can no longer be edited on EventWatch.
 
-Posts listed on EventWatch are imported as published; all others as drafts. Nothing is sent back to EventWatch when you import, and saving a draft doesn't take a post out of review. A draft or a post that was sent back with requested changes is submitted for review when you publish it on your site.
+Posts listed on EventWatch are imported as published; all others as drafts. No event content is sent back to EventWatch when you import, and saving a draft doesn't take a post out of review. A draft or a post that was sent back with requested changes is submitted for review when you publish it on your site.
 
 Importing runs one post at a time while the page is open, and stops if you close the page. If an import doesn't finish, the draft stays on your site and the page offers to try again without creating a second event.
 
 = External services =
 
-**EventWatch** (https://eventwatch.app): this plugin connects your server to the EventWatch API (`api.eventwatch.app`) only after you enter an API key. It connects when an administrator uses "Check connection", which sends the API key and returns your organization's name, when events are sent as described in "What is sent to EventWatch", when it reads the status of events it has sent, as described in "Review status", and when an administrator uses "Import from EventWatch", which reads your organization's posts, downloads their images from the addresses EventWatch returns, and sends the site ID, the post ID, and the EventWatch post ID. Sending an event sends its title, content, dates, time zone, notes on dates, category, prefecture, online setting, venue name and address, official page URL, last-updated time, and the site ID and post ID, and its featured image file. Deleting the plugin tells EventWatch to detach this site's events. Terms of use: https://eventwatch.app/terms . Privacy policy: https://eventwatch.app/privacy .
+**EventWatch** (https://eventwatch.app): this plugin connects your server to the EventWatch API (`api.eventwatch.app`) only after you enter an API key. It connects when an administrator uses "Check connection", which sends the API key and returns your organization's name, when events are sent as described in "What is sent to EventWatch", when it reads the status of events it has sent, as described in "Review status", and when an administrator uses "Import from EventWatch", which reads your organization's posts, downloads their images from the addresses EventWatch returns, and sends the site ID, the post ID, the EventWatch post ID, and the addresses of your site and its admin area. Sending an event sends its title, content, dates, time zone, notes on dates, category, prefecture, online setting, venue name and address, official page URL, last-updated time, the site ID and post ID, and the addresses of your site and its admin area, and its featured image file. EventWatch shows these two addresses to your organization's members, so they can find the site that sent an event. Deleting the plugin tells EventWatch to detach this site's events and to remove these addresses. Terms of use: https://eventwatch.app/terms . Privacy policy: https://eventwatch.app/privacy .
 
 **Google Maps**: see "Maps" above.
 

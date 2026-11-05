@@ -509,7 +509,7 @@ class Event_Import {
 			'POST',
 			Sync_Queue::post_path( $post_id ) . '/link',
 			array(
-				'body'    => array( 'eventId' => $event_id ),
+				'body'    => array( 'eventId' => $event_id ) + Site_Identity::urls(),
 				'timeout' => self::TIMEOUT,
 			)
 		);
@@ -653,7 +653,8 @@ class Event_Import {
 	 */
 	private static function content_digest( $post_id ) {
 		$body = Sync_Payload::build( get_post( $post_id ) )['body'];
-		unset( $body['sourceUpdatedAt'] );
+		// 送るサイトの URL は投稿の内容ではないので、手元で変えたと読まない。既定の公式ページはパーマリンクなので、移転で変わる。
+		unset( $body['sourceUpdatedAt'], $body['siteUrl'], $body['adminUrl'] );
 
 		return md5( (string) wp_json_encode( $body ) );
 	}
