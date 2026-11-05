@@ -1085,6 +1085,16 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 旧名の平文の行が残っていても、判定に使わない。
+	 */
+	public function test_plain_record_under_the_old_name_is_ignored() {
+		update_option( 'eventwatch_site_url', 'https://old.example.com' );
+
+		$this->assertFalse( Site_Identity::has_changed() );
+		$this->assertSame( Site_Identity::current_url(), Site_Identity::recorded_url() );
+	}
+
+	/**
 	 * 読めない記録は違うものとして止める。警告は出さない（出るとテストが落ちる）。
 	 *
 	 * @dataProvider unreadable_records
