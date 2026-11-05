@@ -550,7 +550,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 
 		$id = get_option( Site_Identity::ID_OPTION );
 		$this->assertTrue( wp_is_uuid( $id, 4 ) );
-		$this->assertSame( get_option( 'home' ), get_option( Site_Identity::URL_OPTION ) );
+		$this->assertSame( get_option( 'home' ), Site_Identity::recorded_url() );
 
 		Plugin::activate();
 		$this->assertSame( $id, get_option( Site_Identity::ID_OPTION ) );
@@ -561,7 +561,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_changed_url_stops_writes_until_confirmed() {
 		update_option( Connection::KEY_OPTION, self::KEY );
-		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://production.example.com' ) );
 
 		$this->assertTrue( Site_Identity::has_changed() );
 
@@ -583,7 +583,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		$this->log_in_as_admin();
 		update_option( Connection::KEY_OPTION, self::KEY );
 		$id = Site_Identity::id();
-		update_option( Site_Identity::URL_OPTION, 'https://old.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://old.example.com' ) );
 
 		$this->run_action( Connection_Admin::ACTION_MOVED, array( Connection_Admin::class, 'handle_moved' ) );
 
@@ -602,7 +602,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		update_option( Sync_Status::LAST_SYNC_OPTION, 123 );
 		Connection::check();
 		$id = Site_Identity::id();
-		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://production.example.com' ) );
 
 		$this->run_action( Connection_Admin::ACTION_COPY, array( Connection_Admin::class, 'handle_copy' ) );
 
@@ -672,17 +672,17 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		);
 		$this->assertFalse( Site_Identity::has_changed(), 'home_url filter' );
 
-		update_option( Site_Identity::URL_OPTION, $home . '/' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( $home . '/' ) );
 		$this->assertFalse( Site_Identity::has_changed(), 'trailing slash' );
 
 		$other_scheme = 0 === strpos( $home, 'https://' ) ? 'http://' . substr( $home, 8 ) : 'https://' . substr( $home, 7 );
-		update_option( Site_Identity::URL_OPTION, $other_scheme );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( $other_scheme ) );
 		$this->assertFalse( Site_Identity::has_changed(), 'scheme' );
 
-		update_option( Site_Identity::URL_OPTION, strtoupper( $home ) );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( strtoupper( $home ) ) );
 		$this->assertFalse( Site_Identity::has_changed(), 'case' );
 
-		update_option( Site_Identity::URL_OPTION, $home . '/sub' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( $home . '/sub' ) );
 		$this->assertTrue( Site_Identity::has_changed(), 'path' );
 	}
 
@@ -703,7 +703,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	public function test_notices_only_on_plugin_screens() {
 		$this->log_in_as_admin();
 		update_option( Connection::KEY_OPTION, self::KEY );
-		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://production.example.com' ) );
 
 		foreach ( array( 'dashboard', 'edit-post', 'edit-page', 'plugins', 'eventwatch_event' ) as $screen ) {
 			$this->assertSame( '', $this->notices_on( $screen ), $screen );
@@ -725,7 +725,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_copy_notice_explains_the_fixed_key() {
 		$this->log_in_as_admin();
-		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://production.example.com' ) );
 		add_filter(
 			'eventwatch_fixed_api_key',
 			static function () {
@@ -749,7 +749,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_notices_only_for_administrators() {
 		wp_set_current_user( self::factory()->user->create( array( 'role' => 'editor' ) ) );
-		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://production.example.com' ) );
 
 		$this->assertSame( '', $this->notices_on( 'edit-eventwatch_event' ) );
 	}
@@ -759,7 +759,7 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	 */
 	public function test_no_key_notice() {
 		$user_id = $this->log_in_as_admin();
-		update_option( Site_Identity::URL_OPTION, 'https://production.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://production.example.com' ) );
 
 		$this->assertSame( '', $this->notices_on( 'settings_page_eventwatch' ) );
 
@@ -971,5 +971,175 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 		switch_to_blog( $site );
 		$this->assertTrue( wp_is_uuid( get_option( Site_Identity::ID_OPTION ), 4 ) );
 		restore_current_blog();
+	}
+
+	/**
+	 * 今のサイトの option に、wp search-replace と同じ置換を当てる。更新のフックは通らない。
+	 *
+	 * 定数の WP_HOME があると置換の後も home が変わらないので、今の URL はフィルターで差し替える。
+	 *
+	 * @param string $to 置換の後の URL。
+	 * @return string 置換の前の URL。
+	 */
+	private function search_replace_home( $to ) {
+		global $wpdb;
+
+		$from = Site_Identity::current_url();
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- テーブル名は本体の値で、置換の再現なので option の API を通さない。
+		$wpdb->query( $wpdb->prepare( "UPDATE {$wpdb->options} SET option_value = REPLACE( option_value, %s, %s )", $from, $to ) );
+		wp_cache_flush();
+
+		add_filter(
+			'option_home',
+			static function () use ( $to ) {
+				return $to;
+			},
+			20
+		);
+
+		return $from;
+	}
+
+	/**
+	 * 記録の行に URL の文字列が無い。置換に当たらないので、複製が記録まで書き換えられない。
+	 */
+	public function test_record_does_not_contain_the_url() {
+		global $wpdb;
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$raw = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", Site_Identity::URL_OPTION ) );
+
+		$this->assertSame( Site_Identity::encode_url( Site_Identity::current_url() ), $raw );
+		$this->assertStringNotContainsString( (string) wp_parse_url( Site_Identity::current_url(), PHP_URL_HOST ), $raw );
+		$this->assertSame( Site_Identity::current_url(), Site_Identity::recorded_url() );
+	}
+
+	/**
+	 * 置換で複製したサイトは、確かめるまで書き込みを出さない。読むだけなら通る。
+	 */
+	public function test_search_replace_copy_stops_writes() {
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$this->search_replace_home( 'https://staging.example.test' );
+
+		$this->assertTrue( Site_Identity::has_changed() );
+
+		foreach ( array( 'POST', 'PUT', 'DELETE' ) as $method ) {
+			$result = ( new Api_Client() )->request( $method, '/api/v1.0/org-api/x' );
+			$this->assertSame( Api_Client::SITE_CHANGED, $result->get_error_code() );
+		}
+		$this->assertSame( array(), $this->sent );
+
+		( new Api_Client() )->request( 'GET', '/api/v1.0/org-api/organization' );
+		$this->assertCount( 1, $this->sent );
+	}
+
+	/**
+	 * 置換の後の通知に、置換の前の URL と今の URL が出る。
+	 */
+	public function test_search_replace_notice_shows_the_url_before_the_replace() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$from = $this->search_replace_home( 'https://staging.example.test' );
+
+		$notice = $this->notices_on( 'settings_page_eventwatch' );
+
+		$this->assertStringContainsString( esc_html( $from ), $notice );
+		$this->assertStringContainsString( 'https://staging.example.test', $notice );
+		$this->assertStringContainsString( Connection_Admin::ACTION_COPY, $notice );
+		$this->assertStringContainsString( Connection_Admin::ACTION_MOVED, $notice );
+	}
+
+	/**
+	 * 置換の後に移転を選ぶと、今の URL を記録して続く。
+	 */
+	public function test_search_replace_then_moved_resumes() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$id = Site_Identity::id();
+		$this->search_replace_home( 'https://staging.example.test' );
+
+		$this->run_action( Connection_Admin::ACTION_MOVED, array( Connection_Admin::class, 'handle_moved' ) );
+
+		$this->assertFalse( Site_Identity::has_changed() );
+		$this->assertSame( 'https://staging.example.test', Site_Identity::recorded_url() );
+		$this->assertSame( $id, Site_Identity::id() );
+		$this->assertSame( self::KEY, Connection::api_key() );
+	}
+
+	/**
+	 * 置換の後に複製を選ぶと、別のサイトになり、今の URL を記録する。
+	 */
+	public function test_search_replace_then_copy_becomes_another_site() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$id = Site_Identity::id();
+		$this->search_replace_home( 'https://staging.example.test' );
+
+		$this->run_action( Connection_Admin::ACTION_COPY, array( Connection_Admin::class, 'handle_copy' ) );
+
+		$this->assertFalse( Site_Identity::has_changed() );
+		$this->assertSame( 'https://staging.example.test', Site_Identity::recorded_url() );
+		$this->assertNotSame( $id, Site_Identity::id() );
+		$this->assertSame( '', Connection::api_key() );
+	}
+
+	/**
+	 * 読めない記録は違うものとして止める。警告は出さない（出るとテストが落ちる）。
+	 *
+	 * @dataProvider unreadable_records
+	 *
+	 * @param string $record 記録の値。
+	 */
+	public function test_unreadable_record_stops_writes( $record ) {
+		update_option( Site_Identity::URL_OPTION, $record );
+
+		$this->assertSame( '', Site_Identity::recorded_url() );
+		$this->assertTrue( Site_Identity::has_changed() );
+	}
+
+	/**
+	 * 読めない記録。平文の URL は 16 進の文字でない字を含む。
+	 *
+	 * @return array<string, array{string}>
+	 */
+	public function unreadable_records() {
+		return array(
+			'odd length' => array( 'abc' ),
+			'not hex'    => array( '68zz' ),
+			'plain url'  => array( 'https://example.org' ),
+			'newline'    => array( "6869\n" ),
+		);
+	}
+
+	/**
+	 * マルチサイトの子サイトで置換すると、その子サイトだけが止まる。
+	 *
+	 * @group ms-required
+	 */
+	public function test_search_replace_on_a_child_site_stops_only_that_site() {
+		if ( ! is_multisite() ) {
+			$this->markTestSkipped( 'Requires multisite.' );
+		}
+
+		$child = self::factory()->blog->create();
+
+		switch_to_blog( $child );
+		Site_Identity::ensure();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$from = Site_Identity::current_url();
+		$this->assertFalse( Site_Identity::has_changed() );
+
+		$this->search_replace_home( 'https://staging.example.test' );
+		$this->assertTrue( Site_Identity::has_changed() );
+		$this->assertSame( $from, Site_Identity::recorded_url() );
+
+		$result = ( new Api_Client() )->request( 'PUT', '/api/v1.0/org-api/x' );
+		$this->assertSame( Api_Client::SITE_CHANGED, $result->get_error_code() );
+		$this->assertSame( array(), $this->sent );
+		remove_all_filters( 'option_home', 20 );
+		restore_current_blog();
+
+		$this->assertFalse( Site_Identity::has_changed() );
 	}
 }

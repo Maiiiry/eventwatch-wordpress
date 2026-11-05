@@ -358,7 +358,7 @@ class Bulk_Send_Test extends WP_UnitTestCase {
 		$id = $this->published_event();
 		$this->enter_key();
 		$this->log_in_as_admin();
-		update_option( Site_Identity::URL_OPTION, 'https://old.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://old.example.com' ) );
 
 		$this->assertTrue( Site_Identity::has_changed() );
 		$this->assertStringContainsString( ' disabled=', $this->field() );

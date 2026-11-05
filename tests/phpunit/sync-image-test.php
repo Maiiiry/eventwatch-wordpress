@@ -1267,7 +1267,7 @@ class Sync_Image_Test extends WP_UnitTestCase {
 		Sync_Queue::send_marked();
 		update_post_meta( $post, Sync_Image::ISSUE, Sync_Image::ISSUE_TEMPORARY );
 
-		update_option( Site_Identity::URL_OPTION, 'https://elsewhere.example' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://elsewhere.example' ) );
 		Sync_Pull::run();
 		$this->assertSame( '', get_post_meta( $post, Sync_Queue::PENDING, true ) );
 
@@ -1311,7 +1311,7 @@ class Sync_Image_Test extends WP_UnitTestCase {
 	 */
 	public function test_copied_site_does_not_upload() {
 		$this->event( $this->attachment( self::JPEG . 'a' ) );
-		update_option( Site_Identity::URL_OPTION, 'https://elsewhere.example' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://elsewhere.example' ) );
 
 		$this->run_queue();
 

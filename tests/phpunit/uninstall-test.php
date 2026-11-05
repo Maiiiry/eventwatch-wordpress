@@ -101,7 +101,7 @@ class Uninstall_Test extends WP_UnitTestCase {
 
 		Site_Identity::ensure();
 		update_option( Connection::KEY_OPTION, 'ewk_0123456789012345678901234567890123456789012' );
-		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example.com' ) );
 		$this->run_uninstall();
 		$this->assertSame( 0, $sent );
 

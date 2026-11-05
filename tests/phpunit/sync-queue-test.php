@@ -1099,7 +1099,7 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	 */
 	public function test_copied_site_sends_nothing_until_moved() {
 		$id = $this->event();
-		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example.com' ) );
 		wp_update_post(
 			array(
 				'ID'          => $id,
@@ -1130,7 +1130,7 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		update_post_meta( $no_send, Sync_Queue::NO_SEND, 1 );
 		wp_delete_post( $deleted, true );
 
-		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example.com' ) );
 		wp_update_post(
 			array(
 				'ID'         => $sent,
