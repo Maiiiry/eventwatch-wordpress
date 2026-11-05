@@ -499,7 +499,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		update_post_meta( $id, Event_Detail::LISTING_SLUG, 'abc123' );
 		$this->assertNotSame( '', Event_Detail::listing_url( $id ) );
 
-		update_option( Site_Identity::URL_OPTION, 'https://other.example' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example' ) );
 
 		$this->assertSame( '', Event_Detail::listing_url( $id ) );
 	}
@@ -594,7 +594,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 			),
 			'複製'   => array(
 				static function () {
-					update_option( Site_Identity::URL_OPTION, 'https://other.example' );
+					update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example' ) );
 				},
 			),
 			'待ちの間' => array(

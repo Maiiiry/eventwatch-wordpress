@@ -13,11 +13,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * 記録した URL と今の URL が違えば、書き込みを止める。本番を複製したステージングから本番の投稿を書き換えないため。
+ *
+ * 記録は 16 進で持つ。平文だと、複製に使う wp search-replace や移行ツールの置換で home と一緒に書き換わり、違いが消える。
+ * 隠すためではない。値はサイトの公開 URL である。
  */
 class Site_Identity {
 
 	const ID_OPTION  = 'eventwatch_site_id';
-	const URL_OPTION = 'eventwatch_site_url';
+	const URL_OPTION = 'eventwatch_site_url_hex';
 
 	/**
 	 * サイト ID と URL の記録を作る。あれば何もしない。キーの option も自動の読み込みから外して先に作る。
@@ -26,7 +29,7 @@ class Site_Identity {
 	 */
 	public static function ensure() {
 		add_option( self::ID_OPTION, wp_generate_uuid4(), '', false );
-		add_option( self::URL_OPTION, self::current_url(), '', false );
+		add_option( self::URL_OPTION, self::encode_url( self::current_url() ), '', false );
 
 		// register_setting の既定値があると、add_option は行があっても書き込みまで進む。
 		if ( false === get_option( Connection::KEY_OPTION, false ) ) {
@@ -46,25 +49,38 @@ class Site_Identity {
 	}
 
 	/**
-	 * URL が記録と違うか。記録が無ければ今の URL を記録して偽を返す。
+	 * URL が記録と違うか。記録が無ければ今の URL を記録して偽を返す。読めない記録は違うものとして止める。
 	 *
 	 * @return bool
 	 */
 	public static function has_changed() {
 		self::ensure();
 
-		return self::normalize( (string) get_option( self::URL_OPTION ) ) !== self::normalize( self::current_url() );
+		return self::normalize( self::recorded_url() ) !== self::normalize( self::current_url() );
 	}
 
 	/**
-	 * 記録した URL。
+	 * 記録した URL。16 進として読めなければ空文字。
 	 *
 	 * @return string
 	 */
 	public static function recorded_url() {
 		self::ensure();
 
-		return (string) get_option( self::URL_OPTION );
+		$recorded = (string) get_option( self::URL_OPTION );
+
+		// hex2bin は読めない値で警告を出す。
+		return preg_match( '/^(?:[0-9a-f]{2})+$/D', $recorded ) ? (string) hex2bin( $recorded ) : '';
+	}
+
+	/**
+	 * 記録に書く形。
+	 *
+	 * @param string $url URL。
+	 * @return string
+	 */
+	public static function encode_url( $url ) {
+		return bin2hex( $url );
 	}
 
 	/**
@@ -131,7 +147,7 @@ class Site_Identity {
 	 * @return void
 	 */
 	public static function use_as_moved() {
-		update_option( self::URL_OPTION, self::current_url(), false );
+		update_option( self::URL_OPTION, self::encode_url( self::current_url() ), false );
 		// パーマリンクが変わるので、公式ページの URL を送り直す。止めていた送信もここで再開する。
 		Sync_Queue::request_rescan();
 		Sync_Queue::resume();
@@ -144,7 +160,7 @@ class Site_Identity {
 	 */
 	public static function use_as_copy() {
 		update_option( self::ID_OPTION, wp_generate_uuid4(), false );
-		update_option( self::URL_OPTION, self::current_url(), false );
+		update_option( self::URL_OPTION, self::encode_url( self::current_url() ), false );
 		delete_option( Connection::KEY_OPTION );
 		add_option( Connection::KEY_OPTION, '', '', false );
 		Connection::forget();

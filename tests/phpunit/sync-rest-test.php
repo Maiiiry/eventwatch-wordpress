@@ -207,7 +207,7 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 		$this->assertSame( 'failed', $status['state'] );
 		$this->assertStringContainsString( 'rejected this API key', $status['reason']['text'] );
 
-		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example.com' ) );
 		Connection::forget();
 		delete_post_meta( $first, Sync_Queue::ERROR );
 		$this->assertStringContainsString( 'URL has changed', Sync_Rest::status( $first )['reason']['text'] );
@@ -236,7 +236,7 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 		Sync_Queue::send_marked();
 		$this->assertSame( 'Next retry', Sync_Rest::status( $id )['meta']['label'] );
 
-		update_option( Site_Identity::URL_OPTION, 'https://other.example.com' );
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example.com' ) );
 		$status = Sync_Rest::status( $id );
 
 		$this->assertStringContainsString( 'URL has changed', $status['reason']['text'] );
