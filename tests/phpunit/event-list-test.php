@@ -19,12 +19,20 @@ use WP_UnitTestCase;
 class Event_List_Test extends WP_UnitTestCase {
 
 	/**
+	 * テストの中の「今」。作るときと確かめるときで時計を読み直すと、間で分が変わって食い違う。
+	 *
+	 * @var \DateTimeImmutable
+	 */
+	private $now;
+
+	/**
 	 * 基底クラスの tear_down がメタとブロックの登録を外すので、テストごとに揃える。
 	 */
 	public function set_up() {
 		parent::set_up();
 		Event_Meta::register();
 		update_option( 'timezone_string', 'Asia/Tokyo' );
+		$this->now = new \DateTimeImmutable( 'now', wp_timezone() );
 		if ( ! \WP_Block_Type_Registry::get_instance()->is_registered( Event_List_Block::NAME ) ) {
 			register_block_type( dirname( __DIR__, 2 ) . '/build/blocks/event-list' );
 		}
@@ -37,7 +45,7 @@ class Event_List_Test extends WP_UnitTestCase {
 	 * @return string
 	 */
 	private function wall( $modify ) {
-		return ( new \DateTimeImmutable( 'now', wp_timezone() ) )->modify( $modify )->format( 'Y-m-d H:i' );
+		return $this->now->modify( $modify )->format( 'Y-m-d H:i' );
 	}
 
 	/**
@@ -319,7 +327,7 @@ class Event_List_Test extends WP_UnitTestCase {
 
 		$data = Event_List::item_data( get_post( $post_id ) );
 
-		$next = ( new \DateTimeImmutable( 'now', wp_timezone() ) )->modify( '+2 days' );
+		$next = $this->now->modify( '+2 days' );
 		$this->assertStringContainsString( $next->format( 'g:i A' ), $data['date'] );
 		$this->assertStringStartsWith( $next->format( 'Y-m-d\TH:i' ), $data['datetime'] );
 		$this->assertSame( '+2 more dates', $data['more'] );

@@ -22,13 +22,21 @@ use WP_UnitTestCase;
 class Event_Search_Test extends WP_UnitTestCase {
 
 	/**
+	 * テストの中の「今」。作るときと確かめるときで時計を読み直すと、間で日が変わって食い違う。
+	 *
+	 * @var \DateTimeImmutable
+	 */
+	private $now;
+
+	/**
 	 * 基底クラスの tear_down がメタとブロックの登録を外すので、テストごとに揃える。
 	 */
 	public function set_up() {
 		parent::set_up();
 		Event_Meta::register();
 		update_option( 'timezone_string', 'Asia/Tokyo' );
-		$registry = \WP_Block_Type_Registry::get_instance();
+		$this->now = new \DateTimeImmutable( 'now', wp_timezone() );
+		$registry  = \WP_Block_Type_Registry::get_instance();
 		if ( ! $registry->is_registered( Event_List_Block::NAME ) ) {
 			register_block_type( dirname( __DIR__, 2 ) . '/build/blocks/event-list' );
 		}
@@ -67,7 +75,7 @@ class Event_Search_Test extends WP_UnitTestCase {
 	 * @return int
 	 */
 	private function event( $title, $modify = '+3 days', array $meta = array(), array $post = array() ) {
-		$date    = ( new \DateTimeImmutable( 'now', wp_timezone() ) )->modify( $modify )->format( 'Y-m-d' );
+		$date    = $this->now->modify( $modify )->format( 'Y-m-d' );
 		$post_id = self::factory()->post->create(
 			array_merge(
 				array(
@@ -217,7 +225,7 @@ class Event_Search_Test extends WP_UnitTestCase {
 
 		$this->assertSame( array( '東京', '東京の先' ), $this->titles( array( Event_Search::PARAM_PREFECTURE => '13' ) ) );
 
-		$date = ( new \DateTimeImmutable( 'now', wp_timezone() ) )->modify( '+29 days' )->format( 'Y-m-d' );
+		$date = $this->now->modify( '+29 days' )->format( 'Y-m-d' );
 		$this->assertSame( array( '東京の先' ), $this->titles( array( Event_Search::PARAM_FROM => $date ) ) );
 		$this->assertSame( array( '東京', '大阪' ), $this->titles( array( Event_Search::PARAM_TO => $date ) ) );
 		$this->assertSame(

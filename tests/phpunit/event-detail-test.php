@@ -630,7 +630,8 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	 * Google カレンダーは、まだ終わっていない最初の組を指す。複数なら日付を添える。
 	 */
 	public function test_calendar_points_google_to_the_next_occurrence() {
-		$post = $this->event(
+		$next_day = $this->day( 3, '10:00' );
+		$post     = $this->event(
 			array(
 				Event_Meta::OCCURRENCES => array(
 					array(
@@ -638,7 +639,7 @@ class Event_Detail_Test extends WP_UnitTestCase {
 						'end'   => $this->day( -5, '11:00' ),
 					),
 					array(
-						'start' => $this->day( 3, '10:00' ),
+						'start' => $next_day,
 						'end'   => '',
 					),
 					array(
@@ -652,7 +653,7 @@ class Event_Detail_Test extends WP_UnitTestCase {
 		$next = Event_Dates::next_occurrence( $post->ID );
 		$html = Event_Detail::render_field( 'calendar', $post );
 
-		$this->assertSame( strtotime( $this->day( 3, '10:00' ) . ' Asia/Tokyo' ), $next['start'] );
+		$this->assertSame( strtotime( $next_day . ' Asia/Tokyo' ), $next['start'] );
 		$this->assertStringContainsString( 'eventwatch_ics=1', $html );
 		$this->assertStringContainsString( 'dates=' . gmdate( 'Ymd\THis\Z', $next['start'] ) . '/' . gmdate( 'Ymd\THis\Z', $next['start'] + HOUR_IN_SECONDS ), $html );
 		$this->assertStringContainsString( 'eventwatch-detail__menu-note', $html );
@@ -800,15 +801,17 @@ class Event_Detail_Test extends WP_UnitTestCase {
 	 * .ics の本文。全組・UTC・終了が空は 1 時間・CRLF。
 	 */
 	public function test_ical_body() {
-		$post = $this->event(
+		$first_day  = $this->day( 5, '10:00' );
+		$second_day = $this->day( 6, '10:00' );
+		$post       = $this->event(
 			array(
 				Event_Meta::OCCURRENCES => array(
 					array(
-						'start' => $this->day( 5, '10:00' ),
-						'end'   => $this->day( 5, '12:00' ),
+						'start' => $first_day,
+						'end'   => substr( $first_day, 0, 10 ) . ' 12:00',
 					),
 					array(
-						'start' => $this->day( 6, '10:00' ),
+						'start' => $second_day,
 						'end'   => '',
 					),
 				),
@@ -823,8 +826,8 @@ class Event_Detail_Test extends WP_UnitTestCase {
 		$this->assertSame( 0, preg_match( "/(?<!\r)\n/", $ics ), 'LF だけの改行が無い' );
 		$this->assertSame( 2, substr_count( $ics, 'BEGIN:VEVENT' ) );
 
-		$first  = strtotime( $this->day( 5, '10:00' ) . ' Asia/Tokyo' );
-		$second = strtotime( $this->day( 6, '10:00' ) . ' Asia/Tokyo' );
+		$first  = strtotime( $first_day . ' Asia/Tokyo' );
+		$second = strtotime( $second_day . ' Asia/Tokyo' );
 		$this->assertContains( 'DTSTART:' . gmdate( 'Ymd\THis\Z', $first ), $lines );
 		$this->assertContains( 'DTEND:' . gmdate( 'Ymd\THis\Z', $first + 2 * HOUR_IN_SECONDS ), $lines );
 		$this->assertContains( 'DTEND:' . gmdate( 'Ymd\THis\Z', $second + HOUR_IN_SECONDS ), $lines );
