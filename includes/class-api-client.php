@@ -106,7 +106,7 @@ class Api_Client {
 		}
 
 		$result = $this->interpret( $response );
-		Connection::observe( $result );
+		Connection::observe( $result, $method );
 
 		return $result;
 	}

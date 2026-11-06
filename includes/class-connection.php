@@ -142,9 +142,10 @@ class Connection {
 	 * 一時的な失敗では状態を変えない。つながっていた事実まで消さない。
 	 *
 	 * @param array|WP_Error $result クライアントの戻り。
+	 * @param string         $method 要求のメソッド（大文字）。
 	 * @return void
 	 */
-	public static function observe( $result ) {
+	public static function observe( $result, $method = '' ) {
 		if ( is_wp_error( $result ) ) {
 			if ( in_array( $result->get_error_code(), array( Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED, Api_Client::FORBIDDEN ), true ) ) {
 				self::save( self::status_of( $result ), '', self::reason_of( $result ) );
@@ -152,8 +153,16 @@ class Connection {
 			return;
 		}
 
+		$state = self::state();
+
+		// 結び付きでは GET は断られないので、読めたことは古いキーの失効を示さない。定期の取り込みで案内を消さない。
+		// 消すのは書き込みが通ったときか、接続の確認（check() が状態を保存し直す）。
+		if ( 'GET' === $method && self::is_site_bound( $state ) ) {
+			return;
+		}
+
 		// 通ったので、前の失敗の案内を残さない。つながっている状態と団体名は消さない。
-		if ( ! in_array( self::state()['status'], array( self::UNCHECKED, self::CONNECTED ), true ) ) {
+		if ( ! in_array( $state['status'], array( self::UNCHECKED, self::CONNECTED ), true ) ) {
 			self::save( self::UNCHECKED );
 		}
 	}
