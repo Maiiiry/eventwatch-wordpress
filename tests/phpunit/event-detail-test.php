@@ -808,7 +808,7 @@ class Event_Detail_Test extends WP_UnitTestCase {
 				Event_Meta::OCCURRENCES => array(
 					array(
 						'start' => $first_day,
-						'end'   => $this->day( 5, '12:00' ),
+						'end'   => substr( $first_day, 0, 10 ) . ' 12:00',
 					),
 					array(
 						'start' => $second_day,
