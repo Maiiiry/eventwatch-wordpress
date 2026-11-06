@@ -592,7 +592,7 @@ class Event_Import {
 					'title'   => self::local_title( $event_id, $post_id ),
 					'postId'  => (int) $post_id,
 					'editUrl' => self::edit_url( $post_id ),
-					'reason'  => self::stop_reason( $error->get_error_code() ),
+					'reason'  => self::stop_reason( $error->get_error_code(), isset( $data['code'] ) ? (string) $data['code'] : '' ),
 				)
 			);
 		}
@@ -603,14 +603,18 @@ class Event_Import {
 	/**
 	 * キーやサイトの問題で止めるときの文。
 	 *
-	 * @param string $code 失敗のコード。
+	 * @param string $code     失敗のコード。
+	 * @param string $api_code 応答の code。
 	 * @return string
 	 */
-	public static function stop_reason( $code ) {
+	public static function stop_reason( $code, $api_code = '' ) {
 		switch ( $code ) {
 			case Api_Client::SUSPENDED:
 				return __( 'Your EventWatch organization is suspended. Contact EventWatch support.', 'eventwatch' );
 			case Api_Client::FORBIDDEN:
+				if ( Api_Client::CODE_SITE_BOUND === $api_code ) {
+					return __( 'This site is still connected to EventWatch with another API key that hasn’t been revoked. Revoke the old key under Organization settings › Site connection on EventWatch, then try again.', 'eventwatch' );
+				}
 				return __( 'This API key can’t import posts. Issue a new key with EventWatch, then set it in Settings › EventWatch.', 'eventwatch' );
 			case Api_Client::SITE_CHANGED:
 				return __( 'The site URL has changed. Confirm whether this is a copy in Settings › EventWatch, then try again.', 'eventwatch' );

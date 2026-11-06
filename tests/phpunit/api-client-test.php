@@ -493,6 +493,32 @@ class Api_Client_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 結び付きの 403 だけ理由を残す。止まり方を分けないので状態は FORBIDDEN のまま。2xx で消える。
+	 */
+	public function test_site_bound_reason_is_kept_until_a_success() {
+		$this->respond_with( $this->http( 403, '{"code":"siteBoundToAnotherKey"}' ) );
+		$result = ( new Api_Client() )->request( 'PUT', '/api/v1.0/org-api/sites/s/events/1', array( 'body' => array() ) );
+
+		$this->assertSame( Api_Client::FORBIDDEN, $result->get_error_code() );
+		$state = Connection::state();
+		$this->assertSame( Connection::FORBIDDEN, $state['status'] );
+		$this->assertSame( Api_Client::CODE_SITE_BOUND, $state['reason'] );
+		$this->assertTrue( Connection::is_site_bound( $state ) );
+
+		$this->respond_with( $this->http( 200, '{"displayName":"Org"}' ) );
+		Connection::check();
+		$this->assertSame( '', Connection::state()['reason'] );
+		$this->assertFalse( Connection::is_site_bound( Connection::state() ) );
+
+		foreach ( array( '{"code":"other"}', '{}', '<html>' ) as $body ) {
+			$this->respond_with( $this->http( 403, $body ) );
+			( new Api_Client() )->request( 'PUT', '/api/v1.0/org-api/sites/s/events/1', array( 'body' => array() ) );
+			$this->assertSame( Connection::FORBIDDEN, Connection::state()['status'], $body );
+			$this->assertSame( '', Connection::state()['reason'], $body );
+		}
+	}
+
+	/**
 	 * キーが無ければ、確かめても未確認のまま。
 	 */
 	public function test_check_without_key() {

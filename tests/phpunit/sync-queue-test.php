@@ -16,6 +16,7 @@ use EventWatch\Event_Meta;
 use EventWatch\Post_Type;
 use EventWatch\Site_Identity;
 use EventWatch\Sync_Payload;
+use EventWatch\Sync_Pull;
 use EventWatch\Sync_Queue;
 use EventWatch\Sync_Status;
 use WP_UnitTestCase;
@@ -755,10 +756,89 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	 */
 	public function halting_failures() {
 		return array(
-			'失効'    => array( 401, array(), 'eventwatch_unauthorized' ),
-			'団体の停止' => array( 403, array( 'code' => 'organizationSuspended' ), 'eventwatch_suspended' ),
-			'範囲の外'  => array( 403, array(), 'eventwatch_forbidden' ),
+			'失効'       => array( 401, array(), 'eventwatch_unauthorized' ),
+			'団体の停止'    => array( 403, array( 'code' => 'organizationSuspended' ), 'eventwatch_suspended' ),
+			'範囲の外'     => array( 403, array(), 'eventwatch_forbidden' ),
+			'別のキーのサイト' => array( 403, array( 'code' => 'siteBoundToAnotherKey' ), 'eventwatch_forbidden' ),
 		);
+	}
+
+	/**
+	 * 結び付きの 403 の案内は、定期の取り込みの GET が通っても消えない。失効の後は取り込みが起こす送信で消える。
+	 */
+	public function test_site_bound_reason_survives_the_hourly_pull() {
+		$sent = $this->sent_event();
+		$id   = $this->event();
+		wp_update_post(
+			array(
+				'ID'          => $id,
+				'post_status' => 'publish',
+			)
+		);
+		$this->responses[] = $this->response( 403, array( 'code' => 'siteBoundToAnotherKey' ) );
+		Sync_Queue::send_marked();
+		$this->assertTrue( Connection::is_site_bound( Connection::state() ) );
+
+		// 結び付きでは GET は断られない。定期の取り込みの成功で案内を消さない。
+		$this->requests    = array();
+		$this->responses[] = $this->ok( 'pendingReview' );
+		Sync_Pull::run();
+
+		$this->assertSame( array( 'GET' ), array_column( $this->requests, 'method' ) );
+		$this->assertSame( Sync_Queue::post_path( $sent ), $this->requests[0]['path'] );
+		$this->assertTrue( Connection::is_site_bound( Connection::state() ) );
+
+		// 取り込みは止まった送信を起こす。古いキーが残っている間は、また断られて案内が残る。
+		$this->requests    = array();
+		$this->responses[] = $this->response( 403, array( 'code' => 'siteBoundToAnotherKey' ) );
+		Sync_Queue::run();
+		$this->assertCount( 1, $this->requests );
+		$this->assertTrue( Connection::is_site_bound( Connection::state() ) );
+		$this->assertNotSame( '', (string) get_post_meta( $id, Sync_Queue::PENDING, true ) );
+
+		// 古いキーを失効した後は、ボタンを押さなくても次の取り込みからの送信が通り、案内が消える。
+		$this->requests = array();
+		update_post_meta( $sent, Sync_Queue::PULLED_AT, 0 );
+		Sync_Pull::run();
+		Sync_Queue::run();
+		$this->assertSame( array( 'GET', 'PUT' ), array_column( $this->requests, 'method' ) );
+		$this->assertSame( 0, Sync_Queue::pending_count() );
+		$this->assertFalse( Connection::is_site_bound( Connection::state() ) );
+	}
+
+	/**
+	 * 別のキーに結び付いたサイトで止まった待ちは、古いキーを失効して接続を確かめると、次の送信で送られる。
+	 * 確かめるのは団体の GET で、結び付きでは断られない。
+	 */
+	public function test_site_bound_queue_is_sent_after_revoking_the_old_key() {
+		$first  = $this->event();
+		$second = $this->event();
+		foreach ( array( $first, $second ) as $id ) {
+			wp_update_post(
+				array(
+					'ID'          => $id,
+					'post_status' => 'publish',
+				)
+			);
+		}
+		$this->responses[] = $this->response( 403, array( 'code' => 'siteBoundToAnotherKey' ) );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( 2, Sync_Queue::pending_count() );
+		$this->assertTrue( Connection::is_site_bound( Connection::state() ) );
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RUN_HOOK ) );
+
+		// 古いキーを失効した後の「接続を確かめる」（Connection_Admin::handle_check と同じ流れ）。
+		$this->responses[] = $this->response( 200, array( 'displayName' => 'Org' ) );
+		$this->assertSame( Connection::CONNECTED, Connection::check()['status'] );
+		Sync_Queue::resume();
+
+		$this->requests = array();
+		Sync_Queue::run();
+
+		$this->assertSame( array( 'PUT', 'PUT' ), array_column( $this->requests, 'method' ) );
+		$this->assertSame( 0, Sync_Queue::pending_count() );
+		$this->assertFalse( Connection::is_site_bound( Connection::state() ) );
 	}
 
 	/**
