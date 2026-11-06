@@ -57,8 +57,8 @@ class Privacy_Test extends WP_UnitTestCase {
 		// 本体の admin_init はヘッダーを送るので、テストでは自分のフックだけを流す。
 		remove_all_actions( 'admin_init' );
 		Privacy::boot();
-		do_action( 'admin_init' );
-		do_action( 'admin_init' );
+		do_action( 'admin_init' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- 本体のフックを起こす
+		do_action( 'admin_init' ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- 2 回目でも節が増えないことを見る
 
 		$texts = $this->our_texts();
 		$this->assertCount( 1, $texts );
