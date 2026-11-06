@@ -1,0 +1,59 @@
+name: Release
+
+# v1.2.3 の形のタグを打つと、公式ディレクトリの SVN（trunk・tags・assets）へ配る。
+# 手動の実行は dry-run だけ（SVN へコミットしない）。SVN にプラグインができる前（審査の承認前）は、取り出しで失敗する。
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # SVN の Secrets はこの環境だけに置く。
+    environment: wordpress-org
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        # 配布物を作るので、キャッシュを読まない（キャッシュは PR の実行からも書ける）。
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: 版の番号がそろっていることを確かめる
+        id: version
+        env:
+          TAG: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+        run: |
+          if [ -n "$TAG" ]; then
+            bash tests/check-version.sh "$TAG"
+          else
+            bash tests/check-version.sh
+          fi
+          echo "version=$(node -p 'require("./package.json").version')" >> "$GITHUB_OUTPUT"
+      - run: npm ci
+      - run: npm run build
+      - run: npm run plugin-zip
+      - name: zip を展開する
+        run: unzip -q eventwatch.zip -d "$RUNNER_TEMP/plugin"
+      - uses: 10up/action-wordpress-plugin-deploy@54bd289b8525fd23a5c365ec369185f2966529c2 # 2.3.0
+        with:
+          dry-run: ${{ github.event_name != 'push' }}
+        env:
+          SVN_USERNAME: ${{ secrets.SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.SVN_PASSWORD }}
+          SLUG: eventwatch
+          BUILD_DIR: ${{ runner.temp }}/plugin/eventwatch
+          ASSETS_DIR: .wordpress-org
+          # 手動の実行ではタグが無いので、そろっていることを確かめた版を渡す。
+          VERSION: ${{ steps.version.outputs.version }}
