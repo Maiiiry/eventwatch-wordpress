@@ -63,16 +63,26 @@ class Privacy {
 			'<p>' . sprintf(
 				/* translators: %s: URL of the EventWatch privacy policy. */
 				esc_html__( 'This site lists its events on EventWatch. When we publish an event, our server sends it to EventWatch: its title, content, dates, venue, and other details, its featured image, and the addresses of this site and its admin area. No information about visitors to this site is sent. EventWatch\'s privacy policy: %s', 'eventwatch' ),
-				esc_url( Connection_Admin::web_url( '/privacy' ) )
+				self::link( Connection_Admin::web_url( '/privacy' ) )
 			) . '</p>',
 			'<p>' . sprintf(
 				/* translators: %s: URL of the Google privacy policy. */
 				esc_html__( 'Event pages show a Google map of the venue. When you open an event page, your browser connects to Google, and Google may collect information such as your IP address. Google\'s privacy policy: %s', 'eventwatch' ),
-				esc_url( self::GOOGLE_PRIVACY_URL )
+				self::link( self::GOOGLE_PRIVACY_URL )
 			) . '</p>',
 			'<p>' . esc_html__( 'Event pages link to EventWatch, maps, calendars, and social media. Your browser connects to these services only when you follow a link.', 'eventwatch' ) . '</p>',
 		);
 
 		return implode( "\n", $paragraphs );
+	}
+
+	/**
+	 * URL をそのまま文字にしたリンク。オーナーがポリシーへ写した後も開ける形にする。
+	 *
+	 * @param string $url URL。
+	 * @return string
+	 */
+	private static function link( $url ) {
+		return sprintf( '<a href="%1$s">%2$s</a>', esc_url( $url ), esc_html( $url ) );
 	}
 }

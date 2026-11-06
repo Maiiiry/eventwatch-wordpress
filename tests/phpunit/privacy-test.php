@@ -62,8 +62,8 @@ class Privacy_Test extends WP_UnitTestCase {
 
 		$texts = $this->our_texts();
 		$this->assertCount( 1, $texts );
-		$this->assertStringContainsString( 'https://eventwatch.app/en/privacy', $texts[0] );
-		$this->assertStringContainsString( Privacy::GOOGLE_PRIVACY_URL, $texts[0] );
+		$this->assertStringContainsString( '<a href="https://eventwatch.app/en/privacy">https://eventwatch.app/en/privacy</a>', $texts[0] );
+		$this->assertStringContainsString( '<a href="https://policies.google.com/privacy">https://policies.google.com/privacy</a>', $texts[0] );
 		$this->assertStringContainsString( 'No information about visitors to this site is sent.', $texts[0] );
 	}
 
