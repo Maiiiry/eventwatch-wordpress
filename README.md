@@ -39,6 +39,7 @@ WP_ENV_PORT=8895 WP_ENV_TESTS_PORT=8896 npm run env start
 | `npm run i18n` | 翻訳の POT・PO・MO・JSON を作り直す |
 | `npm run i18n:check` | ja の翻訳がいまのソースにそろっているかを確かめる |
 | `npm run plugin-zip` | 配布用の zip（`eventwatch.zip`）を作る |
+| `bash tests/check-version.sh` | 本体のヘッダー・`readme.txt` の Stable tag・`package.json` の版がそろっているかを確かめる |
 
 `lint:php` と `test:php` は、wp-env を起動して `npm run composer install` を流した後に使います。`test:php` と `i18n` は `npm run build` の後に流します。
 

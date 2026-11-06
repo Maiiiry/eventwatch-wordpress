@@ -26,6 +26,7 @@ jobs:
           coverage: none
           tools: composer
       - run: npm ci
+      - run: bash tests/check-version.sh
       - run: npm run lint:js
       - run: npm run test:js
       - run: npm run build

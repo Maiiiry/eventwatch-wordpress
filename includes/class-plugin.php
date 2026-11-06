@@ -55,6 +55,7 @@ class Plugin {
 		Admin_Columns::boot();
 		Editor_Assets::boot();
 		Import_Admin::boot();
+		Privacy::boot();
 	}
 
 	/**
