@@ -1244,6 +1244,157 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 置換でスキームだけを変えたサイトは、定期の確かめで洗い直して新しい URL を送る。洗い直した後は重ねて張らない。
+	 */
+	public function test_scheme_change_by_replace_resends_on_check() {
+		$id = $this->sent_event();
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->requests = array();
+		$replaced       = $this->flip_scheme( (string) get_option( 'home' ) );
+
+		// 置換は option の更新のフックを通らない。保存値だけを変える。WP_HOME を定義した環境でも送る値が変わるよう、フィルターで揃える。
+		$this->replace_stored_scheme();
+		$as_replaced = static function () use ( $replaced ) {
+			return $replaced;
+		};
+		add_filter( 'option_home', $as_replaced, 20 );
+		$this->assertFalse( Site_Identity::has_changed() );
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		Sync_Queue::rescan_if_urls_changed();
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		wp_clear_scheduled_hook( Sync_Queue::RESCAN_HOOK );
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
+		$this->assertSame( $replaced, $this->requests[0]['body']['siteUrl'] );
+
+		Sync_Queue::rescan_if_urls_changed();
+		remove_filter( 'option_home', $as_replaced, 20 );
+
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * URL が最後の洗い直しと同じなら、定期の確かめで何も送らない。
+	 */
+	public function test_same_urls_do_not_rescan_on_check() {
+		$this->sent_event();
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->requests = array();
+
+		Sync_Queue::rescan_if_urls_changed();
+		Sync_Queue::run();
+
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+		$this->assertSame( array(), $this->requests );
+	}
+
+	/**
+	 * 記録が無いとき（確かめを持たない版から上げた直後）は、いまの URL を覚えるだけにする。
+	 */
+	public function test_first_check_only_records_urls() {
+		$this->sent_event();
+		delete_option( Sync_Queue::URLS_HASH_OPTION );
+
+		Sync_Queue::rescan_if_urls_changed();
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+		$this->assertNotFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
+
+		$this->replace_stored_scheme();
+		Sync_Queue::rescan_if_urls_changed();
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * siteurl の保存値だけが置換で変わっても洗い直す。管理画面の URL は siteurl から作る。
+	 */
+	public function test_check_sees_stored_siteurl() {
+		Sync_Queue::rescan();
+
+		$this->replace_stored_scheme( array( 'siteurl' ) );
+		Sync_Queue::rescan_if_urls_changed();
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * 要求ごとに URL が変わるサイト（WP_HOME を is_ssl() から作る・WP_SITEURL を Host ヘッダーから作る）では、
+	 * 保存値が同じなら洗い直しを張らない。送る値で比べると、要求のたびに全件を送り直す。
+	 */
+	public function test_check_ignores_urls_that_change_per_request() {
+		$this->sent_event();
+		$https      = static function ( $url ) {
+			return set_url_scheme( $url, 'https' );
+		};
+		$other_host = static function () {
+			return 'http://other.example/wp';
+		};
+
+		Sync_Queue::rescan();
+		add_filter( 'option_home', $https, 20 );
+		add_filter( 'option_siteurl', $other_host, 20 );
+		Sync_Queue::rescan_if_urls_changed();
+		$changed = wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK );
+
+		Sync_Queue::rescan();
+		remove_filter( 'option_home', $https, 20 );
+		remove_filter( 'option_siteurl', $other_host, 20 );
+		Sync_Queue::rescan_if_urls_changed();
+
+		$this->assertFalse( $changed );
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * 複製として別のサイトになると、URL の記録も消える。
+	 */
+	public function test_forget_all_forgets_rescanned_urls() {
+		Sync_Queue::rescan();
+		$this->assertNotFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
+
+		Sync_Queue::forget_all();
+
+		$this->assertFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
+	}
+
+	/**
+	 * スキームを入れ替える。置換で http と https を入れ替えたサイトの代わり。
+	 *
+	 * @param string $url URL。
+	 * @return string
+	 */
+	public function flip_scheme( $url ) {
+		if ( 'https' === wp_parse_url( $url, PHP_URL_SCHEME ) ) {
+			return set_url_scheme( $url, 'http' );
+		}
+
+		return set_url_scheme( $url, 'https' );
+	}
+
+	/**
+	 * option の保存値のスキームを、フックを通さずに入れ替える。wp search-replace の代わり。
+	 *
+	 * @param string[] $names 入れ替える option。
+	 * @return void
+	 */
+	private function replace_stored_scheme( array $names = array( 'home', 'siteurl' ) ) {
+		global $wpdb;
+
+		foreach ( $names as $name ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 置換と同じく、option の更新のフックを通さない。
+			$stored = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 同上。
+			$wpdb->update( $wpdb->options, array( 'option_value' => $this->flip_scheme( $stored ) ), array( 'option_name' => $name ) );
+		}
+		wp_cache_delete( 'alloptions', 'options' );
+	}
+
+	/**
 	 * 要求の経路が変わっても、同じ内容の投稿は送らない。
 	 */
 	public function test_request_scheme_does_not_resend() {

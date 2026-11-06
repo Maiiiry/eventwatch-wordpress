@@ -81,6 +81,8 @@ class Sync_Pull {
 	public static function run() {
 		if ( self::can_read() ) {
 			Sync_Image::requeue();
+			// 移転の確認を待つ間は確かめない。確認の後は use_as_moved が洗い直す。
+			Sync_Queue::rescan_if_urls_changed();
 		}
 
 		$start = time();
