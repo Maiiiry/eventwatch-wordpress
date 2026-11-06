@@ -129,6 +129,14 @@ The source code, including the uncompressed JavaScript for the blocks and the ed
 
 The plugin includes a Japanese translation. Other languages come from translate.wordpress.org.
 
+== Screenshots ==
+
+1. The Event Search block lists your upcoming events and lets visitors search them.
+2. Each event has its own page with dates, venue, map links, and buttons to add it to a calendar and share it.
+3. Add the dates, venue, prefecture, and category in the block editor.
+4. Settings > EventWatch. The plugin works without an API key; enter one to list your events on EventWatch.
+5. The event list in the admin area shows each event's dates and prefecture.
+
 == Changelog ==
 
 = 0.1.0 =
