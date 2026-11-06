@@ -36,7 +36,7 @@ class Event_Search_Test extends WP_UnitTestCase {
 		Event_Meta::register();
 		update_option( 'timezone_string', 'Asia/Tokyo' );
 		$this->now = new \DateTimeImmutable( 'now', wp_timezone() );
-		$registry = \WP_Block_Type_Registry::get_instance();
+		$registry  = \WP_Block_Type_Registry::get_instance();
 		if ( ! $registry->is_registered( Event_List_Block::NAME ) ) {
 			register_block_type( dirname( __DIR__, 2 ) . '/build/blocks/event-list' );
 		}
