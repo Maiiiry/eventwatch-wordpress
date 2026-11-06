@@ -86,7 +86,7 @@ jobs:
       - name: zip に開発用のファイルが入っていないことを確かめる
         run: |
           unzip -Z1 eventwatch.zip | tee zip-files.txt
-          if grep -E '(^|/)(node_modules|tests|src|vendor|docs|\.github)/|\.map$|(^|/)(composer\.(json|lock)|package(-lock)?\.json|phpcs\.xml\.dist|phpunit\.xml\.dist|\.wp-env\.json)$' zip-files.txt; then
+          if grep -E '(^|/)(node_modules|tests|src|vendor|docs|\.github|\.wordpress-org)/|\.map$|(^|/)(composer\.(json|lock)|package(-lock)?\.json|phpcs\.xml\.dist|phpunit\.xml\.dist|\.wp-env\.json)$' zip-files.txt; then
             echo 'The plugin zip contains development files.' >&2
             exit 1
           fi

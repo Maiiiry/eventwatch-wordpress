@@ -44,9 +44,11 @@ bash tests/playground.sh 9401 ja     # 日本語のサイトで開く（スク�
 
 1. 本体のヘッダーの `Version`・`readme.txt` の `Stable tag`・`package.json` の `version` を同じ番号に上げ、`readme.txt` の Changelog を書いた PR を出してマージします（`tests/check-version.sh` が 3 か所のずれを止めます）
 2. `main` で `v<版>`（例: `v1.2.0`）のタグを打って push します
-3. Actions の Release が、版がタグとそろっていることを確かめ、配布用の zip の中身を SVN の `trunk` と `tags/<版>` に、`.wordpress-org` を `assets` に配ります
+3. Actions の Release が、タグのコミットが `main` に含まれ、版がタグとそろっていることを確かめ、配布用の zip の中身を SVN の `trunk` と `tags/<版>` に、`.wordpress-org` を `assets` に配ります
 
-Release は環境 `wordpress-org` の Secrets `SVN_USERNAME`・`SVN_PASSWORD` を使います。パスワードは WordPress.org のアカウントの SVN 専用のものです。Actions の手動の実行は dry-run で、SVN にはコミットしません。
+Release は環境 `wordpress-org` の Secrets `SVN_USERNAME`・`SVN_PASSWORD` を使います。パスワードは WordPress.org のアカウントの SVN 専用のものです。環境の配布先は `v*` のタグに限ってあります。Actions の手動の実行は、版の確かめと zip の組み立てまでで、環境にも SVN にも触れません。
+
+Playground のプレビューのボタンは、blueprint を置くだけでは出ません。公開後に、プラグインの管理の画面（Advanced）でプレビューを public にします。
 
 ## 書くときの決まり
 
