@@ -1112,4 +1112,57 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		$this->assertStringNotContainsString( 'eventwatch-sync-cell', $inline() );
 		set_current_screen( 'front' );
 	}
+
+	/**
+	 * 定期の 1 回で、最後に洗い直したときとサイトの URL が違えば洗い直しを張る。
+	 */
+	public function test_run_requests_rescan_when_site_urls_changed() {
+		Sync_Queue::rescan();
+		wp_clear_scheduled_hook( Sync_Queue::RESCAN_HOOK );
+
+		Sync_Pull::run();
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		Sync_Pull::run();
+		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * 移転の確認を待つ間と、止めている間は確かめない。
+	 */
+	public function test_run_does_not_check_site_urls_while_it_cannot_read() {
+		Sync_Queue::rescan();
+		wp_clear_scheduled_hook( Sync_Queue::RESCAN_HOOK );
+		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+
+		update_option( Sync_Queue::HOLD_OPTION, time() + 100 );
+		Sync_Pull::run();
+		$held = wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK );
+		delete_option( Sync_Queue::HOLD_OPTION );
+
+		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example' ) );
+		Sync_Pull::run();
+		$moving = wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK );
+		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+
+		$this->assertFalse( $held );
+		$this->assertFalse( $moving );
+	}
+
+	/**
+	 * スキームを入れ替える。置換で http と https を入れ替えたサイトの代わり。
+	 *
+	 * @param string $url URL。
+	 * @return string
+	 */
+	public function flip_scheme( $url ) {
+		if ( 'https' === wp_parse_url( $url, PHP_URL_SCHEME ) ) {
+			return set_url_scheme( $url, 'http' );
+		}
+
+		return set_url_scheme( $url, 'https' );
+	}
 }

@@ -64,6 +64,11 @@ class Sync_Queue {
 	const HOLD_OPTION   = 'eventwatch_sync_hold_until';
 	const LOCK_OPTION   = 'eventwatch_sync_lock';
 
+	/**
+	 * 最後に洗い直したときのサイトの URL のハッシュ。平文で持つと、URL を変える置換で一緒に書き換わり、違いが消える。
+	 */
+	const URLS_HASH_OPTION = 'eventwatch_rescanned_urls_hash';
+
 	const PATH = '/api/v1.0/org-api/sites/';
 
 	/**
@@ -354,6 +359,9 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public static function rescan() {
+		// ここで印を付けた投稿は、いまの URL で送られる。
+		update_option( self::URLS_HASH_OPTION, self::urls_hash(), false );
+
 		$post_ids = get_posts(
 			array(
 				'post_type'        => Post_Type::POST_TYPE,
@@ -367,6 +375,34 @@ class Sync_Queue {
 		);
 
 		self::mark_many( array_map( 'intval', $post_ids ) );
+	}
+
+	/**
+	 * サイトの URL が最後の洗い直しと違えば、洗い直しを張る。定期の取り込みから呼ぶ。
+	 *
+	 * URL を変える置換は option の更新のフックを通らず、スキームだけの違いは移転の確認も通らない。記録が無ければ
+	 * いまの値を覚えるだけにする。この確かめを持たない版の間に変わった URL は拾えない。
+	 *
+	 * @return void
+	 */
+	public static function rescan_if_urls_changed() {
+		$hash = self::urls_hash();
+
+		if ( add_option( self::URLS_HASH_OPTION, $hash, '', false ) ) {
+			return;
+		}
+		if ( ! hash_equals( (string) get_option( self::URLS_HASH_OPTION ), $hash ) ) {
+			self::request_rescan();
+		}
+	}
+
+	/**
+	 * 送るサイトの URL のハッシュ。
+	 *
+	 * @return string
+	 */
+	private static function urls_hash() {
+		return hash( 'sha256', (string) wp_json_encode( Site_Identity::urls() ) );
 	}
 
 	/**
@@ -494,6 +530,7 @@ class Sync_Queue {
 			delete_option( self::DELETE_PREFIX . $post_id );
 		}
 		delete_option( self::HOLD_OPTION );
+		delete_option( self::URLS_HASH_OPTION );
 		delete_option( Sync_Image::HOLD_OPTION );
 		wp_clear_scheduled_hook( self::RUN_HOOK );
 		wp_clear_scheduled_hook( self::RESCAN_HOOK );

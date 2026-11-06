@@ -1244,6 +1244,96 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 置換でスキームだけを変えたサイトは、定期の確かめで洗い直して新しい URL を送る。洗い直した後は重ねて張らない。
+	 */
+	public function test_scheme_change_by_replace_resends_on_check() {
+		$id = $this->sent_event();
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->requests = array();
+		$replaced       = $this->flip_scheme( (string) get_option( 'home' ) );
+
+		// 置換は option の更新のフックを通らない。値だけを変える。
+		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		$this->assertFalse( Site_Identity::has_changed() );
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		Sync_Queue::rescan_if_urls_changed();
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+
+		wp_clear_scheduled_hook( Sync_Queue::RESCAN_HOOK );
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->assertSame( array( "PUT /events/$id" ), $this->sent() );
+		$this->assertSame( $replaced, $this->requests[0]['body']['siteUrl'] );
+
+		Sync_Queue::rescan_if_urls_changed();
+		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * URL が最後の洗い直しと同じなら、定期の確かめで何も送らない。
+	 */
+	public function test_same_urls_do_not_rescan_on_check() {
+		$this->sent_event();
+		Sync_Queue::rescan();
+		Sync_Queue::run();
+		$this->requests = array();
+
+		Sync_Queue::rescan_if_urls_changed();
+		Sync_Queue::run();
+
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+		$this->assertSame( array(), $this->requests );
+	}
+
+	/**
+	 * 記録が無いとき（確かめを持たない版から上げた直後）は、いまの URL を覚えるだけにする。
+	 */
+	public function test_first_check_only_records_urls() {
+		$this->sent_event();
+		delete_option( Sync_Queue::URLS_HASH_OPTION );
+
+		Sync_Queue::rescan_if_urls_changed();
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+		$this->assertNotFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
+
+		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		Sync_Queue::rescan_if_urls_changed();
+		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * 複製として別のサイトになると、URL の記録も消える。
+	 */
+	public function test_forget_all_forgets_rescanned_urls() {
+		Sync_Queue::rescan();
+		$this->assertNotFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
+
+		Sync_Queue::forget_all();
+
+		$this->assertFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
+	}
+
+	/**
+	 * スキームを入れ替える。置換で http と https を入れ替えたサイトの代わり。
+	 *
+	 * @param string $url URL。
+	 * @return string
+	 */
+	public function flip_scheme( $url ) {
+		if ( 'https' === wp_parse_url( $url, PHP_URL_SCHEME ) ) {
+			return set_url_scheme( $url, 'http' );
+		}
+
+		return set_url_scheme( $url, 'https' );
+	}
+
+	/**
 	 * 要求の経路が変わっても、同じ内容の投稿は送らない。
 	 */
 	public function test_request_scheme_does_not_resend() {
