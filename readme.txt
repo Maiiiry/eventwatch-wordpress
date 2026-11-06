@@ -121,6 +121,10 @@ WordPress publishes scheduled events with WP-Cron, which only runs when someone 
 
 Deleting the plugin removes its settings, including the API key and the site ID, the send status of each event, and the capabilities it added to user roles. It also tells EventWatch to detach this site's events: they stay listed on EventWatch and you can edit them there. If EventWatch can't be reached, the plugin is still deleted; in that case, revoke the API key on EventWatch. Your events stay in the database, along with your choice not to send an event, unless you turn on "Delete all events when the plugin is deleted" in Settings > EventWatch. If you reinstall the plugin, the site gets a new site ID, so EventWatch treats it as a new site: when you publish the remaining events, they can be sent as separate posts.
 
+= Source code =
+
+The source code, including the uncompressed JavaScript for the blocks and the editor, is at https://github.com/eventwatch/eventwatch-wordpress . The `build` folder in the plugin is generated from the `src` folder there with `npm ci` and `npm run build`. The README in the repository explains how to set up a development environment.
+
 = Translations =
 
 The plugin includes a Japanese translation. Other languages come from translate.wordpress.org.
