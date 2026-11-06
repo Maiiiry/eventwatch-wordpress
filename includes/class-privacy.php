@@ -54,24 +54,35 @@ class Privacy {
 	/**
 	 * 文案の HTML。privacy-policy-tutorial の段落はオーナー向けの説明で、「コピー」では写らない。
 	 *
+	 * EventWatch と Google の段落は、いまの設定で接続するときだけ入れる。admin_init のたびに作り直す。
+	 *
 	 * @return string
 	 */
 	public static function policy_text() {
 		$paragraphs = array(
-			'<p class="privacy-policy-tutorial">' . esc_html__( 'EventWatch Events does not set cookies and does not collect information about visitors. It connects to outside services only after an administrator sets them up. Remove the parts below that do not match your settings.', 'eventwatch' ) . '</p>',
+			'<p class="privacy-policy-tutorial">' . esc_html__( 'EventWatch Events does not set cookies and does not collect information about visitors. It connects to outside services only after an administrator sets them up. The suggested text below follows your current settings. If you change the EventWatch or Google Maps settings, review your policy again.', 'eventwatch' ) . '</p>',
 			'<strong class="privacy-policy-tutorial">' . esc_html__( 'Suggested text:', 'eventwatch' ) . ' </strong>',
-			'<p>' . sprintf(
+		);
+
+		// 送るのはキーを設定したときだけ（readme の External services）。
+		if ( '' !== Connection::api_key() ) {
+			$paragraphs[] = '<p>' . sprintf(
 				/* translators: %s: URL of the EventWatch privacy policy. */
 				esc_html__( 'This site lists its events on EventWatch. When we publish an event, our server sends it to EventWatch: its title, content, dates, venue, and other details, its featured image, and the addresses of this site and its admin area. No information about visitors to this site is sent. EventWatch\'s privacy policy: %s', 'eventwatch' ),
 				self::link( Connection_Admin::web_url( '/privacy' ) )
-			) . '</p>',
-			'<p>' . sprintf(
+			) . '</p>';
+		}
+
+		// 地図を埋め込むのは Google Maps のキーを設定したときだけで、既定はリンクだけ（readme の Maps）。
+		if ( '' !== (string) get_option( Settings::MAPS_KEY, '' ) ) {
+			$paragraphs[] = '<p>' . sprintf(
 				/* translators: %s: URL of the Google privacy policy. */
 				esc_html__( 'Event pages show a Google map of the venue. When you open an event page, your browser connects to Google, and Google may collect information such as your IP address. Google\'s privacy policy: %s', 'eventwatch' ),
 				self::link( self::GOOGLE_PRIVACY_URL )
-			) . '</p>',
-			'<p>' . esc_html__( 'Event pages link to EventWatch, maps, calendars, and social media. Your browser connects to these services only when you follow a link.', 'eventwatch' ) . '</p>',
-		);
+			) . '</p>';
+		}
+
+		$paragraphs[] = '<p>' . esc_html__( 'Event pages link to maps, calendars, and social media, and events listed on EventWatch link to EventWatch. Your browser connects to these services only when you follow a link.', 'eventwatch' ) . '</p>';
 
 		return implode( "\n", $paragraphs );
 	}

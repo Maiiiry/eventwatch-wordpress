@@ -1907,26 +1907,26 @@ msgstr "このサイトは、失効していない別の API キーで EventWatc
 msgid "If this site has already sent events with the old key, revoke the old key on EventWatch first. Until it’s revoked, EventWatch doesn’t accept changes from the new key."
 msgstr "古いキーでイベントを送ったことがあるサイトでは、先に EventWatch で古いキーを失効してください。失効するまで、新しいキーからの変更を EventWatch は受け付けません。"
 
-#: includes/class-privacy.php:61
-msgid "EventWatch Events does not set cookies and does not collect information about visitors. It connects to outside services only after an administrator sets them up. Remove the parts below that do not match your settings."
-msgstr "EventWatch Events は Cookie を使わず、訪問者の情報を集めません。外部のサービスに接続するのは、管理者が設定したときだけです。下の文のうち、お使いの設定に合わない部分は削除してください。"
-
-#: includes/class-privacy.php:62
+#: includes/class-privacy.php:64
 msgid "Suggested text:"
 msgstr "提案テキスト:"
 
 #. translators: %s: URL of the EventWatch privacy policy.
-#: includes/class-privacy.php:65
+#: includes/class-privacy.php:71
 #, php-format
 msgid "This site lists its events on EventWatch. When we publish an event, our server sends it to EventWatch: its title, content, dates, venue, and other details, its featured image, and the addresses of this site and its admin area. No information about visitors to this site is sent. EventWatch's privacy policy: %s"
 msgstr "このサイトは、イベントを EventWatch に掲載しています。イベントを公開すると、このサイトのサーバーから EventWatch へ、そのイベントのタイトル・本文・日時・会場などの内容、アイキャッチ画像、このサイトと管理画面のアドレスを送ります。このサイトの訪問者の情報は送りません。EventWatch のプライバシーポリシー: %s"
 
 #. translators: %s: URL of the Google privacy policy.
-#: includes/class-privacy.php:70
+#: includes/class-privacy.php:80
 #, php-format
 msgid "Event pages show a Google map of the venue. When you open an event page, your browser connects to Google, and Google may collect information such as your IP address. Google's privacy policy: %s"
 msgstr "イベントのページには、会場の Google マップを表示しています。イベントのページを開くと、お使いのブラウザが Google に接続し、Google が IP アドレスなどの情報を取得することがあります。Google のプライバシーポリシー: %s"
 
-#: includes/class-privacy.php:73
-msgid "Event pages link to EventWatch, maps, calendars, and social media. Your browser connects to these services only when you follow a link."
-msgstr "イベントのページには、EventWatch・地図・カレンダー・SNS へのリンクがあります。お使いのブラウザがこれらのサービスに接続するのは、リンクを開いたときだけです。"
+#: includes/class-privacy.php:63
+msgid "EventWatch Events does not set cookies and does not collect information about visitors. It connects to outside services only after an administrator sets them up. The suggested text below follows your current settings. If you change the EventWatch or Google Maps settings, review your policy again."
+msgstr "EventWatch Events は Cookie を使わず、訪問者の情報を集めません。外部のサービスに接続するのは、管理者が設定したときだけです。下の文は、いまの設定に合わせてあります。EventWatch や Google マップの設定を変えたら、ポリシーを見直してください。"
+
+#: includes/class-privacy.php:85
+msgid "Event pages link to maps, calendars, and social media, and events listed on EventWatch link to EventWatch. Your browser connects to these services only when you follow a link."
+msgstr "イベントのページには、地図・カレンダー・SNS へのリンクがあり、EventWatch に掲載中のイベントには EventWatch へのリンクもあります。お使いのブラウザがこれらのサービスに接続するのは、リンクを開いたときだけです。"
