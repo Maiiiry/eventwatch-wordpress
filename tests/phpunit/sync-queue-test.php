@@ -1253,8 +1253,12 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		$this->requests = array();
 		$replaced       = $this->flip_scheme( (string) get_option( 'home' ) );
 
-		// 置換は option の更新のフックを通らない。値だけを変える。
-		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		// 置換は option の更新のフックを通らない。保存値だけを変える。WP_HOME を定義した環境でも送る値が変わるよう、フィルターで揃える。
+		$this->replace_stored_scheme();
+		$as_replaced = static function () use ( $replaced ) {
+			return $replaced;
+		};
+		add_filter( 'option_home', $as_replaced, 20 );
 		$this->assertFalse( Site_Identity::has_changed() );
 		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 
@@ -1268,7 +1272,7 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		$this->assertSame( $replaced, $this->requests[0]['body']['siteUrl'] );
 
 		Sync_Queue::rescan_if_urls_changed();
-		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		remove_filter( 'option_home', $as_replaced, 20 );
 
 		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 	}
@@ -1300,11 +1304,50 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 		$this->assertNotFalse( get_option( Sync_Queue::URLS_HASH_OPTION ) );
 
-		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		$this->replace_stored_scheme();
 		Sync_Queue::rescan_if_urls_changed();
-		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
 
 		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * siteurl の保存値だけが置換で変わっても洗い直す。管理画面の URL は siteurl から作る。
+	 */
+	public function test_check_sees_stored_siteurl() {
+		Sync_Queue::rescan();
+
+		$this->replace_stored_scheme( array( 'siteurl' ) );
+		Sync_Queue::rescan_if_urls_changed();
+
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
+	}
+
+	/**
+	 * 要求ごとに URL が変わるサイト（WP_HOME を is_ssl() から作る・WP_SITEURL を Host ヘッダーから作る）では、
+	 * 保存値が同じなら洗い直しを張らない。送る値で比べると、要求のたびに全件を送り直す。
+	 */
+	public function test_check_ignores_urls_that_change_per_request() {
+		$this->sent_event();
+		$https      = static function ( $url ) {
+			return set_url_scheme( $url, 'https' );
+		};
+		$other_host = static function () {
+			return 'http://other.example/wp';
+		};
+
+		Sync_Queue::rescan();
+		add_filter( 'option_home', $https, 20 );
+		add_filter( 'option_siteurl', $other_host, 20 );
+		Sync_Queue::rescan_if_urls_changed();
+		$changed = wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK );
+
+		Sync_Queue::rescan();
+		remove_filter( 'option_home', $https, 20 );
+		remove_filter( 'option_siteurl', $other_host, 20 );
+		Sync_Queue::rescan_if_urls_changed();
+
+		$this->assertFalse( $changed );
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 	}
 
 	/**
@@ -1331,6 +1374,24 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 		}
 
 		return set_url_scheme( $url, 'https' );
+	}
+
+	/**
+	 * option の保存値のスキームを、フックを通さずに入れ替える。wp search-replace の代わり。
+	 *
+	 * @param string[] $names 入れ替える option。
+	 * @return void
+	 */
+	private function replace_stored_scheme( array $names = array( 'home', 'siteurl' ) ) {
+		global $wpdb;
+
+		foreach ( $names as $name ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 置換と同じく、option の更新のフックを通さない。
+			$stored = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 同上。
+			$wpdb->update( $wpdb->options, array( 'option_value' => $this->flip_scheme( $stored ) ), array( 'option_name' => $name ) );
+		}
+		wp_cache_delete( 'alloptions', 'options' );
 	}
 
 	/**

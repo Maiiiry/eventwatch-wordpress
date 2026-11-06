@@ -65,7 +65,7 @@ class Sync_Queue {
 	const LOCK_OPTION   = 'eventwatch_sync_lock';
 
 	/**
-	 * 最後に洗い直したときのサイトの URL のハッシュ。平文で持つと、URL を変える置換で一緒に書き換わり、違いが消える。
+	 * 最後に洗い直したときの home と siteurl の保存値のハッシュ。平文で持つと、URL を変える置換で一緒に書き換わり、違いが消える。
 	 */
 	const URLS_HASH_OPTION = 'eventwatch_rescanned_urls_hash';
 
@@ -360,7 +360,7 @@ class Sync_Queue {
 	 */
 	public static function rescan() {
 		// ここで印を付けた投稿は、いまの URL で送られる。
-		update_option( self::URLS_HASH_OPTION, self::urls_hash(), false );
+		update_option( self::URLS_HASH_OPTION, self::stored_urls_hash(), false );
 
 		$post_ids = get_posts(
 			array(
@@ -378,7 +378,7 @@ class Sync_Queue {
 	}
 
 	/**
-	 * サイトの URL が最後の洗い直しと違えば、洗い直しを張る。定期の取り込みから呼ぶ。
+	 * home と siteurl の保存値が最後の洗い直しと違えば、洗い直しを張る。定期の取り込みから呼ぶ。
 	 *
 	 * URL を変える置換は option の更新のフックを通らず、スキームだけの違いは移転の確認も通らない。記録が無ければ
 	 * いまの値を覚えるだけにする。この確かめを持たない版の間に変わった URL は拾えない。
@@ -386,7 +386,7 @@ class Sync_Queue {
 	 * @return void
 	 */
 	public static function rescan_if_urls_changed() {
-		$hash = self::urls_hash();
+		$hash = self::stored_urls_hash();
 
 		if ( add_option( self::URLS_HASH_OPTION, $hash, '', false ) ) {
 			return;
@@ -397,12 +397,16 @@ class Sync_Queue {
 	}
 
 	/**
-	 * 送るサイトの URL のハッシュ。
+	 * home と siteurl の保存値のハッシュ。送る値（Site_Identity::urls()）ではなく、フィルターを通す前の値で比べる。
+	 * WP_HOME を is_ssl() から、WP_SITEURL を Host ヘッダーから作るサイトでは送る値が要求ごとに変わり、
+	 * 比べるたびに全件を洗い直す。保存値は要求では変わらない。
 	 *
 	 * @return string
 	 */
-	private static function urls_hash() {
-		return hash( 'sha256', (string) wp_json_encode( Site_Identity::urls() ) );
+	private static function stored_urls_hash() {
+		$options = wp_load_alloptions();
+
+		return hash( 'sha256', (string) wp_json_encode( array( $options['home'] ?? '', $options['siteurl'] ?? '' ) ) );
 	}
 
 	/**

@@ -1114,7 +1114,7 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 	}
 
 	/**
-	 * 定期の 1 回で、最後に洗い直したときとサイトの URL が違えば洗い直しを張る。
+	 * 定期の 1 回で、最後に洗い直したときと home・siteurl の保存値が違えば洗い直しを張る。
 	 */
 	public function test_run_requests_rescan_when_site_urls_changed() {
 		Sync_Queue::rescan();
@@ -1123,46 +1123,53 @@ class Sync_Pull_Test extends WP_UnitTestCase {
 		Sync_Pull::run();
 		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 
-		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		$this->replace_stored_scheme();
 		Sync_Pull::run();
-		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
 
 		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 	}
 
 	/**
-	 * 移転の確認を待つ間と、止めている間は確かめない。
+	 * 移転の確認を待つ間と、止めている間は確かめない。解けた後の 1 回で張る。
 	 */
 	public function test_run_does_not_check_site_urls_while_it_cannot_read() {
 		Sync_Queue::rescan();
 		wp_clear_scheduled_hook( Sync_Queue::RESCAN_HOOK );
-		add_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+		$this->replace_stored_scheme();
 
 		update_option( Sync_Queue::HOLD_OPTION, time() + 100 );
 		Sync_Pull::run();
 		$held = wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK );
 		delete_option( Sync_Queue::HOLD_OPTION );
 
+		$recorded = (string) get_option( Site_Identity::URL_OPTION );
 		update_option( Site_Identity::URL_OPTION, Site_Identity::encode_url( 'https://other.example' ) );
 		Sync_Pull::run();
 		$moving = wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK );
-		remove_filter( 'option_home', array( $this, 'flip_scheme' ), 20 );
+
+		update_option( Site_Identity::URL_OPTION, $recorded );
+		Sync_Pull::run();
 
 		$this->assertFalse( $held );
 		$this->assertFalse( $moving );
+		$this->assertNotFalse( wp_get_scheduled_event( Sync_Queue::RESCAN_HOOK ) );
 	}
 
 	/**
-	 * スキームを入れ替える。置換で http と https を入れ替えたサイトの代わり。
+	 * home と siteurl の保存値のスキームを、フックを通さずに入れ替える。wp search-replace の代わり。
 	 *
-	 * @param string $url URL。
-	 * @return string
+	 * @return void
 	 */
-	public function flip_scheme( $url ) {
-		if ( 'https' === wp_parse_url( $url, PHP_URL_SCHEME ) ) {
-			return set_url_scheme( $url, 'http' );
-		}
+	private function replace_stored_scheme() {
+		global $wpdb;
 
-		return set_url_scheme( $url, 'https' );
+		foreach ( array( 'home', 'siteurl' ) as $name ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 置換と同じく、option の更新のフックを通さない。
+			$stored   = (string) $wpdb->get_var( $wpdb->prepare( "SELECT option_value FROM {$wpdb->options} WHERE option_name = %s", $name ) );
+			$replaced = 'https' === wp_parse_url( $stored, PHP_URL_SCHEME ) ? set_url_scheme( $stored, 'http' ) : set_url_scheme( $stored, 'https' );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery -- 同上。
+			$wpdb->update( $wpdb->options, array( 'option_value' => $replaced ), array( 'option_name' => $name ) );
+		}
+		wp_cache_delete( 'alloptions', 'options' );
 	}
 }
