@@ -89,7 +89,7 @@ The content is sent as Markdown with headings, paragraphs, lists, quotes, links,
 
 If EventWatch can't be reached, sending is retried automatically after 1 minute, 5 minutes, 30 minutes, and 2 hours, and then every 6 hours. Only the latest version of an event is sent. Retries use WP-Cron, which only runs when someone visits your site. To retry on time, run WP-Cron from your server's cron: https://developer.wordpress.org/plugins/cron/hooking-wp-cron-into-the-system-task-scheduler/ . If your key is rejected or your organization is suspended, sending stops until you enter a new key, "Check connection" succeeds, or you update an event.
 
-By saving a key, you agree to the EventWatch Terms of Service ( https://eventwatch.app/en/terms ) and Posting Guidelines ( https://eventwatch.app/post/guidelines ). This also applies to a key set in `wp-config.php`.
+By saving a key, you agree to the EventWatch Terms of Service ( https://eventwatch.app/en/terms ) and Posting Guidelines ( https://eventwatch.app/en/post/guidelines ). This also applies to a key set in `wp-config.php`.
 
 Your site does not depend on EventWatch. Your pages and publishing keep working if EventWatch is unavailable, and visitors' browsers never connect to EventWatch for the event pages or blocks. The only link to EventWatch that visitors get is the "Open in the app" link for events listed there.
 
