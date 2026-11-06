@@ -297,6 +297,7 @@ class Past_Events_Test extends WP_UnitTestCase {
 	 * 日付は最後の組で、「ほか」を出さない。印のデータは過去だけ真。
 	 */
 	public function test_item_data_of_past_event() {
+		$last = $this->wall( '-2 days 10:00' );
 		$past = $this->event(
 			'series',
 			array(
@@ -305,7 +306,7 @@ class Past_Events_Test extends WP_UnitTestCase {
 					'end'   => '',
 				),
 				array(
-					'start' => $this->wall( '-2 days 10:00' ),
+					'start' => $last,
 					'end'   => '',
 				),
 			)
@@ -315,7 +316,7 @@ class Past_Events_Test extends WP_UnitTestCase {
 		$data = Event_List::item_data( get_post( $past ) );
 		$this->assertTrue( $data['ended'] );
 		$this->assertSame( '', $data['more'] );
-		$this->assertStringStartsWith( substr( $this->wall( '-2 days' ), 0, 10 ), $data['datetime'] );
+		$this->assertStringStartsWith( substr( $last, 0, 10 ), $data['datetime'] );
 		$this->assertFalse( Event_List::item_data( get_post( $next ) )['ended'] );
 	}
 
