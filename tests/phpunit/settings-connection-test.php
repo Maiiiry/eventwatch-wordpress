@@ -497,6 +497,88 @@ class Settings_Connection_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 別のキーに結び付いたサイトの 403 は、古いキーの失効と主催者面のキーの画面を出す。ほかの 403 は問い合わせのまま。
+	 */
+	public function test_site_bound_status_message() {
+		update_option( Connection::KEY_OPTION, self::KEY );
+		$fingerprint = wp_hash( self::KEY );
+		$save        = static function ( array $extra ) use ( $fingerprint ) {
+			update_option(
+				Connection::STATE_OPTION,
+				array_merge(
+					array(
+						'status'       => Connection::FORBIDDEN,
+						'organization' => '',
+						'checked_at'   => 1,
+						'key'          => $fingerprint,
+					),
+					$extra
+				)
+			);
+		};
+
+		$save( array( 'reason' => Api_Client::CODE_SITE_BOUND ) );
+		$html = $this->output_of( array( Settings::class, 'render_api_key_field' ) );
+		$this->assertStringContainsString( 'Revoke the old key under Organization settings', $html );
+		$this->assertStringContainsString( 'Check connection', $html );
+		$this->assertStringContainsString( '/organizer/api-keys', $html );
+		$this->assertStringNotContainsString( '/contact', $html );
+		$this->assertStringNotContainsString( 'Please contact EventWatch', $html );
+
+		// 理由を持たない記録（この版より前に残ったもの）と、ほかの code の 403。
+		foreach ( array( array(), array( 'reason' => '' ), array( 'reason' => 'other' ) ) as $extra ) {
+			$save( $extra );
+			$html = $this->output_of( array( Settings::class, 'render_api_key_field' ) );
+			$this->assertStringContainsString( 'Please contact EventWatch', $html );
+			$this->assertStringContainsString( '/contact', $html );
+			$this->assertStringNotContainsString( '/organizer/api-keys', $html );
+			$this->assertStringNotContainsString( 'Revoke the old key', $html );
+		}
+	}
+
+	/**
+	 * 結び付きの 403 の後、古いキーを失効して確かめると、つながった状態に戻って理由も消える。
+	 */
+	public function test_check_after_revoking_the_old_key_clears_the_reason() {
+		$this->log_in_as_admin();
+		update_option( Connection::KEY_OPTION, self::KEY );
+		Connection::observe( new \WP_Error( Api_Client::FORBIDDEN, 'x', array( 'code' => Api_Client::CODE_SITE_BOUND ) ) );
+		$this->assertTrue( Connection::is_site_bound( Connection::state() ) );
+		add_filter(
+			'pre_http_request',
+			static function () {
+				return array(
+					'headers'  => array(),
+					'body'     => '{"displayName":"Org"}',
+					'response' => array(
+						'code'    => 200,
+						'message' => 'OK',
+					),
+					'cookies'  => array(),
+				);
+			},
+			20
+		);
+
+		$this->run_action( Connection_Admin::ACTION_CHECK, array( Connection_Admin::class, 'handle_check' ) );
+
+		$this->assertSame( Connection::CONNECTED, Connection::state()['status'] );
+		$this->assertSame( '', Connection::state()['reason'] );
+		$this->assertStringNotContainsString( 'Revoke the old key', $this->output_of( array( Settings::class, 'render_api_key_field' ) ) );
+	}
+
+	/**
+	 * キーを替える欄に、古いキーを先に失効する順序を出す。
+	 */
+	public function test_change_key_explains_the_order() {
+		update_option( Connection::KEY_OPTION, self::KEY );
+
+		$html = $this->output_of( array( Settings::class, 'render_api_key_field' ) );
+
+		$this->assertMatchesRegularExpression( '/<details>.*revoke the old key on EventWatch first.*<\/details>/s', $html );
+	}
+
+	/**
 	 * ja は日本語の Web、それ以外は /en/ の下へ。
 	 */
 	public function test_web_url_follows_the_locale() {

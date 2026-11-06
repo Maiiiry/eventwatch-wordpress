@@ -228,6 +228,23 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 	}
 
 	/**
+	 * 別のキーに結び付いたサイトの 403 で止まったら、ほかの送信待ちにも古いキーの失効を案内する。
+	 */
+	public function test_site_bound_stops_others_with_the_same_reason() {
+		$first      = $this->event();
+		$second     = $this->event();
+		$this->next = $this->answer( 403, array( 'code' => 'siteBoundToAnotherKey' ) );
+		Sync_Queue::send_marked();
+
+		foreach ( array( $first, $second ) as $id ) {
+			$status = Sync_Rest::status( $id );
+			$this->assertSame( 'failed', $status['state'] );
+			$this->assertStringContainsString( 'Revoke the old key', $status['reason']['text'] );
+			$this->assertStringNotContainsString( 'contact EventWatch', $status['reason']['text'] );
+		}
+	}
+
+	/**
 	 * 一時的な失敗の投稿も、ほかで止まったら理由を替え、来ない再試行の時刻を出さない。
 	 */
 	public function test_temporary_failure_shows_stop_reason_without_next_retry() {
@@ -327,11 +344,13 @@ class Sync_Rest_Test extends WP_UnitTestCase {
 	 */
 	public function failure_reasons() {
 		return array(
-			'削除済み'    => array( 409, array( 'code' => 'eventDeleted' ), 'deleted on EventWatch' ),
-			'URL の衝突' => array( 409, array(), 'official page' ),
-			'検証エラー'   => array( 400, array(), 'didn’t accept' ),
-			'失効'      => array( 401, array(), 'rejected this API key' ),
-			'停止'      => array( 403, array( 'code' => 'organizationSuspended' ), 'suspended' ),
+			'削除済み'     => array( 409, array( 'code' => 'eventDeleted' ), 'deleted on EventWatch' ),
+			'URL の衝突'  => array( 409, array(), 'official page' ),
+			'検証エラー'    => array( 400, array(), 'didn’t accept' ),
+			'失効'       => array( 401, array(), 'rejected this API key' ),
+			'停止'       => array( 403, array( 'code' => 'organizationSuspended' ), 'suspended' ),
+			'別のキーのサイト' => array( 403, array( 'code' => 'siteBoundToAnotherKey' ), 'Revoke the old key' ),
+			'範囲の外'     => array( 403, array( 'code' => 'other' ), 'allow this API key' ),
 		);
 	}
 

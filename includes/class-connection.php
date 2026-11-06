@@ -80,13 +80,14 @@ class Connection {
 	/**
 	 * いまの状態。確かめた後でキーが替わっていれば未確認に戻す（定数の入れ替えは保存を通らない）。
 	 *
-	 * @return array{status: string, organization: string, checked_at: int}
+	 * @return array{status: string, organization: string, checked_at: int, reason: string}
 	 */
 	public static function state() {
 		$default = array(
 			'status'       => self::UNCHECKED,
 			'organization' => '',
 			'checked_at'   => 0,
+			'reason'       => '',
 		);
 		$state   = get_option( self::STATE_OPTION );
 
@@ -98,7 +99,18 @@ class Connection {
 			'status'       => isset( $state['status'] ) ? (string) $state['status'] : self::UNCHECKED,
 			'organization' => isset( $state['organization'] ) ? (string) $state['organization'] : '',
 			'checked_at'   => isset( $state['checked_at'] ) ? (int) $state['checked_at'] : 0,
+			'reason'       => isset( $state['reason'] ) ? (string) $state['reason'] : '',
 		);
+	}
+
+	/**
+	 * 別のキーがこのサイトを送ったまま有効で、書き込みを断られている状態か。
+	 *
+	 * @param array $state Connection::state() の値。
+	 * @return bool
+	 */
+	public static function is_site_bound( $state ) {
+		return self::FORBIDDEN === $state['status'] && isset( $state['reason'] ) && Api_Client::CODE_SITE_BOUND === $state['reason'];
 	}
 
 	/**
@@ -135,7 +147,7 @@ class Connection {
 	public static function observe( $result ) {
 		if ( is_wp_error( $result ) ) {
 			if ( in_array( $result->get_error_code(), array( Api_Client::UNAUTHORIZED, Api_Client::SUSPENDED, Api_Client::FORBIDDEN ), true ) ) {
-				self::save( self::status_of( $result ) );
+				self::save( self::status_of( $result ), '', self::reason_of( $result ) );
 			}
 			return;
 		}
@@ -177,19 +189,37 @@ class Connection {
 	}
 
 	/**
+	 * 案内を分ける理由。いまは別のキーに結び付いたサイトの 403 だけを残す。
+	 *
+	 * @param WP_Error $error 失敗。
+	 * @return string
+	 */
+	private static function reason_of( WP_Error $error ) {
+		$data = $error->get_error_data();
+
+		if ( Api_Client::FORBIDDEN === $error->get_error_code() && is_array( $data ) && isset( $data['code'] ) && Api_Client::CODE_SITE_BOUND === $data['code'] ) {
+			return Api_Client::CODE_SITE_BOUND;
+		}
+
+		return '';
+	}
+
+	/**
 	 * 状態を保存する。
 	 *
 	 * @param string $status       状態。
 	 * @param string $organization 団体名。
+	 * @param string $reason       案内を分ける理由（reason_of）。
 	 * @return void
 	 */
-	private static function save( $status, $organization = '' ) {
+	private static function save( $status, $organization = '', $reason = '' ) {
 		update_option(
 			self::STATE_OPTION,
 			array(
 				'status'       => $status,
 				'organization' => $organization,
 				'checked_at'   => time(),
+				'reason'       => $reason,
 				'key'          => self::fingerprint(),
 			),
 			false

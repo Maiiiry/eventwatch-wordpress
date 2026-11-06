@@ -755,10 +755,46 @@ class Sync_Queue_Test extends WP_UnitTestCase {
 	 */
 	public function halting_failures() {
 		return array(
-			'失効'    => array( 401, array(), 'eventwatch_unauthorized' ),
-			'団体の停止' => array( 403, array( 'code' => 'organizationSuspended' ), 'eventwatch_suspended' ),
-			'範囲の外'  => array( 403, array(), 'eventwatch_forbidden' ),
+			'失効'       => array( 401, array(), 'eventwatch_unauthorized' ),
+			'団体の停止'    => array( 403, array( 'code' => 'organizationSuspended' ), 'eventwatch_suspended' ),
+			'範囲の外'     => array( 403, array(), 'eventwatch_forbidden' ),
+			'別のキーのサイト' => array( 403, array( 'code' => 'siteBoundToAnotherKey' ), 'eventwatch_forbidden' ),
 		);
+	}
+
+	/**
+	 * 別のキーに結び付いたサイトで止まった待ちは、古いキーを失効して接続を確かめると、次の送信で送られる。
+	 * 確かめるのは団体の GET で、結び付きでは断られない。
+	 */
+	public function test_site_bound_queue_is_sent_after_revoking_the_old_key() {
+		$first  = $this->event();
+		$second = $this->event();
+		foreach ( array( $first, $second ) as $id ) {
+			wp_update_post(
+				array(
+					'ID'          => $id,
+					'post_status' => 'publish',
+				)
+			);
+		}
+		$this->responses[] = $this->response( 403, array( 'code' => 'siteBoundToAnotherKey' ) );
+		Sync_Queue::send_marked();
+
+		$this->assertSame( 2, Sync_Queue::pending_count() );
+		$this->assertTrue( Connection::is_site_bound( Connection::state() ) );
+		$this->assertFalse( wp_get_scheduled_event( Sync_Queue::RUN_HOOK ) );
+
+		// 古いキーを失効した後の「接続を確かめる」（Connection_Admin::handle_check と同じ流れ）。
+		$this->responses[] = $this->response( 200, array( 'displayName' => 'Org' ) );
+		$this->assertSame( Connection::CONNECTED, Connection::check()['status'] );
+		Sync_Queue::resume();
+
+		$this->requests = array();
+		Sync_Queue::run();
+
+		$this->assertSame( array( 'PUT', 'PUT' ), array_column( $this->requests, 'method' ) );
+		$this->assertSame( 0, Sync_Queue::pending_count() );
+		$this->assertFalse( Connection::is_site_bound( Connection::state() ) );
 	}
 
 	/**

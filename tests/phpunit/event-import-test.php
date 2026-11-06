@@ -7,6 +7,7 @@
 
 namespace EventWatch\Tests;
 
+use EventWatch\Api_Client;
 use EventWatch\Capabilities;
 use EventWatch\Connection;
 use EventWatch\Event_Dates;
@@ -670,6 +671,24 @@ class Event_Import_Test extends WP_UnitTestCase {
 		}
 
 		$this->assertCount( 3, array_unique( $reasons ) );
+	}
+
+	/**
+	 * 別のキーに結び付いたサイトの 403 は、新しいキーの発行ではなく古いキーの失効を案内する。ほかの 403 の文は変えない。
+	 */
+	public function test_site_bound_link_asks_to_revoke_the_old_key() {
+		$this->link_answer = $this->http( 403, array( 'code' => 'siteBoundToAnotherKey' ) );
+		$bound             = $this->import( $this->event() );
+
+		$this->assertSame( 'stop', $bound['status'] );
+		$this->assertStringContainsString( 'Revoke the old key', $bound['reason'] );
+		$this->assertStringNotContainsString( 'Issue a new key', $bound['reason'] );
+
+		$this->link_answer = $this->http( 403, array( 'code' => 'other' ) );
+		$other             = $this->import( $this->event() );
+
+		$this->assertSame( Event_Import::stop_reason( Api_Client::FORBIDDEN ), $other['reason'] );
+		$this->assertStringContainsString( 'Issue a new key', $other['reason'] );
 	}
 
 	/**

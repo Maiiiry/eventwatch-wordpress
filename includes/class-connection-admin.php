@@ -240,6 +240,9 @@ class Connection_Admin {
 			case Connection::SUSPENDED:
 				return __( 'Your organization is suspended on EventWatch, so nothing can be sent for now. This isn’t a problem with your API key, so you don’t need to change it. Please contact EventWatch.', 'eventwatch' );
 			case Connection::FORBIDDEN:
+				if ( Connection::is_site_bound( $state ) ) {
+					return __( 'This site is still connected to EventWatch with another API key that hasn’t been revoked, so EventWatch doesn’t accept changes from this key. Revoke the old key under Organization settings › Site connection on EventWatch, then use “Check connection”, and sending resumes.', 'eventwatch' );
+				}
 				return __( 'EventWatch doesn’t allow this API key to be used for this site. Please contact EventWatch.', 'eventwatch' );
 			case Connection::UNREACHABLE:
 				return __( 'Couldn’t confirm the connection to EventWatch. Wait a moment, then try again. Your site and events aren’t affected.', 'eventwatch' );

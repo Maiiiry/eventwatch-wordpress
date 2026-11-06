@@ -61,6 +61,12 @@ class Api_Client {
 	const CODE_SUSPENDED = 'organizationSuspended';
 
 	/**
+	 * このサイトを送った別のキーが有効なまま残っていることを表す 403 の code。古いキーを失効すれば直るので、案内を分ける。
+	 * 止まり方はほかの 403 と同じ（FORBIDDEN）。
+	 */
+	const CODE_SITE_BOUND = 'siteBoundToAnotherKey';
+
+	/**
 	 * 送り直しの対象の失敗か。data の retry_after は待つ秒数で、指定が無ければ 0。429 はその間送らない。
 	 *
 	 * @param WP_Error $error 失敗。

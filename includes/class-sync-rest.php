@@ -155,9 +155,10 @@ class Sync_Rest {
 		$stopped = (string) get_post_meta( $post_id, Sync_Queue::PENDING, true ) ? self::stopped_reason() : '';
 		if ( '' !== $stopped && ( 'queued' === $state || ( 'failed' === $state && is_array( $error ) && in_array( $error['code'], array( Api_Client::TEMPORARY, Api_Client::RATE_LIMITED ), true ) ) ) ) {
 			$state = 'failed';
+			// 止まっている間のほかの投稿にも、最初に断られた理由と同じ案内を出す。
 			$error = array(
 				'code'    => $stopped,
-				'apiCode' => '',
+				'apiCode' => Api_Client::FORBIDDEN === $stopped ? Connection::state()['reason'] : '',
 				'status'  => 0,
 			);
 		}
@@ -447,7 +448,12 @@ class Sync_Rest {
 			case Api_Client::SUSPENDED:
 				return Connection_Admin::status_text( array( 'status' => Connection::SUSPENDED ) );
 			case Api_Client::FORBIDDEN:
-				return Connection_Admin::status_text( array( 'status' => Connection::FORBIDDEN ) );
+				return Connection_Admin::status_text(
+					array(
+						'status' => Connection::FORBIDDEN,
+						'reason' => $error['apiCode'],
+					)
+				);
 			case Api_Client::NO_KEY:
 				return __( 'No EventWatch API key is set. Enter a key in Settings › EventWatch, and sending resumes.', 'eventwatch' );
 			case Api_Client::SITE_CHANGED:

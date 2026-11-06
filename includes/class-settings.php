@@ -273,6 +273,7 @@ class Settings {
 			. '.eventwatch-key details[open]{flex-basis:100%}'
 			. '.eventwatch-key__change{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}'
 			. '.eventwatch-key__change label{flex-basis:100%}'
+			. '.eventwatch-key__change .description{flex-basis:100%;margin:0}'
 			. '.eventwatch-status{display:flex;gap:4px;margin:8px 0 0}'
 			. '.eventwatch-status .dashicons{flex:none}'
 		);
@@ -330,12 +331,14 @@ class Settings {
 
 		if ( ! $fixed ) {
 			printf(
-				'<details><summary class="button">%1$s</summary><div class="eventwatch-key__change"><label for="%2$s-new">%3$s</label><input type="password" class="regular-text code" id="%2$s-new" name="%2$s" autocomplete="new-password" spellcheck="false"><button type="submit" class="button button-link-delete" form="%4$s">%5$s</button></div></details>',
+				'<details><summary class="button">%1$s</summary><div class="eventwatch-key__change"><label for="%2$s-new">%3$s</label><input type="password" class="regular-text code" id="%2$s-new" name="%2$s" autocomplete="new-password" spellcheck="false"><button type="submit" class="button button-link-delete" form="%4$s">%5$s</button><p class="description">%6$s</p></div></details>',
 				esc_html__( 'Change key', 'eventwatch' ),
 				esc_attr( Connection::KEY_OPTION ),
 				esc_html__( 'New key. Enter it, then save your changes.', 'eventwatch' ),
 				esc_attr( Connection_Admin::ACTION_REMOVE_KEY ),
-				esc_html__( 'Remove key', 'eventwatch' )
+				esc_html__( 'Remove key', 'eventwatch' ),
+				// 送ったことのあるサイトは、古いキーが有効な間ほかのキーの書き込みを断られる。入れる前に見える場所に置く。
+				esc_html__( 'If this site has already sent events with the old key, revoke the old key on EventWatch first. Until it’s revoked, EventWatch doesn’t accept changes from the new key.', 'eventwatch' )
 			);
 		}
 		echo '</div>';
@@ -446,7 +449,7 @@ class Settings {
 			esc_html( Connection_Admin::status_text( $state ) )
 		);
 
-		if ( Connection::UNAUTHORIZED === $state['status'] ) {
+		if ( Connection::UNAUTHORIZED === $state['status'] || Connection::is_site_bound( $state ) ) {
 			$link = array( '/organizer/api-keys', __( 'Open Site connection on EventWatch', 'eventwatch' ) );
 		} elseif ( in_array( $state['status'], array( Connection::SUSPENDED, Connection::FORBIDDEN ), true ) ) {
 			$link = array( '/contact', __( 'Contact EventWatch', 'eventwatch' ) );
