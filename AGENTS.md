@@ -26,6 +26,7 @@ PHP と Composer は wp-env のコンテナの中で動かす。先に `npm run 
 - 最小の版は WordPress 6.7・PHP 7.4。上げるときは本体のヘッダーと `readme.txt` と CI の行列を一緒に直す
 - `main` の ruleset は CI のジョブ名を必須のチェックにしている。ジョブ名や行列（`phpunit (WP … / PHP …)`）を変えたら、ruleset の必須のチェックも同じ PR で直す。直さないと、必須のチェックが来ないまま待ちになり、どの PR もマージできなくなる
 - 版の番号は本体のヘッダーの `Version`・`readme.txt` の `Stable tag`・`package.json` の `version` の 3 か所を同じ PR で上げる。CI の `tests/check-version.sh` がずれを止める
+- 公式ディレクトリのアイコン・バナー・スクリーンショット・Playground の blueprint は `.wordpress-org` に置く（zip に入らず、リリースで SVN の `assets` に配る）。スクリーンショットを足す・消すときは `readme.txt` の Screenshots の番号もそろえる。リリースと手元での blueprint の試し方は `CONTRIBUTING.md`
 - 配布物は `package.json` の `files` に書いたものだけ。実行に要るファイルを足したら、ここにも足す
 - `templates/` の `$args` はテーマが上書きで使う契約なので、キーを消す・意味を変えるときは readme も直す
 - 詳細のページの既定の並びは `Event_Detail::default_content()` の 1 か所。ブロックテーマのテンプレートと `templates/single-event.php` が共有する

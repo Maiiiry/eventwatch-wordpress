@@ -1,0 +1,37 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"landingPage": "/?pagename=upcoming-events",
+	"preferredVersions": {
+		"php": "8.3",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": false
+	},
+	"steps": [
+		{
+			"step": "login",
+			"username": "admin"
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "wordpress.org/plugins",
+				"slug": "eventwatch"
+			},
+			"options": {
+				"activate": true
+			}
+		},
+		{
+			"step": "setSiteOptions",
+			"options": {
+				"timezone_string": "Asia/Tokyo"
+			}
+		},
+		{
+			"step": "runPHP",
+			"code": "<?php\nrequire '/wordpress/wp-load.php';\n$zone = new DateTimeZone( 'Asia/Tokyo' );\n$day = static function ( $days, $time ) use ( $zone ) {\n\treturn ( new DateTimeImmutable( 'today', $zone ) )->modify( '+' . $days . ' days' )->format( 'Y-m-d' ) . ' ' . $time;\n};\n$events = array(\n\tarray( 'Riverside Night Market', 'Food stalls, crafts, and live music along the river.', 7, '17:00', '21:00', 5, 13, false, 'Riverside Park', '1-2-3 Kawabata, Sumida, Tokyo' ),\n\tarray( 'Online Photo Walk Talk', 'Photographers share how they plan a city photo walk.', 10, '20:00', '21:00', 3, 0, true, '', '' ),\n\tarray( 'Community Jazz Concert', 'A free evening concert by local jazz bands.', 14, '18:30', '20:30', 2, 27, false, 'Civic Hall', '4-5-6 Nakanoshima, Kita, Osaka' ),\n\tarray( 'Beginner Pottery Workshop', 'Make your own cup with a potter. No experience needed.', 21, '10:00', '12:00', 8, 26, false, 'Kiyomizu Studio', '7-8 Gojozaka, Higashiyama, Kyoto' ),\n);\nforeach ( $events as $event ) {\n\twp_insert_post(\n\t\tarray(\n\t\t\t'post_type'    => 'eventwatch_event',\n\t\t\t'post_author'  => 1,\n\t\t\t'post_status'  => 'publish',\n\t\t\t'post_title'   => $event[0],\n\t\t\t'post_content' => '<!-- wp:paragraph --><p>' . $event[1] . '</p><!-- /wp:paragraph -->',\n\t\t\t'meta_input'   => array(\n\t\t\t\t'eventwatch_occurrences'   => array( array( 'start' => $day( $event[2], $event[3] ), 'end' => $day( $event[2], $event[4] ) ) ),\n\t\t\t\t'eventwatch_zone'          => 'Asia/Tokyo',\n\t\t\t\t'eventwatch_category'      => $event[5],\n\t\t\t\t'eventwatch_prefecture'    => $event[6],\n\t\t\t\t'eventwatch_online'        => $event[7],\n\t\t\t\t'eventwatch_venue_name'    => $event[8],\n\t\t\t\t'eventwatch_venue_address' => $event[9],\n\t\t\t),\n\t\t)\n\t);\n}\nwp_insert_post(\n\tarray(\n\t\t'post_type'    => 'page',\n\t\t'post_author'  => 1,\n\t\t'post_status'  => 'publish',\n\t\t'post_name'    => 'upcoming-events',\n\t\t'post_title'   => 'Upcoming Events',\n\t\t'post_content' => '<!-- wp:eventwatch/event-search /-->',\n\t)\n);\n"
+		}
+	]
+}
